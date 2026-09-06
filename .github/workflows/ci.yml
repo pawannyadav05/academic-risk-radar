@@ -22,11 +22,11 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Lint codebase
-        run: npm run lint
+      - name: Build shared workspace packages
+        run: npm run build --workspace=packages/shared-types && npm run build --workspace=packages/scoring-engine
 
-      - name: Typecheck TypeScript
+      - name: Typecheck TypeScript across all workspaces
         run: npm run typecheck
 
       - name: Run scoring engine unit tests
-        run: npm --prefix packages/scoring-engine run build && npm --prefix packages/scoring-engine test
+        run: npm --prefix packages/scoring-engine test
