@@ -1,0 +1,18 @@
+{
+  "name": "@academic-risk-radar/scoring-engine",
+  "version": "1.0.0",
+  "private": true,
+  "main": "dist/src/index.js",
+  "types": "dist/src/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "test": "node --test dist/tests/engine.test.js"
+  },
+  "dependencies": {
+    "@academic-risk-radar/shared-types": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}

@@ -1,0 +1,32 @@
+name: Academic Risk Radar CI
+
+on:
+  push:
+    branches: [ main, dev ]
+  pull_request:
+    branches: [ main, dev ]
+
+jobs:
+  build-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint codebase
+        run: npm run lint
+
+      - name: Typecheck TypeScript
+        run: npm run typecheck
+
+      - name: Run scoring engine unit tests
+        run: npm --prefix packages/scoring-engine run build && npm --prefix packages/scoring-engine test

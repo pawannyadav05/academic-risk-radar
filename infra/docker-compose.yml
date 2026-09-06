@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0
+    container_name: academic_risk_mongo
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_DATABASE: academic_risk_radar
+    volumes:
+      - mongo_data:/data/db
+
+  redis:
+    image: redis:7.2-alpine
+    container_name: academic_risk_redis
+    ports:
+      - "6379:6379"
+
+  api:
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    container_name: academic_risk_api
+    ports:
+      - "4000:4000"
+    environment:
+      PORT: 4000
+      MONGO_URI: mongodb://mongodb:27017/academic_risk_radar
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: super_secret_development_key
+    depends_on:
+      - mongodb
+      - redis
+
+  workers:
+    build:
+      context: ..
+      dockerfile: apps/workers/Dockerfile
+    container_name: academic_risk_workers
+    environment:
+      MONGO_URI: mongodb://mongodb:27017/academic_risk_radar
+      REDIS_URL: redis://redis:6379
+    depends_on:
+      - mongodb
+      - redis
+
+  web:
+    build:
+      context: ..
+      dockerfile: apps/web/Dockerfile
+    container_name: academic_risk_web
+    ports:
+      - "3000:3000"
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+    depends_on:
+      - api
+
+volumes:
+  mongo_data:

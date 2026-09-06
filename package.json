@@ -1,0 +1,20 @@
+{
+  "name": "academic-risk-radar",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Academic Early-Warning and Mentoring Intervention Platform",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "build": "npm run build --workspaces --if-present",
+    "dev": "npm run dev --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "typecheck": "npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3"
+  }
+}
