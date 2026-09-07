@@ -1,6 +1,11 @@
 import mongoose, { Schema } from "mongoose";
 import {
+  AssessmentRecord,
+  AssignmentSubmission,
+  AttendanceRecord,
   AuditEntry,
+  LmsActivity,
+  QuarantineRecord,
   RiskModelVersion,
   RiskSnapshot,
   Student,
@@ -74,3 +79,59 @@ const UserSchema = new Schema<User>({
   sectionIds: [{ type: String }],
 });
 export const UserModel = mongoose.model<User>("User", UserSchema);
+
+// Attendance Record Schema (M1)
+const AttendanceRecordSchema = new Schema<AttendanceRecord>({
+  studentId: { type: String, required: true, index: true },
+  sectionId: { type: String, required: true },
+  date: { type: String, required: true, index: true },
+  status: { type: String, enum: ["present", "absent", "late"], required: true },
+  sourceRef: { type: String, required: true },
+});
+AttendanceRecordSchema.index({ studentId: 1, sectionId: 1, date: 1 }, { unique: true });
+export const AttendanceRecordModel = mongoose.model<AttendanceRecord>("AttendanceRecord", AttendanceRecordSchema);
+
+// Assessment Record Schema (M1)
+const AssessmentRecordSchema = new Schema<AssessmentRecord>({
+  studentId: { type: String, required: true, index: true },
+  courseId: { type: String, required: true, index: true },
+  type: { type: String, required: true },
+  score: { type: Number, required: true },
+  maxScore: { type: Number, required: true },
+  date: { type: String, required: true },
+  sourceRef: { type: String, required: true },
+});
+AssessmentRecordSchema.index({ studentId: 1, courseId: 1, type: 1, date: 1 }, { unique: true });
+export const AssessmentRecordModel = mongoose.model<AssessmentRecord>("AssessmentRecord", AssessmentRecordSchema);
+
+// Assignment Submission Schema (M1)
+const AssignmentSubmissionSchema = new Schema<AssignmentSubmission>({
+  studentId: { type: String, required: true, index: true },
+  courseId: { type: String, required: true },
+  assignmentId: { type: String, required: true, index: true },
+  submittedAt: { type: String, default: null },
+  status: { type: String, enum: ["submitted", "missing", "late"], required: true },
+});
+AssignmentSubmissionSchema.index({ studentId: 1, assignmentId: 1 }, { unique: true });
+export const AssignmentSubmissionModel = mongoose.model<AssignmentSubmission>("AssignmentSubmission", AssignmentSubmissionSchema);
+
+// LMS Activity Schema (M1)
+const LmsActivitySchema = new Schema<LmsActivity>({
+  studentId: { type: String, required: true, index: true },
+  courseId: { type: String, required: true },
+  date: { type: String, required: true, index: true },
+  activityType: { type: String, required: true },
+  durationSec: { type: Number, required: true },
+});
+LmsActivitySchema.index({ studentId: 1, date: -1 });
+export const LmsActivityModel = mongoose.model<LmsActivity>("LmsActivity", LmsActivitySchema);
+
+// Quarantine Record Schema (M1)
+const QuarantineRecordSchema = new Schema<QuarantineRecord>({
+  originalCollection: { type: String, required: true, index: true },
+  rawRecord: { type: Schema.Types.Mixed, required: true },
+  reason: { type: String, required: true },
+  ingestedAt: { type: String, required: true, index: true },
+});
+QuarantineRecordSchema.index({ originalCollection: 1, ingestedAt: -1 });
+export const QuarantineModel = mongoose.model<QuarantineRecord>("QuarantineRecord", QuarantineRecordSchema);
