@@ -1,4 +1,4 @@
-# Module M2: Student Academic Profile (Owner: Team Member 3)
+# Module M2: Student Academic Profile (Owner: Team Member 3 - Nilesh)
 
 Build the consolidated student profile aggregation service in this directory.
 Endpoints to expose:

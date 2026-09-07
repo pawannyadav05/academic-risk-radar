@@ -12,7 +12,7 @@
 
 **Governance constraint — non-negotiable, applies to every module that touches student data:** this is an early-support system, never a disciplinary one. Risk bands are visible to the student themselves with contributing factors; they are never exposed to recruiters, never printed on a transcript, and never used as an eligibility filter anywhere. This is enforced as an access-control rule in the backend authorization layer, not a UI convention or a comment.
 
-**Team:** 4 people — Team Member 1(Pawan), Team Member 2(Vani), and Team Member 3(Nilesh), Team Member 4(Krish). Maximum 3 people are actively working at any given time (the 4th may be unavailable on a given day/week) — this affects scheduling, not module ownership; every person below still owns their assigned modules end to end.
+**Team:** 4 people — Team Member 1 (Pawan), Team Member 2 (Vani), Team Member 3 (Nilesh), and Team Member 4 (Krish). Maximum 3 people are actively working at any given time (the 4th may be unavailable on a given day/week) — this affects scheduling, not module ownership; every person below still owns their assigned modules end to end.
 
 **Timeline:** 7–8 weeks total, full spec scope (all 8 modules, all 6 roles) — nothing is cut for time. AI coding tools (Antigravity / Claude Code) generate scaffolding, CRUD, and boilerplate; humans review and hand-write scoring logic, access-control rules, and integration.
 
@@ -348,7 +348,7 @@ Paste your own section below (Sections 0–4 plus your one numbered section) int
 
 ---
 
-### 5.4 — TEAM MEMBER 4(Krish): M6 (Intervention & Outcome Tracking) + M7 (Dashboards & Reporting)
+### 5.4 — TEAM MEMBER 4 (Krish): M6 (Intervention & Outcome Tracking) + M7 (Dashboards & Reporting)
 
 **Build:**
 - `interventions` collection and endpoints: `POST /api/v1/interventions` (mentor records an action taken in response to an `alertId`, with `action`, `notes`, optional `followUpDate`), `PATCH /api/v1/interventions/:id/outcome` (mentor later records what happened — did the student's band improve after the action).

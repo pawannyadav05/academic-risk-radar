@@ -119,7 +119,7 @@
 
 ---
 
-## 3. Team Member 2: Detailed Blueprint (Modules M4 & M5)
+## 3. Team Member 2 (Vani): Detailed Blueprint (Modules M4 & M5)
 
 ### 📌 Module Ownership
 - **Module M4**: Trend & Anomaly Detection (`apps/api/src/modules/trends/`, seed data generator)
@@ -192,7 +192,7 @@
 
 ---
 
-## 4. Team Member 3: Detailed Blueprint (Modules M1 & M2)
+## 4. Team Member 3 (Nilesh): Detailed Blueprint (Modules M1 & M2)
 
 ### 📌 Module Ownership
 - **Module M1**: Ingestion & Normalisation (`apps/api/src/modules/ingestion/`, CSV importers, quarantine collection)
@@ -260,7 +260,7 @@
 
 ---
 
-## 5. Team Member 4: Detailed Blueprint (Modules M6 & M7)
+## 5. Team Member 4 (Krish): Detailed Blueprint (Modules M6 & M7)
 
 ### 📌 Module Ownership
 - **Module M6**: Intervention & Outcome Tracking (`apps/api/src/modules/interventions/`, `apps/web/app/(mentor)/interventions/`)

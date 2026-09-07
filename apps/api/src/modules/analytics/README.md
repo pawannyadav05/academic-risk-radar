@@ -1,4 +1,4 @@
-# Module M7: Dashboards & Reporting (Owner: Team Member 4)
+# Module M7: Dashboards & Reporting (Owner: Team Member 4 - Krish)
 
 Build role-scoped analytics endpoints for Student, Instructor, Mentor, HoD, and Dean in this directory.
 Endpoints to expose:

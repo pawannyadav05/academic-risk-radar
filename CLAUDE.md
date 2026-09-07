@@ -18,8 +18,8 @@ After pulling latest code, scan and read all markdown documentation files in `do
 - Always create or check out a feature branch dedicated to your module:
   - Team Member 1 (Pawan): `feat/m3-scoring` / `feat/m8-admin`
   - Team Member 2 (Vani): `feat/m4-trends` / `feat/m5-alerts`
-  - Team Member 3: `feat/m1-ingestion` / `feat/m2-profile`
-  - Team Member 4: `feat/m6-interventions` / `feat/m7-analytics`
+  - Team Member 3 (Nilesh): `feat/m1-ingestion` / `feat/m2-profile`
+  - Team Member 4 (Krish): `feat/m6-interventions` / `feat/m7-analytics`
 - Push commits to your remote feature branch (`git push origin <feature-branch>`).
 - Open a Pull Request (PR) on GitHub. The Repo Lead (Pawan) will review and merge your PR into `main`.
 

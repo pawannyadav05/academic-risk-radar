@@ -14,7 +14,7 @@ After pulling latest changes, inspect and read all documentation files under `do
 
 ## MANDATORY WORKFLOW 2: GIT FEATURE BRANCH ONLY
 - **NEVER COMMIT OR PUSH DIRECTLY TO `main`.**
-- Always ensure you are working on a dedicated feature branch for your module (`feat/m1-ingestion`, `feat/m2-profile`, `feat/m3-scoring`, `feat/m4-trends`, `feat/m5-alerts`, `feat/m6-interventions`, `feat/m7-analytics`, `feat/m8-admin`).
+- Always ensure you are working on a dedicated feature branch for your module (`feat/m1-ingestion`, `feat/m2-profile` [Team Member 3 Nilesh], `feat/m3-scoring`, `feat/m8-admin` [Team Member 1 Pawan], `feat/m4-trends`, `feat/m5-alerts` [Team Member 2 Vani], `feat/m6-interventions`, `feat/m7-analytics` [Team Member 4 Krish]).
 - Push feature branches to remote so the Repo Lead (Pawan) can review and merge the Pull Request into `main`.
 
 ## NON-NEGOTIABLE CODE RULES:
