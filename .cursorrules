@@ -1,0 +1,15 @@
+# CURSOR / AI AGENT MANDATORY INSTRUCTIONS
+
+## MANDATORY WORKFLOW: READ ALL DOCS FIRST
+Before writing any code or answering coding prompts in this repository, you MUST first inspect and read all documentation files under `docs/`:
+
+1. `docs/stage-wise-development-plan.md` (Read current stage evaluation goals and exact module checklists)
+2. `docs/build-plan.md` (Master architecture and module ownership)
+3. `docs/glossary.md` (Canonical domain terminology)
+4. `docs/api-contract.md` (REST API specification & RBAC rules)
+5. `docs/model-specification.md` (Risk model weights & thresholds)
+
+## NON-NEGOTIABLE CODE RULES:
+- **Shared Types**: Import all types from `@academic-risk-radar/shared-types`. Do not redefine types locally.
+- **Naming Consistency**: Use canonical names (`studentId`, `band`, `computedAt`, `factors`, `intervention`, `mentorAssignment`).
+- **Module Boundaries**: Work strictly inside your assigned module folder under `apps/api/src/modules/`.
