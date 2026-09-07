@@ -23,14 +23,42 @@ Whenever switching AI agents or starting a new development session, refer to `do
 
 ---
 
+## 🌿 Git Feature Branching & Pull Request Workflow (For Teammates)
+
+All team members must work on dedicated **feature branches**. **Direct commits to `main` are strictly prohibited.**
+
+### Workflow Steps for Collaborators:
+1. **Sync latest main from GitHub**:
+   ```bash
+   git checkout main
+   git pull origin main
+   ```
+2. **Create and switch to your feature branch**:
+   ```bash
+   # Example for Team Member 3 working on Module M1
+   git checkout -b feat/m1-ingestion
+   ```
+3. **Commit changes locally**:
+   ```bash
+   git commit -m "feat(m1): implement CSV importer and quarantine validation logic"
+   ```
+4. **Push feature branch to GitHub**:
+   ```bash
+   git push origin feat/m1-ingestion
+   ```
+5. **Open a Pull Request (PR)** on GitHub targeting the `main` branch.
+6. **Merge Approval**: The Team Lead / Repo Owner (**Pawan**) will review the Pull Request, inspect CI build status, and merge it into `main`.
+
+---
+
 ## 🤖 AI Agent Setup & Kickoff Prompt (For Teammates)
 
-This repository includes configuration files (`CLAUDE.md`, `.cursorrules`, `.gemini/rules/00-docs-first.md`) that instruct AI tools (Antigravity, Claude Code, Cursor, Windsurf, Copilot) to **automatically scan all documentation in `docs/` before writing code**.
+This repository includes configuration files (`CLAUDE.md`, `.cursorrules`, `.gemini/rules/00-docs-first.md`) that instruct AI tools (Antigravity, Claude Code, Cursor, Windsurf, Copilot) to **automatically fetch latest code from GitHub**, **scan all documentation in `docs/` before writing code**, and **enforce feature branch development**.
 
 ### Recommended AI Kickoff Prompt
 When opening a new AI coding session, copy and paste this command into your AI chat:
 
-> *"First scan and read all .md files under the docs/ folder (`docs/stage-wise-development-plan.md`, `docs/build-plan.md`, `docs/glossary.md`, `docs/api-contract.md`, `docs/model-specification.md`) and check packages/shared-types/index.ts. I am Team Member [X] working on Module [M_X]. We are currently in Stage 1 (Week 5 Evaluation). Follow the exact 'WHAT TO BUILD NOW' checklist for my module in Stage 1."*
+> *"First run git fetch origin and git pull origin main to pull the latest changes from GitHub. Then scan and read all .md files under the docs/ folder (`docs/stage-wise-development-plan.md`, `docs/build-plan.md`, `docs/glossary.md`, `docs/api-contract.md`, `docs/model-specification.md`) and check packages/shared-types/index.ts. Ensure we work on a feature branch (never main). I am Team Member [X] working on Module [M_X]. We are currently in Stage 1 (Week 5 Evaluation). Follow the exact 'WHAT TO BUILD NOW' checklist for my module in Stage 1."*
 
 ---
 
@@ -60,13 +88,13 @@ npm run typecheck
 
 ## 👥 Module Ownership Quick Reference
 
-| Module | Name | Owner |
-|---|---|---|
-| **M1** | Ingestion & Normalisation | Team Member 3 |
-| **M2** | Student Academic Profile | Team Member 3 |
-| **M3** | Risk Scoring Engine | Team Member 1 (Pawan) |
-| **M4** | Trend & Anomaly Detection | Team Member 2 (Vani) |
-| **M5** | Alert Routing & Mentor Inbox | Team Member 2 (Vani) |
-| **M6** | Intervention & Outcome Tracking | Team Member 4 |
-| **M7** | Dashboards & Reporting | Team Member 4 |
-| **M8** | Configuration & Audit Control | Team Member 1 (Pawan) |
+| Module | Name | Owner | Feature Branch |
+|---|---|---|---|
+| **M1** | Ingestion & Normalisation | Team Member 3 | `feat/m1-ingestion` |
+| **M2** | Student Academic Profile | Team Member 3 | `feat/m2-profile` |
+| **M3** | Risk Scoring Engine | Team Member 1 (Pawan) | `feat/m3-scoring` |
+| **M4** | Trend & Anomaly Detection | Team Member 2 (Vani) | `feat/m4-trends` |
+| **M5** | Alert Routing & Mentor Inbox | Team Member 2 (Vani) | `feat/m5-alerts` |
+| **M6** | Intervention & Outcome Tracking | Team Member 4 | `feat/m6-interventions` |
+| **M7** | Dashboards & Reporting | Team Member 4 | `feat/m7-analytics` |
+| **M8** | Configuration & Audit Control | Team Member 1 (Pawan) | `feat/m8-admin` |
