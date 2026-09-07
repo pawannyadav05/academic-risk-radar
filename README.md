@@ -52,8 +52,8 @@ npm run typecheck
 | **M1** | Ingestion & Normalisation | Team Member 3 |
 | **M2** | Student Academic Profile | Team Member 3 |
 | **M3** | Risk Scoring Engine | Team Member 1 (Pawan) |
-| **M4** | Trend & Anomaly Detection | Team Member 2 |
-| **M5** | Alert Routing & Mentor Inbox | Team Member 2 |
+| **M4** | Trend & Anomaly Detection | Team Member 2(Vani) |
+| **M5** | Alert Routing & Mentor Inbox | Team Member 2(Vani) |
 | **M6** | Intervention & Outcome Tracking | Team Member 4 |
 | **M7** | Dashboards & Reporting | Team Member 4 |
 | **M8** | Configuration & Audit Control | Team Member 1 (Pawan) |

@@ -12,7 +12,7 @@
 
 **Governance constraint — non-negotiable, applies to every module that touches student data:** this is an early-support system, never a disciplinary one. Risk bands are visible to the student themselves with contributing factors; they are never exposed to recruiters, never printed on a transcript, and never used as an eligibility filter anywhere. This is enforced as an access-control rule in the backend authorization layer, not a UI convention or a comment.
 
-**Team:** 4 people — Team Member 1, Team Member 2, and two teammates. Maximum 3 people are actively working at any given time (the 4th may be unavailable on a given day/week) — this affects scheduling, not module ownership; every person below still owns their assigned modules end to end.
+**Team:** 4 people — Team Member 1(Pawan), Team Member 2(Vani), and Team Member 3(Nilesh), Team Member 4(Krish). Maximum 3 people are actively working at any given time (the 4th may be unavailable on a given day/week) — this affects scheduling, not module ownership; every person below still owns their assigned modules end to end.
 
 **Timeline:** 7–8 weeks total, full spec scope (all 8 modules, all 6 roles) — nothing is cut for time. AI coding tools (Antigravity / Claude Code) generate scaffolding, CRUD, and boilerplate; humans review and hand-write scoring logic, access-control rules, and integration.
 
@@ -277,7 +277,7 @@ Every list/analytics endpoint is paginated and role-filtered server-side — nev
 
 Paste your own section below (Sections 0–4 plus your one numbered section) into Antigravity when you start.
 
-### 5.1 — TEAM MEMBER 1: M3 (Risk Scoring Engine) + M8 (Configuration & Audit)
+### 5.1 — TEAM MEMBER 1(Pawan): M3 (Risk Scoring Engine) + M8 (Configuration & Audit)
 
 **Build:**
 - A versioned rule-and-weight scoring engine (`packages/scoring-engine`, pure TypeScript, zero framework imports, unit-testable in isolation) that takes a student's aggregated profile (from M2) and trend signals (from M4) and produces a `RiskSnapshot`: a `band` plus a ranked `factors[]` array, each factor showing its `name`, `weight`, `contribution`, and raw `value`.
@@ -303,7 +303,7 @@ Paste your own section below (Sections 0–4 plus your one numbered section) int
 
 ---
 
-### 5.2 — TEAM MEMBER 2: M4 (Trend & Anomaly Detection) + M5 (Alert Routing & Mentor Inbox)
+### 5.2 — TEAM MEMBER 2(Vani): M4 (Trend & Anomaly Detection) + M5 (Alert Routing & Mentor Inbox)
 
 **Build:**
 - A trend-detection module that, for each student, computes a rolling baseline (e.g. trailing 4–6 week average) per relevant metric (attendance rate, average score, submission rate, LMS activity) from M1's normalised source collections, and flags: (a) slow deterioration against the student's own baseline, and (b) a sudden-drop rule (e.g. a defined percentage drop week-over-week). Output is a set of trend signals per student, passed into Team Member 1's scoring engine as one category of risk factors — do not build a separate ML model; this is arithmetic over the aggregated collections.
@@ -326,7 +326,7 @@ Paste your own section below (Sections 0–4 plus your one numbered section) int
 
 ---
 
-### 5.3 — TEAM MEMBER 3: M1 (Ingestion & Normalisation) + M2 (Student Academic Profile)
+### 5.3 — TEAM MEMBER 3(Nilesh): M1 (Ingestion & Normalisation) + M2 (Student Academic Profile)
 
 **Build:**
 - Import/connector functions for all 4 source types (attendance, marks, assignments, LMS activity). Since no real institutional data or connector access exists yet, build these as **CSV/file importers matching the exact schema in Section 1** — this is not a shortcut, it is the correct v1 implementation per the spec's "working file-import fallback" requirement; live API connectors can be swapped in later without changing anything downstream.
@@ -348,7 +348,7 @@ Paste your own section below (Sections 0–4 plus your one numbered section) int
 
 ---
 
-### 5.4 — TEAM MEMBER 4: M6 (Intervention & Outcome Tracking) + M7 (Dashboards & Reporting)
+### 5.4 — TEAM MEMBER 4(Krish): M6 (Intervention & Outcome Tracking) + M7 (Dashboards & Reporting)
 
 **Build:**
 - `interventions` collection and endpoints: `POST /api/v1/interventions` (mentor records an action taken in response to an `alertId`, with `action`, `notes`, optional `followUpDate`), `PATCH /api/v1/interventions/:id/outcome` (mentor later records what happened — did the student's band improve after the action).
@@ -391,19 +391,19 @@ Read this table first if you only have one minute. It's the single-glance versio
 
 | # | Module | What it does | Owner | Depends on | Feeds into |
 |---|---|---|---|---|---|
-| M1 | Ingestion & Normalisation | Imports attendance/marks/assignments/LMS data, validates it, quarantines bad rows | **Team Member 3** | Nothing — entry point | M2 (Team Member 3), M4 (Team Member 2) |
-| M2 | Student Academic Profile | Consolidates all of M1's data into one per-student view | **Team Member 3** | M1 | M3 (Team Member 1) |
-| M3 | Risk Scoring Engine | Versioned rules-and-weights engine producing a band + ranked, explainable factors | **Team Member 1** | M2, M4 | M5 (Team Member 2), M7 (Team Member 4) |
-| M4 | Trend & Anomaly Detection | Rolling-baseline + sudden-drop detection per student; also owns the synthetic seed-data generator | **Team Member 2** | M1 | M3 (Team Member 1) |
-| M5 | Alert Routing & Mentor Inbox | Turns a risk snapshot into a deduplicated alert, routes to mentor, tracks SLA/escalation | **Team Member 2** | M3 | M6 (Team Member 4), M8 audit (Team Member 1) |
-| M6 | Intervention & Outcome Tracking | Mentor logs an action on an alert and records the outcome | **Team Member 4** | M5 | M7 (Team Member 4) |
-| M7 | Dashboards & Reporting | Role-scoped dashboards for student/instructor/mentor/HoD/Dean | **Team Member 4** | M2, M3, M4 | Nothing downstream — last stage |
-| M8 | Configuration & Audit | Weight/threshold versioning + band-change preview + immutable audit log | **Team Member 1** | Nothing (independent), logs writes from every module | Everything writes to it, nothing depends on it |
+| M1 | Ingestion & Normalisation | Imports attendance/marks/assignments/LMS data, validates it, quarantines bad rows | **Team Member 3(Nilesh)** | Nothing — entry point | M2 (Team Member 3), M4 (Team Member 2) |
+| M2 | Student Academic Profile | Consolidates all of M1's data into one per-student view | **Team Member 3(Nilesh)** | M1 | M3 (Team Member 1) |
+| M3 | Risk Scoring Engine | Versioned rules-and-weights engine producing a band + ranked, explainable factors | **Team Member 1(Pawan)** | M2, M4 | M5 (Team Member 2), M7 (Team Member 4) |
+| M4 | Trend & Anomaly Detection | Rolling-baseline + sudden-drop detection per student; also owns the synthetic seed-data generator | **Team Member 2(Vani)** | M1 | M3 (Team Member 1) |
+| M5 | Alert Routing & Mentor Inbox | Turns a risk snapshot into a deduplicated alert, routes to mentor, tracks SLA/escalation | **Team Member 2(Vani)** | M3 | M6 (Team Member 4), M8 audit (Team Member 1) |
+| M6 | Intervention & Outcome Tracking | Mentor logs an action on an alert and records the outcome | **Team Member 4(Krish)** | M5 | M7 (Team Member 4) |
+| M7 | Dashboards & Reporting | Role-scoped dashboards for student/instructor/mentor/HoD/Dean | **Team Member 4(Krish)** | M2, M3, M4 | Nothing downstream — last stage |
+| M8 | Configuration & Audit | Weight/threshold versioning + band-change preview + immutable audit log | **Team Member 1(Pawan)** | Nothing (independent), logs writes from every module | Everything writes to it, nothing depends on it |
 
 **By person, both modules together:**
-- **Team Member 1:** M3 + M8 — Section 5.1
-- **Team Member 2:** M4 + M5 — Section 5.2
-- **Team Member 3:** M1 + M2 — Section 5.3
-- **Team Member 4:** M6 + M7 — Section 5.4
+- **Team Member 1(Pawan):** M3 + M8 — Section 5.1
+- **Team Member 2(Vani):** M4 + M5 — Section 5.2
+- **Team Member 3(Nilesh):** M1 + M2 — Section 5.3
+- **Team Member 4(Krish):** M6 + M7 — Section 5.4
 
 If you're pasting this file into Antigravity, paste Sections 0–4 (shared, everyone) plus **only your own subsection of Section 5** — this table is just to confirm you've picked the right one before you do.
