@@ -1,10 +1,12 @@
 import mongoose, { Schema } from "mongoose";
 import {
+  Alert,
   AssessmentRecord,
   AssignmentSubmission,
   AttendanceRecord,
   AuditEntry,
   LmsActivity,
+  MentorAssignment,
   QuarantineRecord,
   RiskModelVersion,
   RiskSnapshot,
@@ -135,3 +137,30 @@ const QuarantineRecordSchema = new Schema<QuarantineRecord>({
 });
 QuarantineRecordSchema.index({ originalCollection: 1, ingestedAt: -1 });
 export const QuarantineModel = mongoose.model<QuarantineRecord>("QuarantineRecord", QuarantineRecordSchema);
+
+// Alert Schema (M5)
+const AlertSchema = new Schema<Alert>({
+  _id: { type: String, required: true },
+  studentId: { type: String, required: true, index: true },
+  mentorId: { type: String, required: true, index: true },
+  riskSnapshotId: { type: String, required: true },
+  status: { type: String, enum: ["open", "acknowledged", "escalated", "closed"], required: true, index: true },
+  createdAt: { type: String, required: true },
+  acknowledgedAt: { type: String, default: null },
+  escalatedAt: { type: String, default: null },
+  slaDeadline: { type: String, required: true, index: true },
+});
+AlertSchema.index({ mentorId: 1, status: 1 });
+AlertSchema.index({ slaDeadline: 1, status: 1 });
+export const AlertModel = mongoose.model<Alert>("Alert", AlertSchema);
+
+// Mentor Assignment Schema (M5)
+const MentorAssignmentSchema = new Schema<MentorAssignment>({
+  studentId: { type: String, required: true, index: true },
+  mentorId: { type: String, required: true, index: true },
+  assignedFrom: { type: String, required: true },
+  assignedTo: { type: String, default: null },
+});
+MentorAssignmentSchema.index({ studentId: 1, mentorId: 1 }, { unique: true });
+export const MentorAssignmentModel = mongoose.model<MentorAssignment>("MentorAssignment", MentorAssignmentSchema);
+
