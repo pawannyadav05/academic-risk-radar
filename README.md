@@ -95,6 +95,6 @@ npm run typecheck
 | **M3** | Risk Scoring Engine | Team Member 1 (Pawan) | `feat/m3-scoring` |
 | **M4** | Trend & Anomaly Detection | Team Member 2 (Vani) | `feat/m4-trends` |
 | **M5** | Alert Routing & Mentor Inbox | Team Member 2 (Vani) | `feat/m5-alerts` |
-| **M6** | Intervention & Outcome Tracking | Team Member 4 (Krish) | `feat/m6-interventions` |
-| **M7** | Dashboards & Reporting | Team Member 4 (Krish) | `feat/m7-analytics` |
+| **M6** | Intervention & Outcome Tracking | Team Member 4 (Piyush Kumar Singh) | `feat/m6-interventions` |
+| **M7** | Dashboards & Reporting | Team Member 4 (Piyush Kumar Singh) | `feat/m7-analytics` |
 | **M8** | Configuration & Audit Control | Team Member 1 (Pawan) | `feat/m8-admin` |

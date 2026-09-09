@@ -1,4 +1,4 @@
-# Module M6: Intervention & Outcome Tracking (Owner: Team Member 4 - Krish)
+# Module M6: Intervention & Outcome Tracking (Owner: Team Member 4 - Piyush Kumar Singh)
 
 Build mentor intervention logging and outcome tracking in this directory.
 Endpoints to expose:

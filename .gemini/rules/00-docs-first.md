@@ -19,7 +19,7 @@ After pulling the latest code, scan and read all documentation files in `docs/`:
   - Team Member 1 (Pawan): `feat/m3-scoring`, `feat/m8-admin`
   - Team Member 2 (Vani): `feat/m4-trends`, `feat/m5-alerts`
   - Team Member 3 (Nilesh): `feat/m1-ingestion`, `feat/m2-profile`
-  - Team Member 4 (Krish): `feat/m6-interventions`, `feat/m7-analytics`
+  - Team Member 4 (Piyush Kumar Singh): `feat/m6-interventions`, `feat/m7-analytics`
 - All changes must be pushed to your feature branch on GitHub (`git push origin <branch-name>`).
 - The Team Lead / Repo Owner (Pawan) will review the Pull Request (PR) on GitHub and merge it into `main`.
 

@@ -260,7 +260,7 @@
 
 ---
 
-## 5. Team Member 4 (Krish): Detailed Blueprint (Modules M6 & M7)
+## 5. Team Member 4 (Piyush Kumar Singh): Detailed Blueprint (Modules M6 & M7)
 
 ### 📌 Module Ownership
 - **Module M6**: Intervention & Outcome Tracking (`apps/api/src/modules/interventions/`, `apps/web/app/(mentor)/interventions/`)
