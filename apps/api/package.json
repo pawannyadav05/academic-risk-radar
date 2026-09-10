@@ -8,7 +8,8 @@
     "dev": "tsc --watch",
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
-    "test": "node --test dist/tests/**/*.test.js"
+    "test": "node --test dist/tests/**/*.test.js",
+    "seed": "node dist/src/modules/trends/seed-generator.js"
   },
   "dependencies": {
     "@academic-risk-radar/scoring-engine": "*",
