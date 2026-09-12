@@ -5,6 +5,7 @@ import {
   AssignmentSubmission,
   AttendanceRecord,
   AuditEntry,
+  Intervention,
   LmsActivity,
   MentorAssignment,
   QuarantineRecord,
@@ -163,4 +164,20 @@ const MentorAssignmentSchema = new Schema<MentorAssignment>({
 });
 MentorAssignmentSchema.index({ studentId: 1, mentorId: 1 }, { unique: true });
 export const MentorAssignmentModel = mongoose.model<MentorAssignment>("MentorAssignment", MentorAssignmentSchema);
+
+// Intervention Schema (M6 — Team Member 4)
+const InterventionSchema = new Schema<Intervention>({
+  _id: { type: String, required: true },
+  alertId: { type: String, required: true, index: true },
+  mentorId: { type: String, required: true, index: true },
+  action: { type: String, required: true },
+  notes: { type: String, required: true },
+  createdAt: { type: String, required: true },
+  followUpDate: { type: String, default: null },
+  outcome: { type: String, default: null },
+  outcomeRecordedAt: { type: String, default: null },
+});
+InterventionSchema.index({ alertId: 1, mentorId: 1 });
+InterventionSchema.index({ mentorId: 1, createdAt: -1 });
+export const InterventionModel = mongoose.model<Intervention>("Intervention", InterventionSchema);
 
