@@ -1,5 +1,9 @@
+process.env.NODE_ENV = "test";
+
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import http from "node:http";
+import app from "../src/server.js";
 import {
   AggregatedStudentMetrics,
   calculateRollingBaseline,
@@ -118,4 +122,49 @@ describe("M4: Trend & Anomaly Detection — Rolling Baseline & Deterioration Eng
       assert.ok(result.trendDeteriorationSignal >= 0.95, `Signal should be >= 0.95, got ${result.trendDeteriorationSignal}`);
     });
   });
+
+  describe("API Route Scaffolds", () => {
+    it("GET /api/v1/trends/:id should return HTTP 501 Stage 2 pending payload", async () => {
+      const server = http.createServer(app);
+      await new Promise<void>((resolve, reject) => {
+        server.listen(0, () => {
+          const address = server.address();
+          if (!address || typeof address === "string") {
+            server.close();
+            return reject(new Error("Failed to get server address"));
+          }
+
+          const req = http.request(
+            {
+              hostname: "127.0.0.1",
+              port: address.port,
+              path: "/api/v1/trends/STD100",
+              method: "GET",
+            },
+            (res) => {
+              let rawData = "";
+              res.on("data", (chunk) => {
+                rawData += chunk;
+              });
+              res.on("end", () => {
+                server.close();
+                assert.equal(res.statusCode, 501);
+                const data = JSON.parse(rawData);
+                assert.equal(data.status, "not_implemented");
+                assert.equal(data.studentId, "STD100");
+                assert.equal(data.module, "M4");
+                resolve();
+              });
+            }
+          );
+          req.on("error", (err) => {
+            server.close();
+            reject(err);
+          });
+          req.end();
+        });
+      });
+    });
+  });
 });
+
