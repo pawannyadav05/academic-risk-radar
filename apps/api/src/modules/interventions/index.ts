@@ -1,4 +1,10 @@
-import { Router, Request, Response } from "express";
+import { Router } from "express";
+import { requireRole } from "../../auth/rbac.middleware.js";
+import {
+  createIntervention,
+  updateInterventionOutcome,
+  listInterventions,
+} from "./interventions.controller.js";
 
 /**
  * Module M6: Intervention & Outcome Tracking (Team Member 4 — Piyush Kumar Singh)
@@ -6,9 +12,10 @@ import { Router, Request, Response } from "express";
  * API Routes (from docs/api-contract.md):
  *   POST  /api/v1/interventions              — Record a mentoring action linked to an alertId
  *   PATCH /api/v1/interventions/:id/outcome  — Update intervention outcome (e.g., "improved", "no_change")
+ *   GET   /api/v1/interventions              — List interventions for a mentor (paginated)
  *
- * Stage 1: Route scaffolds only (schema defined in schemas.ts).
- * Stage 2: Full controller logic with DB persistence.
+ * Stage 1: Route scaffolds only (schema defined in schemas.ts). ✅ COMPLETE
+ * Stage 2: Full controller logic with DB persistence. ✅ COMPLETE
  *
  * Depends on: M5 Alert documents (Team Member 2) — interventions reference an alertId.
  * Produces for: M7 dashboards (Team Member 4) — closed-loop outcome tracking.
@@ -16,47 +23,42 @@ import { Router, Request, Response } from "express";
 const router = Router();
 
 /**
+ * GET /interventions
+ * List interventions for the authenticated mentor, with optional filtering and pagination.
+ * RBAC: mentor, hod, dean, admin can access (mentors restricted to own interventions).
+ */
+router.get(
+  "/interventions",
+  requireRole("mentor", "hod", "dean", "admin"),
+  listInterventions
+);
+
+/**
  * POST /interventions
  * Record a mentor's intervention action in response to an alert.
+ * RBAC: Only mentors can create interventions.
  *
- * Request body shape (Stage 2):
- *   { alertId: string, mentorId: string, action: string, notes: string, followUpDate?: string }
- *
- * Response (Stage 2):
- *   201 — { intervention: Intervention }
- *   400 — Validation error (missing required fields)
- *   403 — RBAC: only the assigned mentor can create interventions for their alerts
+ * Request body: { alertId: string, action: string, notes: string, followUpDate?: string }
+ * Response: 201 — { intervention: Intervention }
  */
-router.post("/interventions", (_req: Request, res: Response) => {
-  res.status(501).json({
-    status: "not_implemented",
-    message: "POST /interventions — Stage 2 implementation pending",
-    module: "M6",
-    owner: "Team Member 4 (Piyush Kumar Singh)",
-  });
-});
+router.post(
+  "/interventions",
+  requireRole("mentor"),
+  createIntervention
+);
 
 /**
  * PATCH /interventions/:id/outcome
  * Update the outcome of an existing intervention.
+ * RBAC: Only mentors can update outcomes (enforced to the original mentor in controller).
  *
- * Request body shape (Stage 2):
- *   { outcome: string, outcomeRecordedAt?: string }
- *
- * Allowed outcome values: "improved", "no_change", "deteriorated", "inconclusive"
- *
- * Response (Stage 2):
- *   200 — { intervention: Intervention }
- *   404 — Intervention not found
- *   403 — RBAC: only the original mentor can update outcome
+ * Request body: { outcome: "improved" | "no_change" | "deteriorated" | "inconclusive" }
+ * Response: 200 — { intervention: Intervention }
  */
-router.patch("/interventions/:id/outcome", (_req: Request, res: Response) => {
-  res.status(501).json({
-    status: "not_implemented",
-    message: "PATCH /interventions/:id/outcome — Stage 2 implementation pending",
-    module: "M6",
-    owner: "Team Member 4 (Piyush Kumar Singh)",
-  });
-});
+router.patch(
+  "/interventions/:id/outcome",
+  requireRole("mentor"),
+  updateInterventionOutcome
+);
 
 export default router;

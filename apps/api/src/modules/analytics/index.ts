@@ -1,4 +1,9 @@
-import { Router, Request, Response } from "express";
+import { Router } from "express";
+import { requireRole } from "../../auth/rbac.middleware.js";
+import {
+  getDepartmentAnalytics,
+  getInstitutionAnalytics,
+} from "./analytics.controller.js";
 
 /**
  * Module M7: Dashboards & Reporting (Team Member 4 — Piyush Kumar Singh)
@@ -7,8 +12,8 @@ import { Router, Request, Response } from "express";
  *   GET /api/v1/analytics/department/:id  — Department-level risk band distributions (HoD)
  *   GET /api/v1/analytics/institution     — Institution-wide risk trends (Dean)
  *
- * Stage 1: Route scaffolds only.
- * Stage 2: Full controller logic with aggregation queries.
+ * Stage 1: Route scaffolds only. ✅ COMPLETE
+ * Stage 2: Full controller logic with aggregation queries. ✅ COMPLETE
  *
  * Depends on: M2 student profiles (Team Member 3), M3 RiskSnapshots (Team Member 1),
  *             M4 trend signals (Team Member 2).
@@ -24,54 +29,23 @@ const router = Router();
 /**
  * GET /analytics/department/:id
  * Return department-level risk band distributions for HoD view.
- *
- * Response shape (Stage 2):
- *   {
- *     departmentId: string,
- *     totalStudents: number,
- *     bandDistribution: { low: number, moderate: number, high: number, critical: number },
- *     recentTrends: Array<{ week: string, bandCounts: Record<RiskBand, number> }>,
- *     escalatedAlerts: number
- *   }
- *
- * Response (Stage 2):
- *   200 — Department analytics payload
- *   403 — RBAC: HoD can only access their own department
- *   404 — Department not found
+ * RBAC: hod (own department only), dean, admin
  */
-router.get("/analytics/department/:id", (_req: Request, res: Response) => {
-  res.status(501).json({
-    status: "not_implemented",
-    message: "GET /analytics/department/:id — Stage 2 implementation pending",
-    module: "M7",
-    owner: "Team Member 4 (Piyush Kumar Singh)",
-  });
-});
+router.get(
+  "/analytics/department/:id",
+  requireRole("hod", "dean", "admin"),
+  getDepartmentAnalytics
+);
 
 /**
  * GET /analytics/institution
  * Return institution-wide risk trends for Dean view.
- *
- * Response shape (Stage 2):
- *   {
- *     totalStudents: number,
- *     bandDistribution: { low: number, moderate: number, high: number, critical: number },
- *     departmentComparison: Array<{ departmentId: string, name: string, bandCounts: Record<RiskBand, number> }>,
- *     interventionSuccessRate: number,
- *     weeklyTrends: Array<{ week: string, bandCounts: Record<RiskBand, number> }>
- *   }
- *
- * Response (Stage 2):
- *   200 — Institution analytics payload
- *   403 — RBAC: Dean role required
+ * RBAC: dean, admin only
  */
-router.get("/analytics/institution", (_req: Request, res: Response) => {
-  res.status(501).json({
-    status: "not_implemented",
-    message: "GET /analytics/institution — Stage 2 implementation pending",
-    module: "M7",
-    owner: "Team Member 4 (Piyush Kumar Singh)",
-  });
-});
+router.get(
+  "/analytics/institution",
+  requireRole("dean", "admin"),
+  getInstitutionAnalytics
+);
 
 export default router;
