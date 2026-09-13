@@ -1,10 +1,18 @@
 import { Router } from "express";
+import rateLimit from "express-rate-limit";
 import { requireRole } from "../../auth/rbac.middleware.js";
 import {
   createIntervention,
   updateInterventionOutcome,
   listInterventions,
 } from "./interventions.controller.js";
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+});
 
 /**
  * Module M6: Intervention & Outcome Tracking (Team Member 4 — Piyush Kumar Singh)
@@ -21,6 +29,9 @@ import {
  * Produces for: M7 dashboards (Team Member 4) — closed-loop outcome tracking.
  */
 const router = Router();
+
+// Apply the rate limiting middleware to all requests in this router
+router.use(apiLimiter);
 
 /**
  * GET /interventions

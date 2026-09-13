@@ -1,9 +1,17 @@
 import { Router } from "express";
+import rateLimit from "express-rate-limit";
 import { requireRole } from "../../auth/rbac.middleware.js";
 import {
   getDepartmentAnalytics,
   getInstitutionAnalytics,
 } from "./analytics.controller.js";
+
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // Limit each IP to 100 requests per `window` (here, per 15 minutes)
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+});
 
 /**
  * Module M7: Dashboards & Reporting (Team Member 4 — Piyush Kumar Singh)
@@ -25,6 +33,9 @@ import {
  *   - All endpoints are paginated and role-filtered server-side.
  */
 const router = Router();
+
+// Apply the rate limiting middleware to all requests in this router
+router.use(apiLimiter);
 
 /**
  * GET /analytics/department/:id
