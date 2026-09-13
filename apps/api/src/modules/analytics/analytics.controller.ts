@@ -17,6 +17,11 @@ export async function getDepartmentAnalytics(req: Request, res: Response) {
 
     const departmentId = req.params.id;
 
+    // Validate departmentId to prevent regex/NoSQL injection — only allow safe characters
+    if (!departmentId || typeof departmentId !== "string" || !/^[a-zA-Z0-9._-]+$/.test(departmentId)) {
+      return res.status(400).json({ error: "Validation error: Invalid department ID format" });
+    }
+
     // RBAC: HoD can only access their own department
     if (user.role === "hod" && user.departmentId !== departmentId) {
       return res.status(403).json({
@@ -25,10 +30,11 @@ export async function getDepartmentAnalytics(req: Request, res: Response) {
     }
 
     // Find all students in this department (students whose sectionIds belong to this department)
-    // For department scoping, we match students that have a sectionId starting with the departmentId
-    // or use the departmentId directly if stored on user records
+    // For department scoping, we match students that have a sectionId starting with the departmentId.
+    // departmentId has been validated above to contain only safe characters (no regex metacharacters).
+    const escapedDeptId = departmentId.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
     const students = await StudentModel.find({
-      sectionIds: { $regex: new RegExp(`^${departmentId}`, "i") },
+      sectionIds: { $regex: new RegExp(`^${escapedDeptId}`, "i") },
     }).lean();
 
     // Fallback: if no students found via sectionId prefix, try finding all students

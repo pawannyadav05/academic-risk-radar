@@ -3,6 +3,19 @@ import crypto from "crypto";
 import { InterventionModel, AlertModel } from "../../db/schemas.js";
 
 /**
+ * Sanitize a string ID to prevent NoSQL injection.
+ * Only allows alphanumeric characters, hyphens, and underscores.
+ */
+function sanitizeId(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (trimmed.length === 0 || trimmed.length > 128) return null;
+  // Only allow safe characters: alphanumeric, hyphens, underscores, dots
+  if (!/^[a-zA-Z0-9._-]+$/.test(trimmed)) return null;
+  return trimmed;
+}
+
+/**
  * POST /api/v1/interventions
  * Record a mentor's intervention action in response to an alert.
  *
@@ -17,23 +30,26 @@ export async function createIntervention(req: Request, res: Response) {
       return res.status(401).json({ error: "Unauthorized: Missing user authentication" });
     }
 
-    const { alertId, action, notes, followUpDate } = req.body;
+    const { alertId: rawAlertId, action: rawAction, notes: rawNotes, followUpDate } = req.body;
 
-    // Validate required fields
-    if (!alertId || typeof alertId !== "string") {
-      return res.status(400).json({ error: "Validation error: 'alertId' is required and must be a string" });
+    // Validate and sanitize required fields to prevent NoSQL injection
+    const alertId = sanitizeId(rawAlertId);
+    if (!alertId) {
+      return res.status(400).json({ error: "Validation error: 'alertId' is required and must be a valid identifier string" });
     }
-    if (!action || typeof action !== "string" || action.trim().length === 0) {
+    if (!rawAction || typeof rawAction !== "string" || rawAction.trim().length === 0) {
       return res.status(400).json({ error: "Validation error: 'action' is required and must be a non-empty string" });
     }
-    if (!notes || typeof notes !== "string") {
+    if (!rawNotes || typeof rawNotes !== "string") {
       return res.status(400).json({ error: "Validation error: 'notes' is required and must be a string" });
     }
+    const action = rawAction.trim();
+    const notes = String(rawNotes);
 
     // Verify the alert exists
-    const alert = await AlertModel.findById(alertId);
+    const alert = await AlertModel.findById(String(alertId));
     if (!alert) {
-      return res.status(404).json({ error: `Alert not found: ${alertId}` });
+      return res.status(404).json({ error: "Alert not found" });
     }
 
     // RBAC: Only the assigned mentor can create interventions for their alerts
@@ -44,14 +60,15 @@ export async function createIntervention(req: Request, res: Response) {
     }
 
     const now = new Date().toISOString();
+    const sanitizedFollowUp = followUpDate && typeof followUpDate === "string" ? followUpDate : null;
     const intervention = new InterventionModel({
       _id: crypto.randomUUID(),
-      alertId,
-      mentorId: user.id,
-      action: action.trim(),
+      alertId: String(alertId),
+      mentorId: String(user.id),
+      action,
       notes,
       createdAt: now,
-      followUpDate: followUpDate || null,
+      followUpDate: sanitizedFollowUp,
       outcome: null,
       outcomeRecordedAt: null,
     });
@@ -78,21 +95,25 @@ export async function updateInterventionOutcome(req: Request, res: Response) {
       return res.status(401).json({ error: "Unauthorized: Missing user authentication" });
     }
 
-    const { id } = req.params;
+    const id = sanitizeId(req.params.id);
+    if (!id) {
+      return res.status(400).json({ error: "Validation error: Invalid intervention ID format" });
+    }
+
     const { outcome } = req.body;
 
-    // Validate outcome value
+    // Validate outcome value — strict allowlist prevents injection
     const allowedOutcomes = ["improved", "no_change", "deteriorated", "inconclusive"];
-    if (!outcome || !allowedOutcomes.includes(outcome)) {
+    if (!outcome || typeof outcome !== "string" || !allowedOutcomes.includes(outcome)) {
       return res.status(400).json({
         error: `Validation error: 'outcome' must be one of: ${allowedOutcomes.join(", ")}`,
       });
     }
 
-    // Find the intervention
-    const intervention = await InterventionModel.findById(id);
+    // Find the intervention using sanitized ID
+    const intervention = await InterventionModel.findById(String(id));
     if (!intervention) {
-      return res.status(404).json({ error: `Intervention not found: ${id}` });
+      return res.status(404).json({ error: "Intervention not found" });
     }
 
     // RBAC: Only the original mentor can update the outcome
@@ -131,8 +152,9 @@ export async function listInterventions(req: Request, res: Response) {
       return res.status(401).json({ error: "Unauthorized: Missing user authentication" });
     }
 
-    const mentorId = (req.query.mentorId as string) || user.id;
-    const alertId = req.query.alertId as string | undefined;
+    // Sanitize query parameters to prevent NoSQL injection
+    const mentorId = sanitizeId(req.query.mentorId as string) || String(user.id);
+    const rawAlertId = req.query.alertId ? sanitizeId(req.query.alertId as string) : undefined;
     const page = Math.max(1, parseInt(req.query.page as string) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
     const skip = (page - 1) * limit;
@@ -144,10 +166,10 @@ export async function listInterventions(req: Request, res: Response) {
       });
     }
 
-    // Build filter
-    const filter: Record<string, string> = { mentorId };
-    if (alertId) {
-      filter.alertId = alertId;
+    // Build filter with sanitized values only
+    const filter: Record<string, string> = { mentorId: String(mentorId) };
+    if (rawAlertId) {
+      filter.alertId = String(rawAlertId);
     }
 
     const [interventions, totalCount] = await Promise.all([
