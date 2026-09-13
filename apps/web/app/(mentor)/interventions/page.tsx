@@ -501,6 +501,33 @@ export default function MentorInterventionsPage() {
                 )}
               </div>
 
+              {/* Closed-Loop Outcome Tracking (Stage 3) */}
+              {iv.outcome && (
+                <div style={{ marginTop: "1.25rem", background: "#f8fafc", padding: "0.875rem", borderRadius: "8px", display: "flex", alignItems: "center", gap: "0.75rem", border: "1px solid #e2e8f0" }}>
+                  <span style={{ fontSize: "0.75rem", color: "#475569", fontWeight: 600, textTransform: "uppercase", letterSpacing: "0.05em" }}>Risk Band Shift:</span>
+                  
+                  {iv.outcome === "improved" ? (
+                    <>
+                      <span style={{ color: "#dc2626", fontWeight: 600, padding: "0.125rem 0.5rem", background: "#fee2e2", borderRadius: "4px", fontSize: "0.875rem" }}>High</span>
+                      <span style={{ color: "#94a3b8" }}>→</span>
+                      <span style={{ color: "#059669", fontWeight: 600, padding: "0.125rem 0.5rem", background: "#d1fae5", borderRadius: "4px", fontSize: "0.875rem" }}>Moderate</span>
+                    </>
+                  ) : iv.outcome === "deteriorated" ? (
+                    <>
+                      <span style={{ color: "#d97706", fontWeight: 600, padding: "0.125rem 0.5rem", background: "#fef3c7", borderRadius: "4px", fontSize: "0.875rem" }}>Moderate</span>
+                      <span style={{ color: "#94a3b8" }}>→</span>
+                      <span style={{ color: "#dc2626", fontWeight: 600, padding: "0.125rem 0.5rem", background: "#fee2e2", borderRadius: "4px", fontSize: "0.875rem" }}>High</span>
+                    </>
+                  ) : (
+                    <>
+                      <span style={{ color: "#d97706", fontWeight: 600, padding: "0.125rem 0.5rem", background: "#fef3c7", borderRadius: "4px", fontSize: "0.875rem" }}>Moderate</span>
+                      <span style={{ color: "#94a3b8" }}>→</span>
+                      <span style={{ color: "#d97706", fontWeight: 600, padding: "0.125rem 0.5rem", background: "#fef3c7", borderRadius: "4px", fontSize: "0.875rem" }}>Moderate</span>
+                    </>
+                  )}
+                </div>
+              )}
+
               {/* Update Outcome Section (only if no outcome yet) */}
               {!iv.outcome && (
                 <div

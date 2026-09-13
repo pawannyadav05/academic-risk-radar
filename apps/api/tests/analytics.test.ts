@@ -45,6 +45,56 @@ function startServer(app: express.Express): Promise<{ port: number; close: () =>
   });
 }
 
+describe("M7: Section Analytics — RBAC Tests", () => {
+  it("GET /analytics/section/:id should return 403 for student role", async () => {
+    const app = createTestApp();
+    const { port, close } = await startServer(app);
+    try {
+      const res = await fetch(`http://127.0.0.1:${port}/api/v1/analytics/section/CS101`, {
+        headers: {
+          "x-user-id": "student-001",
+          "x-user-role": "student",
+        },
+      });
+      assert.equal(res.status, 403, "Student should not access section analytics");
+    } finally {
+      close();
+    }
+  });
+
+  it("GET /analytics/section/:id should return 403 for mentor role", async () => {
+    const app = createTestApp();
+    const { port, close } = await startServer(app);
+    try {
+      const res = await fetch(`http://127.0.0.1:${port}/api/v1/analytics/section/CS101`, {
+        headers: {
+          "x-user-id": "mentor-001",
+          "x-user-role": "mentor",
+        },
+      });
+      assert.equal(res.status, 403, "Mentor should not access section analytics");
+    } finally {
+      close();
+    }
+  });
+
+  it("GET /analytics/section/:id should NOT return 403 for instructor role", async () => {
+    const app = createTestApp();
+    const { port, close } = await startServer(app);
+    try {
+      const res = await fetch(`http://127.0.0.1:${port}/api/v1/analytics/section/CS101`, {
+        headers: {
+          "x-user-id": "instructor-001",
+          "x-user-role": "instructor",
+        },
+      });
+      assert.notEqual(res.status, 403, "Instructor should be allowed to access section analytics");
+    } finally {
+      close();
+    }
+  });
+});
+
 describe("M7: Department Analytics — RBAC Tests", () => {
   it("GET /analytics/department/:id should return 403 for student role", async () => {
     const app = createTestApp();

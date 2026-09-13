@@ -277,3 +277,98 @@ export async function getInstitutionAnalytics(req: Request, res: Response) {
     return res.status(500).json({ error: "Internal server error" });
   }
 }
+
+/**
+ * GET /api/v1/analytics/section/:id
+ * Return section-level risk band distributions and attendance deficits for Instructor view.
+ */
+export async function getSectionAnalytics(req: Request, res: Response) {
+  try {
+    const user = req.user;
+    if (!user) {
+      return res.status(401).json({ error: "Unauthorized: Missing user authentication" });
+    }
+
+    const sectionId = req.params.id;
+
+    // Validate sectionId
+    if (!sectionId || typeof sectionId !== "string" || !/^[a-zA-Z0-9._-]+$/.test(sectionId)) {
+      return res.status(400).json({ error: "Validation error: Invalid section ID format" });
+    }
+
+    // Find students in this section
+    const students = await StudentModel.find({ sectionIds: sectionId }).lean();
+    const studentIds = students.map((s) => s._id);
+
+    if (studentIds.length === 0) {
+      return res.status(200).json({
+        sectionId,
+        totalStudents: 0,
+        bandDistribution: { low: 0, moderate: 0, high: 0, critical: 0 },
+        attendanceDeficitDistribution: [],
+      });
+    }
+
+    // Get the latest RiskSnapshot per student using aggregation
+    const latestSnapshots = await RiskSnapshotModel.aggregate([
+      { $match: { studentId: { $in: studentIds } } },
+      { $sort: { studentId: 1, computedAt: -1 } },
+      {
+        $group: {
+          _id: "$studentId",
+          band: { $first: "$band" },
+          computedAt: { $first: "$computedAt" },
+          factors: { $first: "$factors" },
+        },
+      },
+    ]);
+
+    // Count band distribution
+    const bandDistribution = { low: 0, moderate: 0, high: 0, critical: 0 };
+    
+    // Group attendance deficits into buckets for histogram
+    // Buckets: 0-10%, 10-20%, 20-30%, >30%
+    const attendanceBuckets = {
+      "0-10%": 0,
+      "10-20%": 0,
+      "20-30%": 0,
+      ">30%": 0
+    };
+
+    for (const snap of latestSnapshots) {
+      const band = snap.band as keyof typeof bandDistribution;
+      if (band in bandDistribution) {
+        bandDistribution[band]++;
+      }
+      
+      // Find attendance deficit factor
+      const attendanceFactor = snap.factors?.find((f: any) => f.name === "attendance_deficit");
+      if (attendanceFactor) {
+        const val = attendanceFactor.value; // typically 0.0 to 1.0
+        if (val <= 0.10) attendanceBuckets["0-10%"]++;
+        else if (val <= 0.20) attendanceBuckets["10-20%"]++;
+        else if (val <= 0.30) attendanceBuckets["20-30%"]++;
+        else attendanceBuckets[">30%"]++;
+      } else {
+        // Assume 0 deficit if factor missing
+        attendanceBuckets["0-10%"]++;
+      }
+    }
+    
+    // Format attendance buckets for chart
+    const attendanceDeficitDistribution = Object.entries(attendanceBuckets).map(([bucket, count]) => ({
+      bucket,
+      count
+    }));
+
+    return res.status(200).json({
+      sectionId,
+      totalStudents: studentIds.length,
+      bandDistribution,
+      attendanceDeficitDistribution,
+    });
+  } catch (err) {
+    console.error("Error fetching section analytics:", err);
+    return res.status(500).json({ error: "Internal server error" });
+  }
+}

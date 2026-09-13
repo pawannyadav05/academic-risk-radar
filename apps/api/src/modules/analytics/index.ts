@@ -4,6 +4,7 @@ import { requireRole } from "../../auth/rbac.middleware.js";
 import {
   getDepartmentAnalytics,
   getInstitutionAnalytics,
+  getSectionAnalytics,
 } from "./analytics.controller.js";
 
 const apiLimiter = rateLimit({
@@ -20,14 +21,18 @@ const apiLimiter = rateLimit({
  *   GET /api/v1/analytics/department/:id  — Department-level risk band distributions (HoD)
  *   GET /api/v1/analytics/institution     — Institution-wide risk trends (Dean)
  *
+ *   GET /api/v1/analytics/section/:id     — Section-level risk breakdown (Instructor)
+ *
  * Stage 1: Route scaffolds only. ✅ COMPLETE
  * Stage 2: Full controller logic with aggregation queries. ✅ COMPLETE
+ * Stage 3: Section analytics added. ✅ COMPLETE
  *
  * Depends on: M2 student profiles (Team Member 3), M3 RiskSnapshots (Team Member 1),
  *             M4 trend signals (Team Member 2).
  * Produces for: Nothing downstream — this is the last stage of the pipeline.
  *
  * RBAC Rules:
+ *   - Instructor: Can access analytics for their assigned sections.
  *   - HoD: Can only access analytics for their own department.
  *   - Dean: Can access institution-wide analytics.
  *   - All endpoints are paginated and role-filtered server-side.
@@ -36,6 +41,17 @@ const router = Router();
 
 // Apply the rate limiting middleware to all requests in this router
 router.use(apiLimiter);
+
+/**
+ * GET /analytics/section/:id
+ * Return section-level risk band distributions and attendance deficits for Instructor view.
+ * RBAC: instructor, hod, dean, admin
+ */
+router.get(
+  "/analytics/section/:id",
+  requireRole("instructor", "hod", "dean", "admin"),
+  getSectionAnalytics
+);
 
 /**
  * GET /analytics/department/:id
