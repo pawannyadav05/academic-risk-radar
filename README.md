@@ -33,19 +33,61 @@ Built as a **TypeScript monorepo** using **Next.js**, **Node.js**, and **MongoDB
 
 ---
 
-## 🔄 System Overview
+## 🔄 System Architecture & Data Flow
 
-```
-  Raw Data Sources                 Processing Pipeline                 Consumers
-  ─────────────────                ───────────────────                 ─────────
-  CSV Exports      ──►  M1 Ingestion &    ──►  M3 Risk Scoring  ──►  Dashboards (M7)
-  LMS API          ──►  Normalisation     ──►  Engine           ──►  Mentor Inbox (M5)
-  Attendance       ──►  ─────────────     ──►  ─────────────    ──►  Interventions (M6)
-  Marks System          M2 Student        ──►  M4 Trend &
-                        Profile                Anomaly Detection
-```
+```mermaid
+flowchart LR
+    subgraph SOURCES["📥 Data Sources"]
+        direction TB
+        A1["📄 CSV Exports"]
+        A2["🌐 LMS API"]
+        A3["🏫 Attendance System"]
+        A4["📝 Marks System"]
+    end
 
-Data flows from institutional sources → normalised into student profiles → scored weekly → alerts routed to mentors → interventions tracked to closure.
+    subgraph INGEST["⚙️ M1 — Ingestion & Normalisation"]
+        B["Parse · Validate · Deduplicate · Quarantine"]
+    end
+
+    subgraph PROFILE["👤 M2 — Student Profile"]
+        C["Aggregate academic history\nper student per course"]
+    end
+
+    subgraph SCORE["🧮 M3 — Risk Scoring Engine"]
+        D["Weighted Score 0–100\nAttendance 35% · Marks 30%\nAssignments 20% · LMS 15%"]
+    end
+
+    subgraph DETECT["📈 M4 — Trend & Anomaly"]
+        E["Week-over-week trend\nSudden drop detection"]
+    end
+
+    subgraph ALERT["🔔 M5 — Alert Routing"]
+        F["Risk band threshold crossed\n→ Notify assigned mentor"]
+    end
+
+    subgraph OUTPUTS["📊 Outputs"]
+        direction TB
+        G1["🖥️ Role-Based Dashboards (M7)"]
+        G2["📋 Mentor Inbox (M5)"]
+        G3["✅ Intervention Tracker (M6)"]
+        G4["🔐 Admin & Audit Panel (M8)"]
+    end
+
+    A1 & A2 & A3 & A4 --> B
+    B --> C
+    C --> D
+    D --> E
+    E --> F
+    F --> G1 & G2 & G3 & G4
+
+    style SOURCES fill:#1e293b,stroke:#3b82f6,color:#e2e8f0
+    style INGEST  fill:#1e293b,stroke:#8b5cf6,color:#e2e8f0
+    style PROFILE fill:#1e293b,stroke:#8b5cf6,color:#e2e8f0
+    style SCORE   fill:#1e293b,stroke:#f59e0b,color:#e2e8f0
+    style DETECT  fill:#1e293b,stroke:#f59e0b,color:#e2e8f0
+    style ALERT   fill:#1e293b,stroke:#ef4444,color:#e2e8f0
+    style OUTPUTS fill:#1e293b,stroke:#22c55e,color:#e2e8f0
+```
 
 ---
 
