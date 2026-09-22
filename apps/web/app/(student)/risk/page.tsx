@@ -6,23 +6,23 @@ import React, { useState } from "react";
 // Seed data — Pawan Kumar Yadav (real profile mirroring engine.ts computation)
 // ─────────────────────────────────────────────────────────────────────────────
 const STUDENT = {
-  name: "Pawan Kumar Yadav",
-  enrolmentId: "K2P24OF",
+  name: "Rahul Sharma",
+  enrolmentId: "K2P24CS",
   programme: "B.Tech. (Computer Science and Engineering)",
-  section: "P132",
+  section: "P134",
   batch: "2024",
-  email: "kumarpawanyadav02@gmail.com",
-  phone: "9608364081",
-  address: "Jehanabad, Jehanabad, India",
-  hostel: "Non-Hostler",
+  email: "rahul.sharma24@university.edu",
+  phone: "9876543210",
+  address: "Patna, Bihar, India",
+  hostel: "Hostel Block-C",
 };
 
 const METRICS = {
-  attendanceRate: 0.68,
-  assessmentAvg: 0.843,         // 8.43 CGPA / 10
-  missingAssignmentsRatio: 0.20,
-  lmsEngagementRatio: 0.60,
-  trendDeteriorationSignal: 0.30,
+  attendanceRate: 0.61,
+  assessmentAvg: 0.712,         // 7.12 CGPA / 10
+  missingAssignmentsRatio: 0.35,
+  lmsEngagementRatio: 0.45,
+  trendDeteriorationSignal: 0.50,
 };
 
 // ─────────────────────────────────────────────────────────────────────────────
