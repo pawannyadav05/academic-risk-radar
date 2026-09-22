@@ -1,0 +1,3 @@
+# Collapse AI agent config files from GitHub's default file view
+CLAUDE.md linguist-documentation=true
+.cursorrules linguist-documentation=true
