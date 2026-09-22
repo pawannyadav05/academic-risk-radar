@@ -1,0 +1,23 @@
+# CURSOR / AI AGENT MANDATORY INSTRUCTIONS
+
+## MANDATORY STEP 0: FETCH LATEST REMOTE CODE FIRST
+Before writing any code or answering coding prompts in this repository:
+1. Run `git fetch origin` and `git pull origin main` to fetch the latest code merged by teammates on GitHub. Never start work on an outdated codebase!
+
+## MANDATORY WORKFLOW 1: READ ALL DOCS FIRST
+After pulling latest changes, inspect and read all documentation files under `docs/`:
+1. `docs/stage-wise-development-plan.md` (Read current stage evaluation goals and exact module checklists)
+2. `docs/build-plan.md` (Master architecture and module ownership)
+3. `docs/glossary.md` (Canonical domain terminology)
+4. `docs/api-contract.md` (REST API specification & RBAC rules)
+5. `docs/model-specification.md` (Risk model weights & thresholds)
+
+## MANDATORY WORKFLOW 2: GIT FEATURE BRANCH ONLY
+- **NEVER COMMIT OR PUSH DIRECTLY TO `main`.**
+- Always ensure you are working on a dedicated feature branch for your module (`feat/m1-ingestion`, `feat/m2-profile` [Team Member 3 Nilesh], `feat/m3-scoring`, `feat/m8-admin` [Team Member 1 Pawan], `feat/m4-trends`, `feat/m5-alerts` [Team Member 2 Vani], `feat/m6-interventions`, `feat/m7-analytics` [Team Member 4 Piyush Kumar Singh]).
+- Push feature branches to remote so the Repo Lead (Pawan) can review and merge the Pull Request into `main`.
+
+## NON-NEGOTIABLE CODE RULES:
+- **Shared Types**: Import all types from `@academic-risk-radar/shared-types`. Do not redefine types locally.
+- **Naming Consistency**: Use canonical names (`studentId`, `band`, `computedAt`, `factors`, `intervention`, `mentorAssignment`).
+- **Module Boundaries**: Work strictly inside your assigned module folder under `apps/api/src/modules/`.
