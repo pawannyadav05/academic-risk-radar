@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import express from "express";
+import rateLimit from "express-rate-limit";
 import { authenticateUser } from "../src/auth/rbac.middleware.js";
 import adminRouter from "../src/modules/admin/index.js";
 
@@ -11,7 +12,12 @@ import adminRouter from "../src/modules/admin/index.js";
 describe("Module M8 — Admin Router (Stage 2)", () => {
   function createTestServer() {
     const app = express();
+    const limiter = rateLimit({
+      windowMs: 15 * 60 * 1000,
+      max: 1000,
+    });
     app.use(express.json());
+    app.use(limiter);
     app.use(authenticateUser);
     app.use("/api/v1/admin", adminRouter);
     return app;
