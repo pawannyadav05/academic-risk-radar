@@ -11,7 +11,8 @@
     "test": "node --test dist/tests/**/*.test.js",
     "test:rbac": "node --test dist/tests/rbac.test.js",
     "test:auth": "node --test dist/tests/auth.test.js",
-    "seed": "node dist/src/modules/trends/seed-generator.js"
+    "seed": "node dist/src/modules/trends/seed-generator.js",
+    "seed:demo": "npm run build && node dist/src/modules/trends/seed-demo.js"
   },
   "dependencies": {
     "@academic-risk-radar/scoring-engine": "*",
