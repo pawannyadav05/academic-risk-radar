@@ -15,6 +15,46 @@
 
 ---
 
+## 1.1 Live Team Implementation Status & Execution Sequence (Week 9 Remediation)
+
+### 📊 Live Teammate Status Board
+
+| Team Member | Module Scope | Status | Stage 2 % | Critical Pending Items |
+| :--- | :--- | :---: | :---: | :--- |
+| **Team Member 1 (Pawan)** | **M3 & M8** + Core Auth, RBAC, Docker | **COMPLETED** | **100%** | None (Merged into `main` via PR #20) |
+| **Team Member 2 (Vani)** | **M4 & M5** + Seeding & Mentor Inbox | **PENDING** | **~60%** | `npm run seed:demo` script, Mentor Inbox UI session auth |
+| **Team Member 3 (Nilesh)** | **M1 & M2** + Ingestion API & Student UI | **PENDING** | **~50%** | `POST /sections/:id/imports/:source`, live Student `/risk` page |
+| **Team Member 4 (Piyush)** | **M6 & M7** + Interventions & Instructor UI | **PENDING** | **~40%** | Soft-delete `DELETE /interventions/:id`, CSV UI on `/sections` |
+
+---
+
+### 🚦 Teammate Development Sequence & Dependencies
+
+```
+[COMPLETED] Pawan (Member 1)
+  └─ Real JWT Auth, Zero-Trust RBAC, User Schema, Docker Stack
+        │
+        ├─────────────────────────────┐
+        ▼                             ▼
+[PHASE 1A] Vani (Member 2)       [PHASE 1B] Nilesh (Member 3)
+  ├─ npm run seed:demo script      ├─ POST /sections/:id/imports/:source
+  └─ Mentor Inbox UI auth fix      └─ Wire /risk page to live API
+        │                             │
+        └──────────────┬──────────────┘
+                       ▼
+        [PHASE 2] Piyush (Member 4)
+          ├─ CSV upload panel on /sections (calls Nilesh's API)
+          ├─ DELETE /interventions/:id (Soft-Delete)
+          └─ Modularize /interventions UI (<150 line subcomponents)
+```
+
+#### ⚠️ Mandatory Teammate Guidelines for Zero-Trust RBAC:
+1. **Never pass caller-controlled `x-user-id` or `x-user-role` headers**: Express strictly ignores these headers and returns `401 Unauthorized` without a valid token.
+2. **In Automated Tests**: Generate signed JWT tokens using `signToken()` from `apps/api/src/auth/jwt.service.js` and pass `Authorization: Bearer <token>`.
+3. **In Next.js Frontend**: Make requests to relative same-origin paths (`/api/v1/...`). They automatically proxy to Express backend via `apps/web/next.config.mjs` and preserve the HTTP-only signed session cookie.
+
+---
+
 ## 2. Team Member 1 (Pawan): Detailed Blueprint (Modules M3 & M8 + Core Auth & Container Infra)
 
 ### 📌 Module Ownership
@@ -106,16 +146,16 @@
 6. **Integration Tests (`auth.test.ts`, `rbac.test.ts`)**:
    - Assert login success, failed login with bad password, missing token rejection (401), cross-student query denial (403), and admin raw marks access denial (403).
 
-#### ✅ STAGE 2 CHECKLIST (WHAT TO BUILD NOW):
+#### ✅ STAGE 2 CHECKLIST (WHAT WAS BUILT):
 - [x] Student Risk API (`GET /students/:id/risk`) and batch queue trigger.
 - [x] BullMQ scoring worker recalculating snapshots upon queue dispatch.
 - [x] Model version preview and impact simulation API (`/admin/model-versions`).
 - [x] Immutable audit logging service (`audit.service.ts`).
-- [ ] Real JWT login endpoint (`POST /auth/login`) with bcrypt password verification.
-- [ ] Zero-trust RBAC middleware: remove `x-user-*` header trust and admin fallback; enforce cookie/bearer token.
-- [ ] Next.js route protection middleware, same-origin API rewrites, and real `/login` UI.
-- [ ] Complete Docker Compose stack with Dockerfiles, health checks, and `.env.example`.
-- [ ] Automated Auth & RBAC integration tests passing.
+- [x] Real JWT login endpoint (`POST /auth/login`) with bcrypt password verification (PR #20).
+- [x] Zero-trust RBAC middleware: removed `x-user-*` header trust and admin fallback; enforced Bearer token & session cookies (PR #20).
+- [x] Next.js route protection middleware, same-origin API rewrites, and institutional `/login` UI (PR #20).
+- [x] Complete Docker Compose stack with Dockerfiles, health checks, and `.env.example` (PR #20).
+- [x] Automated Auth & RBAC integration tests passing (`test:auth`, `test:rbac` 17/17) (PR #20).
 
 #### ❌ STAGE 2 BOUNDARY (WHAT NOT TO BUILD YET):
 - Do NOT build full Admin Model Version Editor UI or Audit Log viewer UI (defer to Stage 3).
