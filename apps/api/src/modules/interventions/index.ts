@@ -4,6 +4,7 @@ import { requireRole } from "../../auth/rbac.middleware.js";
 import {
   createIntervention,
   updateInterventionOutcome,
+  withdrawIntervention,
   listInterventions,
 } from "./interventions.controller.js";
 
@@ -70,6 +71,19 @@ router.patch(
   "/interventions/:id/outcome",
   requireRole("mentor"),
   updateInterventionOutcome
+);
+
+/**
+ * DELETE /interventions/:id
+ * Soft delete / withdraw an intervention.
+ * RBAC: Only mentors can withdraw interventions (enforced to assigned mentor in controller).
+ *
+ * Response: 200 — { message: string, intervention: Intervention }
+ */
+router.delete(
+  "/interventions/:id",
+  requireRole("mentor"),
+  withdrawIntervention
 );
 
 export default router;

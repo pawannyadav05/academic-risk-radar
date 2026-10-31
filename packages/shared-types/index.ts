@@ -98,6 +98,9 @@ export interface Intervention {
   followUpDate: string | null;
   outcome: string | null;
   outcomeRecordedAt: string | null;
+  status?: "active" | "withdrawn" | string;
+  withdrawnAt?: string | null;
+  withdrawnBy?: string | null;
 }
 
 export interface MentorAssignment {

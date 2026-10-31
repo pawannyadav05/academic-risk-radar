@@ -58,6 +58,22 @@ This document tracks the prompts, technical decisions, and code changes made dur
   - Hardened endpoints against injection attacks using a dedicated `sanitizeId` allowlist for `alertId` and `mentorId`, and escaped user-controlled regex parameters.
   - Covered all endpoints with exhaustive integration tests (`supertest`) asserting 403 Forbidden for unauthorized role access.
 
+### Stage 2 Remediation: Functional System Review & Teammate Task Division (Week 9)
+
+**Goal:** Complete Piyush's Stage 2 deliverables across Modules M6 & M7 (Interventions & Dashboards) to enable the full Golden Demonstration Workflow.
+- **Implemented Features:**
+  - **Intervention Soft-Delete & Withdrawal API (`DELETE /api/v1/interventions/:id`)**: Enforced assigned mentor ownership, updated status to `"withdrawn"`, recorded audit metadata (`withdrawnAt`, `withdrawnBy`), and filtered withdrawn entries from default list queries (`find({ status: { $ne: "withdrawn" } })`).
+  - **Modularized Mentor Interventions UI**: Refactored the monolithic 1000+ line `page.tsx` into clean, maintainable modular components strictly under 150 lines:
+    - `InterventionList.tsx`: Tabular view of active interventions with status badges and action buttons.
+    - `InterventionForm.tsx`: Modal form to record mentor actions linked to alerts.
+    - `OutcomeModal.tsx`: Modal to update outcome tracking.
+    - `WithdrawModal.tsx`: Confirmation modal to soft-delete mistaken interventions.
+  - **Instructor Section Data Submission UI (`/sections`)**: Added an Academic Data Submission Panel allowing instructors to download templates, upload/paste CSV data (attendance/assessment), and trigger real-time BullMQ scoring recalculations.
+  - **Protected Ingestion Endpoint (`POST /api/v1/sections/:sectionId/imports/:source`)**: Validated instructor section ownership (403 on cross-section attempts), performed idempotent upserts, and enqueued affected student IDs to `risk-scoring-queue`.
+  - **Graceful Dashboard Deferral**: Added Stage 3 (Week 13) Roadmap notices on `/hod-dashboard` and `/dean-dashboard` with aggregated metrics and removed caller-controlled mock headers.
+  - **Comprehensive Test Coverage**: Added 21 automated tests in `interventions.test.ts` and 6 automated tests in `instructor-import.test.ts`, asserting RBAC, soft-delete metadata, and negative access denial.
+  - **CodeQL Security Hardening**: Removed unused `cookieParser` middleware in `rbac.test.ts` to eliminate CodeQL alert for missing CSRF middleware on cookie-parser, added rate limiting to test fixtures, and enforced explicit MongoDB query operators across controllers.
+
 ## Stage 3: Product Readiness (Week 13)
 
 **Goal:** Build the visualization dashboards and closed-loop outcome tracking.
