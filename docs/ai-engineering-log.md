@@ -39,6 +39,45 @@ This document tracks the prompts, technical decisions, and code changes made dur
 
 ---
 
+# Team Member 3 (Nilesh — Module M1 & M2)
+
+## Stage 1: Foundation (Week 5)
+
+**Goal:** Establish schemas, CSV ingestion parsers with quarantine routing, and pure academic profile aggregator.
+- **Prompts Used:**
+  - *"Implement the Quarantine schema in schemas.ts and create CSV parser utilities in csv-importers.ts for attendance, assessments, assignments, and LMS activity."*
+  - *"Build validation routines that gracefully isolate malformed rows into the quarantine collection with explicit reasons without aborting the batch."*
+  - *"Implement pure profile aggregator logic in profile-aggregator.ts and GET /api/v1/students/:id/profile with enforceStudentAccessControl."*
+- **Technical Decisions:**
+  - **Zero Data Loss Isolation (Quarantine):** Created an append-only `QuarantineRecord` schema capturing raw malformed rows alongside detailed failure diagnostics (`reason`, `originalCollection`, `ingestedAt`), preventing bad rows from failing the entire batch while preserving data for audit and manual review.
+  - **Pure Aggregator Architecture:** Designed `aggregateStudentProfile` as a pure function accepting in-memory arrays of records, enabling deterministic calculation of attendance rates, grade deficits, and assignment completion ratios without direct database coupling.
+
+## Stage 2: Functional System (Week 9)
+
+**Goal:** BullMQ asynchronous ingestion worker, idempotent multi-source upserts, protected instructor import API, and live student risk dashboard.
+- **Prompts Used:**
+  - *"Implement BullMQ ingestion worker ingestion.worker.ts with Redis queue for asynchronous background CSV ingestion and scoring engine trigger."*
+  - *"Build protected instructor CSV import endpoint POST /api/v1/sections/:sectionId/imports/:source enforcing section ownership (403 on mismatch) and auto-enqueuing scoring recalculation."*
+  - *"Wire /student/risk page to live session and profile APIs, removing hardcoded mock data ('Rahul Sharma', inline computeRiskSnapshot), adding loading skeleton, empty state, and error banner with retry, and modularizing components under 150 lines."*
+- **Technical Decisions:**
+  - **Idempotency Guarantee:** Formulated compound upsert keys `(studentId, sectionId, date)` for attendance and `(studentId, courseId, type, date)` for assessments, guaranteeing that re-uploading identical batch files does not duplicate records or distort scoring weights.
+  - **Real-Time Recalculation Trigger:** Integrated the ingestion pipeline with BullMQ `risk-scoring-queue`, automatically dispatching jobs containing affected unique `studentIds` upon successful import so student snapshots update instantly without manual intervention.
+  - **Zero-Trust Student Risk Dashboard:** Replaced monolithic 559-line static client mock with a modular architecture (`StudentProfileCard`, `PersonalInfoCard`, `MetricsSummaryCards`, `FactorBreakdownList`, `StudentRiskSkeleton`, `StudentRiskEmpty`, `StudentRiskError`) fetching live authenticated session from `/api/v1/auth/me`, profile summary from `/api/v1/students/:id/profile`, and risk calculation from `/api/v1/students/:id/risk`.
+
+## Stage 3: Product Readiness (Week 13)
+
+**Goal:** Admin Connectors dashboard, Quarantine explorer UI, and high-performance compound indexing.
+- **Prompts Used:**
+  - *"Build Admin Connectors Management dashboard (/admin/connectors) with live source sync health, manual file upload trigger, and quarantine record viewer with pagination and filtering."*
+  - *"Add MongoDB compound indexes on (studentId, date) and (studentId, sectionId, date) for sub-millisecond profile aggregations."*
+  - *"Sanitize quarantine query parameters against an allowlist to eliminate CodeQL NoSQL query injection alerts."*
+- **Technical Decisions:**
+  - **Quarantine Explorer & Sync Fallback:** Engineered `/admin/connectors` with live statistics across all 4 data streams and a synchronous fallback in `POST /connectors/:name/sync` if Redis is offline, ensuring reliable pipeline operations across diverse execution environments.
+  - **NoSQL Injection Defense:** Sanitized `rawCollection` queries against a static allowlist (`ALLOWED_QUARANTINE_COLLECTIONS`) to prevent parameter tampering and eliminate CodeQL security vulnerabilities.
+  - **Query Optimization:** Applied compound indexes on `(studentId, date)` and `(studentId, sectionId, date)` in `schemas.ts`, ensuring high-throughput profile aggregations even with multi-year historical logs.
+
+---
+
 # Team Member 4 (Piyush Kumar Singh - Module M6 & M7)
 
 ## Stage 1: Foundation (Week 5)

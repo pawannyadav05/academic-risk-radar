@@ -23,8 +23,8 @@
 | :--- | :--- | :---: | :---: | :--- |
 | **Team Member 1 (Pawan)** | **M3 & M8** + Core Auth, RBAC, Docker | **COMPLETED** | **100%** | None (Merged into `main` via PR #20) |
 | **Team Member 2 (Vani)** | **M4 & M5** + Seeding & Mentor Inbox | **COMPLETED** | **100%** | None (Completed Stage 2 Seeding & Auth) |
-| **Team Member 3 (Nilesh)** | **M1 & M2** + Ingestion API & Student UI | **PENDING** | **~50%** | `POST /sections/:id/imports/:source`, live Student `/risk` page |
-| **Team Member 4 (Piyush)** | **M6 & M7** + Interventions & Instructor UI | **PENDING** | **~40%** | Soft-delete `DELETE /interventions/:id`, CSV UI on `/sections` |
+| **Team Member 3 (Nilesh)** | **M1 & M2** + Ingestion API & Student UI | **COMPLETED** | **100%** | None (Completed Stage 2 & Stage 3 deliverables) |
+| **Team Member 4 (Piyush)** | **M6 & M7** + Interventions & Instructor UI | **COMPLETED** | **100%** | None (Completed Stage 2 Interventions via PR #28) |
 
 ---
 
@@ -342,10 +342,10 @@
 #### ✅ STAGE 2 CHECKLIST (WHAT TO BUILD NOW):
 - [x] CSV ingestion pipeline with quarantine error logging.
 - [x] Ingestion BullMQ worker and profile aggregator.
-- [ ] Protected instructor data-submission endpoint (`POST /sections/:sectionId/imports/:source`) verifying instructor section ownership.
-- [ ] Auto-trigger scoring worker upon data submission.
-- [ ] Wire `/risk` page to live student session API (remove inline hardcoded Rahul Sharma mock data).
-- [ ] Ingestion integration tests for cross-section denial (403) and idempotent re-imports.
+- [x] Protected instructor data-submission endpoint (`POST /sections/:sectionId/imports/:source`) verifying instructor section ownership.
+- [x] Auto-trigger scoring worker upon data submission.
+- [x] Wire `/risk` page to live student session API (remove inline hardcoded Rahul Sharma mock data).
+- [x] Ingestion integration tests for cross-section denial (403) and idempotent re-imports.
 
 #### ❌ STAGE 2 BOUNDARY (WHAT NOT TO BUILD YET):
 - Do NOT build full Connector Management Admin UI (`/admin/connectors`) (defer to Stage 3).
