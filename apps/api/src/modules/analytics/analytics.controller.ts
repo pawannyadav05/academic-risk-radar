@@ -326,8 +326,8 @@ export async function getSectionAnalytics(req: Request, res: Response) {
       });
     }
 
-    // Find students in this section
-    const students = await StudentModel.find({ sectionIds: sectionId }).lean();
+    // Find students in this section using explicit $eq operator
+    const students = await StudentModel.find({ sectionIds: { $eq: sectionId } }).lean();
     const studentIds = students.map((s) => s._id);
 
     if (studentIds.length === 0) {

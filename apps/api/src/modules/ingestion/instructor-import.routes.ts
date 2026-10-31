@@ -12,6 +12,8 @@ const importLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+router.use(importLimiter);
+
 /**
  * POST /api/v1/sections/:sectionId/imports/:source
  * Protected academic submission endpoint for instructors.
@@ -19,7 +21,6 @@ const importLimiter = rateLimit({
 router.post(
   "/sections/:sectionId/imports/:source",
   requireRole("instructor", "admin"),
-  importLimiter,
   importSectionAcademicData
 );
 

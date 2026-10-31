@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import http from "node:http";
 import express from "express";
+import rateLimit from "express-rate-limit";
 import { authenticateUser } from "../src/auth/rbac.middleware.js";
 import { signToken } from "../src/auth/jwt.service.js";
 import interventionsRouter from "../src/modules/interventions/index.js";
@@ -17,7 +18,12 @@ import interventionsRouter from "../src/modules/interventions/index.js";
 
 function createTestApp() {
   const app = express();
+  const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 1000,
+  });
   app.use(express.json());
+  app.use(limiter);
   app.use(authenticateUser);
   app.use("/api/v1", interventionsRouter);
   return app;

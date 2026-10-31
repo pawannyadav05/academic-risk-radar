@@ -50,8 +50,8 @@ export async function createIntervention(req: Request, res: Response) {
       return res.status(404).json({ error: "Alert not found" });
     }
 
-    // Verify the alert exists
-    const alert = await AlertModel.findById(String(alertId));
+    // Verify the alert exists using explicit $eq operator
+    const alert = await AlertModel.findOne({ _id: { $eq: String(alertId) } });
     if (!alert) {
       return res.status(404).json({ error: "Alert not found" });
     }
@@ -122,8 +122,8 @@ export async function updateInterventionOutcome(req: Request, res: Response) {
       return res.status(404).json({ error: "Intervention not found" });
     }
 
-    // Find the intervention using sanitized ID
-    const intervention = await InterventionModel.findById(String(id));
+    // Find the intervention using sanitized ID and explicit $eq operator
+    const intervention = await InterventionModel.findOne({ _id: { $eq: String(id) } });
     if (!intervention) {
       return res.status(404).json({ error: "Intervention not found" });
     }
@@ -178,7 +178,7 @@ export async function withdrawIntervention(req: Request, res: Response) {
       return res.status(404).json({ error: "Intervention not found" });
     }
 
-    const intervention = await InterventionModel.findById(String(id));
+    const intervention = await InterventionModel.findOne({ _id: { $eq: String(id) } });
     if (!intervention) {
       return res.status(404).json({ error: "Intervention not found" });
     }
@@ -253,15 +253,16 @@ export async function listInterventions(req: Request, res: Response) {
       });
     }
 
-    // Build filter with sanitized values only
-    const filter: Record<string, any> = { mentorId: String(mentorId) };
+    // Build filter with sanitized values and explicit $eq operators to prevent NoSQL injection
+    const filter: Record<string, any> = { mentorId: { $eq: String(mentorId) } };
     if (rawAlertId) {
-      filter.alertId = String(rawAlertId);
+      filter.alertId = { $eq: String(rawAlertId) };
     }
 
     // Default: hide withdrawn records unless specifically requested
-    if (statusParam) {
-      filter.status = statusParam;
+    const allowedStatuses = ["active", "withdrawn"] as const;
+    if (statusParam && (allowedStatuses as readonly string[]).includes(statusParam)) {
+      filter.status = { $eq: statusParam };
     } else if (!includeWithdrawn) {
       filter.status = { $ne: "withdrawn" };
     }
