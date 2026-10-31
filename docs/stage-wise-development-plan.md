@@ -22,7 +22,7 @@
 | Team Member | Module Scope | Status | Stage 2 % | Critical Pending Items |
 | :--- | :--- | :---: | :---: | :--- |
 | **Team Member 1 (Pawan)** | **M3 & M8** + Core Auth, RBAC, Docker | **COMPLETED** | **100%** | None (Merged into `main` via PR #20) |
-| **Team Member 2 (Vani)** | **M4 & M5** + Seeding & Mentor Inbox | **PENDING** | **~60%** | `npm run seed:demo` script, Mentor Inbox UI session auth |
+| **Team Member 2 (Vani)** | **M4 & M5** + Seeding & Mentor Inbox | **COMPLETED** | **100%** | None (Completed Stage 2 Seeding & Auth) |
 | **Team Member 3 (Nilesh)** | **M1 & M2** + Ingestion API & Student UI | **PENDING** | **~50%** | `POST /sections/:id/imports/:source`, live Student `/risk` page |
 | **Team Member 4 (Piyush)** | **M6 & M7** + Interventions & Instructor UI | **PENDING** | **~40%** | Soft-delete `DELETE /interventions/:id`, CSV UI on `/sections` |
 
@@ -259,9 +259,9 @@
 - [x] Trend signals engine (`trends.service.ts`) producing `trendDeteriorationSignal`.
 - [x] Alert deduplication logic and mentor inbox API endpoints.
 - [x] BullMQ SLA escalation worker (`escalation.worker.ts`).
-- [ ] Deterministic demo seeding script (`npm run seed:demo`) creating matching users, bcrypt passwords, sections, high-risk student, and alert.
-- [ ] Connect Mentor Inbox UI to real authenticated mentor session (remove hardcoded headers).
-- [ ] Cross-mentor alert denial integration tests.
+- [x] Deterministic demo seeding script (`npm run seed:demo`) creating matching users, bcrypt passwords, sections, high-risk student, and alert.
+- [x] Connect Mentor Inbox UI to real authenticated mentor session (remove hardcoded headers).
+- [x] Cross-mentor alert denial integration tests.
 
 #### ❌ STAGE 2 BOUNDARY (WHAT NOT TO BUILD YET):
 - Do NOT build advanced multi-channel SMS/Email notification integrations (defer to Stage 3).

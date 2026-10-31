@@ -26,11 +26,16 @@ This document tracks the prompts, technical decisions, and code changes made dur
   - *"Implement mentor inbox API with strict RBAC ensuring mentors can only query their own alerts, and add rate limiting."*
   - *"Build BullMQ SLA escalation worker checking for overdue open alerts and escalating to HoD with immutable audit logs."*
   - *"Build responsive dark-themed Mentor Alert Inbox UI with real API connection, SLA badges, and one-click acknowledgement."*
+  - *"Implement deterministic database demo seeding script `seed-demo.ts` (`npm run seed:demo`) creating 6 institutional bcrypt-hashed accounts (`Password123!`), section `SEC-CSE-101`, high-risk student Rahul Sharma (`STU-001`), historical attendance deficit (65%), assessment average (52%), and an open alert with 48h SLA deadline."*
+  - *"Update Mentor Inbox UI (`/inbox`) to use authenticated session via same-origin `/api/v1/alerts` and `credentials: include`, removing hardcoded spoofed headers and adding student risk band badge and skeleton loading state."*
+  - *"Add cross-mentor alert access denial integration tests in `alerts.test.ts` verifying 403 Forbidden for cross-mentor viewing and acknowledging."*
 - **Technical Decisions:**
   - **Deduplication Rule:** Enforced a strict database query checking for existing open alerts before creating a new alert. When a student already has an active open alert, the newest `riskSnapshotId` is linked in place, preventing alert fatigue and inbox flooding.
   - **NoSQL Injection Defense:** Applied strict `sanitizeId` and `sanitizeStudentId` regex allowlists across all route parameters and query arguments in M4 and M5 routers.
   - **SLA Breach Escalation:** Automated background SLA tracking via BullMQ `alert-escalation-queue`. Overdue alerts transition to `status: "escalated"` and generate an append-only `AuditEntry` record alongside real-time console notifications for the Head of Department (HoD).
-  - **Frontend Integration:** Crafted a modern, accessible Next.js Mentor Inbox (`/inbox`) matching the dark navy aesthetic, featuring live countdown badges, search filtering, and one-click acknowledgement.
+  - **Frontend Integration & Zero-Trust Session:** Transitioned the `/inbox` client component from hardcoded spoofed headers to relative same-origin `/api/v1/alerts` requests with cookie credentials, integrating with the Next.js API proxy and HTTP-only JWT session cookies. Added student risk band badge, active alert stats, and clean loading skeletons.
+  - **Deterministic Seeding Engine:** Created `apps/api/src/modules/trends/seed-demo.ts` runnable via `npm run seed:demo`. Pre-calculates exact attendance ratios (65%) and assessment scores (52%) for Rahul Sharma (`STU-001`) in `SEC-CSE-101`, seeds 6 bcrypt-hashed user accounts matching all platform roles, and creates the initial open alert for the golden demo workflow.
+  - **Cross-Mentor RBAC Hardening:** Added dual verification (`user.id` or `user.identityId`) in `alerts.controller.ts` and automated negative test coverage in `alerts.test.ts` asserting HTTP 403 Forbidden when a mentor attempts to inspect or acknowledge another mentor's alert.
 
 ---
 

@@ -19,9 +19,11 @@ import {
  * Module M5: Alert Routing & Mentor Inbox (Team Member 2 — Vani Bhardwaj)
  * Stage 2 & 3: Mentor Alert Inbox with real-time status tabs, SLA countdown badges,
  * one-click acknowledgement, and seamless intervention logging handover.
+ *
+ * Uses authenticated session via same-origin /api/v1/alerts (Zero-Trust RBAC).
  */
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api/v1";
+const API_BASE = "/api/v1";
 
 const STATUS_CONFIG: Record<
   AlertStatus,
@@ -70,17 +72,19 @@ export default function MentorInboxPage() {
     setLoading(true);
     setError(null);
     try {
-      const url = new URL(`${API_BASE}/alerts`);
+      const queryParams = new URLSearchParams();
       if (statusFilter !== "all") {
-        url.searchParams.set("status", statusFilter);
+        queryParams.set("status", statusFilter);
       }
+      const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
 
-      const res = await fetch(url.toString(), {
-        headers: {
-          "x-user-id": "MTR-001",
-          "x-user-role": "mentor",
-        },
+      const res = await fetch(`${API_BASE}/alerts${queryString}`, {
+        credentials: "include",
       });
+
+      if (res.status === 401) {
+        throw new Error("Authentication required. Please log in with your mentor account.");
+      }
 
       if (!res.ok) {
         throw new Error(`Failed to load alerts: HTTP ${res.status}`);
@@ -102,17 +106,16 @@ export default function MentorInboxPage() {
   const handleAcknowledge = async (alertId: string) => {
     setAcknowledgingId(alertId);
     try {
-      const res = await fetch(`${API_BASE}/alerts/${alertId}/acknowledge`, {
+      const res = await fetch(`${API_BASE}/alerts/${encodeURIComponent(alertId)}/acknowledge`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          "x-user-id": "MTR-001",
-          "x-user-role": "mentor",
         },
+        credentials: "include",
       });
 
       if (!res.ok) {
-        const errorData = await res.json();
+        const errorData = await res.json().catch(() => ({}));
         throw new Error(errorData.error || `HTTP ${res.status}`);
       }
 
@@ -482,11 +485,37 @@ export default function MentorInboxPage() {
         </div>
       )}
 
-      {/* Loading state */}
+      {/* Loading skeleton state */}
       {loading && (
-        <div style={{ padding: "4rem 0", textAlign: "center", color: "#94a3b8" }}>
-          <RefreshCw size={24} style={{ animation: "spin 1s linear infinite", margin: "0 auto 1rem" }} />
-          <p style={{ margin: 0 }}>Fetching assigned mentee alerts from radar...</p>
+        <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+          <div style={{ padding: "1.5rem 0", textAlign: "center", color: "#94a3b8" }}>
+            <RefreshCw size={20} style={{ animation: "spin 1s linear infinite", margin: "0 auto 0.5rem" }} />
+            <p style={{ margin: 0, fontSize: "0.875rem" }}>Loading authenticated mentor alerts...</p>
+          </div>
+          {[1, 2].map((n) => (
+            <div
+              key={n}
+              style={{
+                background: "#0f172a",
+                border: "1px solid #1e293b",
+                borderRadius: "12px",
+                padding: "1.25rem 1.5rem",
+                display: "flex",
+                flexDirection: "column",
+                gap: "1rem",
+                opacity: 0.7,
+              }}
+            >
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                <div style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+                  <div style={{ width: "110px", height: "24px", background: "#1e293b", borderRadius: "6px" }} />
+                  <div style={{ width: "150px", height: "24px", background: "#1e293b", borderRadius: "6px" }} />
+                </div>
+                <div style={{ width: "120px", height: "20px", background: "#1e293b", borderRadius: "6px" }} />
+              </div>
+              <div style={{ height: "48px", background: "#0b1120", borderRadius: "8px" }} />
+            </div>
+          ))}
         </div>
       )}
 
@@ -502,7 +531,7 @@ export default function MentorInboxPage() {
           }}
         >
           <CheckCircle size={40} style={{ color: "#10b981", margin: "0 auto 1rem" }} />
-          <h3 style={{ margin: "0 0 0.5rem", color: "#f8fafc" }}>No Alerts In Queue</h3>
+          <h3 style={{ margin: "0 0 0.5rem", color: "#f8fafc" }}>No Open Alerts</h3>
           <p style={{ margin: 0, color: "#94a3b8", fontSize: "0.875rem", maxWidth: "450px", marginLeft: "auto", marginRight: "auto" }}>
             {statusFilter !== "all"
               ? `There are currently no alerts matching status '${statusFilter}'.`
@@ -534,7 +563,7 @@ export default function MentorInboxPage() {
                 }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "0.75rem" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", flexWrap: "wrap" }}>
                     <div
                       style={{
                         padding: "6px 10px",
@@ -556,6 +585,25 @@ export default function MentorInboxPage() {
                     <h3 style={{ margin: 0, fontSize: "1.1rem", color: "#f8fafc" }}>
                       Student ID: <span style={{ color: "#38bdf8" }}>{alert.studentId}</span>
                     </h3>
+
+                    <span
+                      style={{
+                        fontSize: "0.75rem",
+                        fontWeight: 600,
+                        padding: "2px 8px",
+                        borderRadius: "6px",
+                        background: "rgba(239, 68, 68, 0.15)",
+                        color: "#f87171",
+                        border: "1px solid rgba(239, 68, 68, 0.3)",
+                        textTransform: "uppercase",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "4px",
+                      }}
+                    >
+                      <AlertTriangle size={12} />
+                      High Risk
+                    </span>
 
                     {getSlaBadge(alert.slaDeadline, alert.status)}
                   </div>
