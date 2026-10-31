@@ -1,7 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import express from "express";
-import cookieParser from "cookie-parser";
 import rateLimit from "express-rate-limit";
 import { UserRole } from "@academic-risk-radar/shared-types";
 import {
@@ -32,7 +31,6 @@ describe("Stage 2 — RBAC & Negative Access Control", () => {
     });
 
     app.use(express.json());
-    app.use(cookieParser());
     app.use(limiter);
     app.use(authenticateUser);
 

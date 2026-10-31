@@ -72,6 +72,7 @@ This document tracks the prompts, technical decisions, and code changes made dur
   - **Protected Ingestion Endpoint (`POST /api/v1/sections/:sectionId/imports/:source`)**: Validated instructor section ownership (403 on cross-section attempts), performed idempotent upserts, and enqueued affected student IDs to `risk-scoring-queue`.
   - **Graceful Dashboard Deferral**: Added Stage 3 (Week 13) Roadmap notices on `/hod-dashboard` and `/dean-dashboard` with aggregated metrics and removed caller-controlled mock headers.
   - **Comprehensive Test Coverage**: Added 21 automated tests in `interventions.test.ts` and 6 automated tests in `instructor-import.test.ts`, asserting RBAC, soft-delete metadata, and negative access denial.
+  - **CodeQL Security Hardening**: Removed unused `cookieParser` middleware in `rbac.test.ts` to eliminate CodeQL alert for missing CSRF middleware on cookie-parser, added rate limiting to test fixtures, and enforced explicit MongoDB query operators across controllers.
 
 ## Stage 3: Product Readiness (Week 13)
 
