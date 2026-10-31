@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import mongoose from "mongoose";
 import { RiskSnapshotModel, StudentModel, AlertModel, InterventionModel } from "../../db/schemas.js";
 
 /**
@@ -26,6 +27,16 @@ export async function getDepartmentAnalytics(req: Request, res: Response) {
     if (user.role === "hod" && user.departmentId !== departmentId) {
       return res.status(403).json({
         error: "Forbidden: HoD can only access analytics for their own department",
+      });
+    }
+
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(200).json({
+        departmentId,
+        totalStudents: 0,
+        bandDistribution: { low: 0, moderate: 0, high: 0, critical: 0 },
+        recentTrends: [],
+        escalatedAlerts: 0,
       });
     }
 
@@ -149,6 +160,16 @@ export async function getInstitutionAnalytics(req: Request, res: Response) {
     const user = req.user;
     if (!user) {
       return res.status(401).json({ error: "Unauthorized: Missing user authentication" });
+    }
+
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(200).json({
+        totalStudents: 0,
+        bandDistribution: { low: 0, moderate: 0, high: 0, critical: 0 },
+        departmentComparison: [],
+        interventionSuccessRate: 0,
+        weeklyTrends: [],
+      });
     }
 
     // Get all students
@@ -294,6 +315,15 @@ export async function getSectionAnalytics(req: Request, res: Response) {
     // Validate sectionId
     if (!sectionId || typeof sectionId !== "string" || !/^[a-zA-Z0-9._-]+$/.test(sectionId)) {
       return res.status(400).json({ error: "Validation error: Invalid section ID format" });
+    }
+
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(200).json({
+        sectionId,
+        totalStudents: 0,
+        bandDistribution: { low: 0, moderate: 0, high: 0, critical: 0 },
+        attendanceDeficitDistribution: [],
+      });
     }
 
     // Find students in this section

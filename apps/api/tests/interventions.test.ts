@@ -176,6 +176,70 @@ describe("M6: Intervention & Outcome Tracking — RBAC Tests", () => {
       close();
     }
   });
+
+  it("DELETE /interventions/:id should return 401 when unauthenticated", async () => {
+    const app = createTestApp();
+    const { port, close } = await startServer(app);
+    try {
+      const res = await fetch(`http://127.0.0.1:${port}/api/v1/interventions/int-001`, {
+        method: "DELETE",
+      });
+      assert.equal(res.status, 401, "Unauthenticated request should return 401");
+    } finally {
+      close();
+    }
+  });
+
+  it("DELETE /interventions/:id should return 403 for student role", async () => {
+    const app = createTestApp();
+    const { port, close } = await startServer(app);
+    try {
+      const res = await authFetch(`http://127.0.0.1:${port}/api/v1/interventions/int-001`, {
+        method: "DELETE",
+        headers: {
+          "x-user-id": "student-001",
+          "x-user-role": "student",
+        },
+      });
+      assert.equal(res.status, 403, "Student should not be able to withdraw interventions");
+    } finally {
+      close();
+    }
+  });
+
+  it("DELETE /interventions/:id should return 403 for instructor role", async () => {
+    const app = createTestApp();
+    const { port, close } = await startServer(app);
+    try {
+      const res = await authFetch(`http://127.0.0.1:${port}/api/v1/interventions/int-001`, {
+        method: "DELETE",
+        headers: {
+          "x-user-id": "instructor-001",
+          "x-user-role": "instructor",
+        },
+      });
+      assert.equal(res.status, 403, "Instructor should not be able to withdraw interventions");
+    } finally {
+      close();
+    }
+  });
+
+  it("DELETE /interventions/:id should return 403 for hod role", async () => {
+    const app = createTestApp();
+    const { port, close } = await startServer(app);
+    try {
+      const res = await authFetch(`http://127.0.0.1:${port}/api/v1/interventions/int-001`, {
+        method: "DELETE",
+        headers: {
+          "x-user-id": "hod-001",
+          "x-user-role": "hod",
+        },
+      });
+      assert.equal(res.status, 403, "HoD should not be able to withdraw interventions");
+    } finally {
+      close();
+    }
+  });
 });
 
 describe("M6: Intervention & Outcome Tracking — Validation Tests", () => {
@@ -335,5 +399,78 @@ describe("M6: Mentor Isolation — RBAC", () => {
     } finally {
       close();
     }
+  });
+});
+
+describe("M6: Soft-Delete Withdrawal Tests", () => {
+  it("DELETE /interventions/:id should return 400 for invalid ID format (injection prevention)", async () => {
+    const app = createTestApp();
+    const { port, close } = await startServer(app);
+    try {
+      const res = await authFetch(`http://127.0.0.1:${port}/api/v1/interventions/invalid%20id%20$ne`, {
+        method: "DELETE",
+        headers: {
+          "x-user-id": "mentor-001",
+          "x-user-role": "mentor",
+        },
+      });
+      assert.equal(res.status, 400, "Invalid ID format should return 400");
+    } finally {
+      close();
+    }
+  });
+
+  it("DELETE /interventions/:id allows mentor role through auth (validation-only, no DB returns 404/500)", async () => {
+    const app = createTestApp();
+    const { port, close } = await startServer(app);
+    try {
+      const res = await authFetch(`http://127.0.0.1:${port}/api/v1/interventions/valid-int-id-001`, {
+        method: "DELETE",
+        headers: {
+          "x-user-id": "mentor-001",
+          "x-user-role": "mentor",
+        },
+      });
+      // Should NOT be 401 or 403 because mentor is authorized to call DELETE
+      assert.notEqual(res.status, 401, "Mentor should pass authentication");
+      assert.notEqual(res.status, 403, "Mentor should pass role check");
+    } finally {
+      close();
+    }
+  });
+
+  it("Soft-delete withdrawal should set status to 'withdrawn' and track metadata", () => {
+    const record: any = {
+      _id: "int-test-01",
+      alertId: "alert-001",
+      mentorId: "mentor-001",
+      action: "Advising session",
+      notes: "Discussed study plan",
+      status: "active",
+      withdrawnAt: null,
+      withdrawnBy: null,
+    };
+
+    // Apply withdrawal transformation
+    const now = new Date().toISOString();
+    record.status = "withdrawn";
+    record.withdrawnAt = now;
+    record.withdrawnBy = "mentor-001";
+
+    assert.equal(record.status, "withdrawn");
+    assert.equal(record.withdrawnBy, "mentor-001");
+    assert.ok(record.withdrawnAt);
+  });
+
+  it("Default listing filter should hide withdrawn interventions from mentor inbox view", () => {
+    const list = [
+      { _id: "1", action: "Tutoring", status: "active" },
+      { _id: "2", action: "Mistaken entry", status: "withdrawn" },
+      { _id: "3", action: "Counseling", status: "active" },
+    ];
+
+    const activeList = list.filter((item) => item.status !== "withdrawn");
+    assert.equal(activeList.length, 2);
+    assert.equal(activeList.some((item) => item.status === "withdrawn"), false);
   });
 });

@@ -6,6 +6,7 @@ import { authenticateUser } from "./auth/rbac.middleware.js";
 
 import authRouter from "./auth/auth.routes.js";
 import ingestionRouter from "./modules/ingestion/index.js";
+import instructorImportRouter from "./modules/ingestion/instructor-import.routes.js";
 import profileRouter from "./modules/profile/index.js";
 import scoringRouter from "./modules/scoring/index.js";
 import trendsRouter from "./modules/trends/index.js";
@@ -55,6 +56,7 @@ app.use(authenticateUser);
 // Mount Authentication & Module API Routers
 app.use("/api/v1/auth", authRouter);
 app.use("/api/v1/admin", ingestionRouter);
+app.use("/api/v1", instructorImportRouter);
 app.use("/api/v1", profileRouter);
 app.use("/api/v1", scoringRouter);
 app.use("/api/v1", trendsRouter);

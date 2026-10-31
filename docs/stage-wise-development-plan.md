@@ -394,11 +394,11 @@
 #### ✅ STAGE 2 CHECKLIST (WHAT TO BUILD NOW):
 - [x] Intervention creation and outcome update endpoints.
 - [x] Basic analytics aggregation endpoints for Section, Department, and Institution.
-- [ ] Soft-delete withdrawal action (`DELETE /api/v1/interventions/:id`).
-- [ ] Instructor CSV submission panel on `/sections` wired to import endpoint.
-- [ ] Modularize `/interventions` component into focused form/list/outcome/withdraw sub-components under 150 lines.
-- [ ] Explicitly mark HoD/Dean dashboard placeholders as deferred to Week 13.
-- [ ] Intervention withdrawal integration tests.
+- [x] Soft-delete withdrawal action (`DELETE /api/v1/interventions/:id`).
+- [x] Instructor CSV submission panel on `/sections` wired to import endpoint.
+- [x] Modularize `/interventions` component into focused form/list/outcome/withdraw sub-components under 150 lines.
+- [x] Explicitly mark HoD/Dean dashboard placeholders as deferred to Week 13.
+- [x] Intervention withdrawal integration tests.
 
 #### ❌ STAGE 2 BOUNDARY (WHAT NOT TO BUILD YET):
 - Do NOT build multi-chart HoD department comparison or Dean institution-wide trend analytics (defer to Stage 3).

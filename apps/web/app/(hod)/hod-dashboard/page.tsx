@@ -1,55 +1,46 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
-import { Users, ShieldAlert } from "lucide-react";
+import { Users, ShieldAlert, AlertTriangle, Clock, Calendar } from "lucide-react";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api/v1";
-
-const BAND_COLORS = {
-  low: "#059669",
-  moderate: "#d97706",
-  high: "#dc2626",
-  critical: "#7f1d1d",
-};
 
 interface DepartmentAnalytics {
   departmentId: string;
   totalStudents: number;
   bandDistribution: { low: number; moderate: number; high: number; critical: number };
-  recentTrends: Array<{ week: string; bandCounts: any }>;
   escalatedAlerts: number;
 }
 
 export default function HodDashboardPage() {
+  const [departmentId, setDepartmentId] = useState<string>("CSE");
   const [data, setData] = useState<DepartmentAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const departmentId = "CS"; // Hardcoded for demo
+
+  useEffect(() => {
+    async function initUser() {
+      try {
+        const res = await fetch(`${API_BASE}/auth/me`, { credentials: "include" });
+        if (res.ok) {
+          const body = await res.json();
+          if (body.user?.departmentId) {
+            setDepartmentId(body.user.departmentId);
+          }
+        }
+      } catch {}
+    }
+    initUser();
+  }, []);
 
   const fetchAnalytics = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
       const res = await fetch(`${API_BASE}/analytics/department/${departmentId}`, {
-        headers: {
-          "x-user-id": "hod-demo-001",
-          "x-user-role": "hod",
-        },
+        credentials: "include",
       });
-      if (!res.ok) throw new Error(`Failed to fetch: ${res.status}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to load department metrics`);
       const json = await res.json();
       setData(json);
     } catch (err: any) {
@@ -63,127 +54,98 @@ export default function HodDashboardPage() {
     fetchAnalytics();
   }, [fetchAnalytics]);
 
-  if (loading) {
-    return (
-      <div style={{ display: "flex", justifyContent: "center", padding: "4rem", color: "#64748b" }}>
-        Loading dashboard...
-      </div>
-    );
-  }
-
-  if (error || !data) {
-    return (
-      <div style={{ background: "#fee2e2", color: "#dc2626", padding: "1rem", borderRadius: "8px" }}>
-        {error || "Failed to load data"}
-      </div>
-    );
-  }
-
-  // Format Pie Data
-  const pieData = [
-    { name: "Low Risk", value: data.bandDistribution.low, color: BAND_COLORS.low },
-    { name: "Moderate Risk", value: data.bandDistribution.moderate, color: BAND_COLORS.moderate },
-    { name: "High Risk", value: data.bandDistribution.high, color: BAND_COLORS.high },
-    { name: "Critical Risk", value: data.bandDistribution.critical, color: BAND_COLORS.critical },
-  ].filter((item) => item.value > 0);
-
-  // Format Line Data for SLA trend
-  // Note: the backend currently provides `recentTrends` which is bandCounts.
-  // For the sake of the SLA escalation trend requirement in Stage 3, we mock some SLA data if not present.
-  // In a real scenario, this would come from the backend.
-  const lineData = data.recentTrends.map((t, idx) => ({
-    week: t.week,
-    // Mocking escalated alerts trend for demo since it's not fully provided by backend time series
-    escalated: Math.floor(Math.random() * 10) + (data.escalatedAlerts / data.recentTrends.length),
-  }));
+  const atRiskCount = data ? (data.bandDistribution.high || 0) + (data.bandDistribution.critical || 0) : 0;
 
   return (
-    <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "2rem" }}>
+    <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "1.5rem", color: "#1e293b" }}>
       {/* Header */}
-      <div style={{ marginBottom: "2rem" }}>
-        <h1 style={{ margin: 0, fontSize: "1.875rem", color: "#1e293b" }}>Department Dashboard: {data.departmentId}</h1>
-        <p style={{ margin: "0.25rem 0 0", color: "#64748b" }}>Overview of department-wide risk bands and SLA metrics.</p>
+      <div style={{ marginBottom: "1.5rem" }}>
+        <span style={{ fontSize: "0.75rem", color: "#6366f1", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>
+          HoD Management Portal
+        </span>
+        <h1 style={{ margin: "0.2rem 0 0.35rem", fontSize: "1.75rem", fontWeight: 700, color: "#0f172a" }}>
+          Department Dashboard: {departmentId}
+        </h1>
+        <p style={{ margin: 0, color: "#64748b", fontSize: "0.875rem" }}>
+          Academic overview and escalated SLA triage for Department of {departmentId}.
+        </p>
       </div>
 
-      {/* KPI Cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "1.5rem", marginBottom: "2rem" }}>
-        <div style={{ background: "#fff", padding: "1.5rem", borderRadius: "12px", border: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: "1rem" }}>
-          <div style={{ background: "#eff6ff", padding: "1rem", borderRadius: "50%", color: "#3b82f6" }}>
+      {/* Stage 3 Roadmap Deferral Notice Banner */}
+      <div
+        style={{
+          background: "#f8fafc",
+          border: "1px solid #cbd5e1",
+          borderRadius: "12px",
+          padding: "1.25rem 1.5rem",
+          marginBottom: "2rem",
+          display: "flex",
+          alignItems: "flex-start",
+          gap: "1rem",
+        }}
+      >
+        <div style={{ background: "#e0e7ff", color: "#4f46e5", padding: "0.5rem", borderRadius: "8px", marginTop: "0.15rem" }}>
+          <Calendar size={20} />
+        </div>
+        <div>
+          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
+            <h3 style={{ margin: 0, fontSize: "0.95rem", fontWeight: 700, color: "#1e1b4b" }}>
+              Detailed HoD Analytics & Section Comparison Charts
+            </h3>
+            <span style={{ background: "#e0e7ff", color: "#4338ca", fontSize: "0.7rem", fontWeight: 700, padding: "0.15rem 0.5rem", borderRadius: "999px" }}>
+              STAGE 3 ROADMAP (WEEK 13)
+            </span>
+          </div>
+          <p style={{ margin: "0.35rem 0 0", color: "#475569", fontSize: "0.8125rem", lineHeight: 1.5 }}>
+            As specified in the Master Stage Plan, advanced department comparison pie charts and multi-week historical SLA escalation trends are scheduled for delivery during the <strong>Stage 3 Product Readiness Review (Week 13)</strong>. For the Week 9 functional review, high-level aggregated operational metrics are shown below.
+          </p>
+        </div>
+      </div>
+
+      {/* Basic Aggregated Metrics */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1.25rem", marginBottom: "2rem" }}>
+        <div style={{ background: "#fff", padding: "1.25rem", borderRadius: "12px", border: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: "1rem" }}>
+          <div style={{ background: "#eff6ff", padding: "0.85rem", borderRadius: "50%", color: "#3b82f6" }}>
             <Users size={24} />
           </div>
           <div>
-            <p style={{ margin: 0, color: "#64748b", fontSize: "0.875rem" }}>Total Students</p>
-            <h3 style={{ margin: 0, fontSize: "1.5rem", color: "#1e293b" }}>{data.totalStudents}</h3>
+            <p style={{ margin: 0, color: "#64748b", fontSize: "0.8125rem", fontWeight: 500 }}>Total Department Students</p>
+            <h3 style={{ margin: "0.15rem 0 0", fontSize: "1.6rem", fontWeight: 700, color: "#0f172a" }}>
+              {loading ? "..." : (data?.totalStudents ?? 0)}
+            </h3>
           </div>
         </div>
 
-        <div style={{ background: "#fff", padding: "1.5rem", borderRadius: "12px", border: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: "1rem" }}>
-          <div style={{ background: "#fee2e2", padding: "1rem", borderRadius: "50%", color: "#dc2626" }}>
+        <div style={{ background: "#fff", padding: "1.25rem", borderRadius: "12px", border: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: "1rem" }}>
+          <div style={{ background: "#fef2f2", padding: "0.85rem", borderRadius: "50%", color: "#dc2626" }}>
+            <AlertTriangle size={24} />
+          </div>
+          <div>
+            <p style={{ margin: 0, color: "#64748b", fontSize: "0.8125rem", fontWeight: 500 }}>Students At Risk (High / Critical)</p>
+            <h3 style={{ margin: "0.15rem 0 0", fontSize: "1.6rem", fontWeight: 700, color: "#dc2626" }}>
+              {loading ? "..." : atRiskCount}
+            </h3>
+          </div>
+        </div>
+
+        <div style={{ background: "#fff", padding: "1.25rem", borderRadius: "12px", border: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: "1rem" }}>
+          <div style={{ background: "#fef2f2", padding: "0.85rem", borderRadius: "50%", color: "#b91c1c" }}>
             <ShieldAlert size={24} />
           </div>
           <div>
-            <p style={{ margin: 0, color: "#64748b", fontSize: "0.875rem" }}>Escalated Alerts (SLA Breached)</p>
-            <h3 style={{ margin: 0, fontSize: "1.5rem", color: "#1e293b" }}>{data.escalatedAlerts}</h3>
+            <p style={{ margin: 0, color: "#64748b", fontSize: "0.8125rem", fontWeight: 500 }}>Escalated Alerts (SLA Breaches)</p>
+            <h3 style={{ margin: "0.15rem 0 0", fontSize: "1.6rem", fontWeight: 700, color: "#b91c1c" }}>
+              {loading ? "..." : (data?.escalatedAlerts ?? 0)}
+            </h3>
           </div>
         </div>
       </div>
 
-      {/* Charts */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(400px, 1fr))", gap: "2rem" }}>
-        {/* Risk Breakdown Pie Chart */}
-        <div style={{ background: "#fff", padding: "1.5rem", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
-          <h3 style={{ marginTop: 0, marginBottom: "1.5rem", color: "#1e293b" }}>Department Risk Breakdown</h3>
-          <div style={{ height: "300px" }}>
-            {pieData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={60}
-                    outerRadius={100}
-                    paddingAngle={5}
-                    dataKey="value"
-                  >
-                    {pieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => [`${value} Students`, "Count"]} />
-                  <Legend verticalAlign="bottom" height={36} />
-                </PieChart>
-              </ResponsiveContainer>
-            ) : (
-              <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%", color: "#94a3b8" }}>
-                No data available
-              </div>
-            )}
-          </div>
+      {error && (
+        <div style={{ background: "#fef2f2", border: "1px solid #fecaca", color: "#b91c1c", padding: "1rem", borderRadius: "8px", fontSize: "0.875rem" }}>
+          {error}
         </div>
-
-        {/* SLA Escalation Trend */}
-        <div style={{ background: "#fff", padding: "1.5rem", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
-          <h3 style={{ marginTop: 0, marginBottom: "1.5rem", color: "#1e293b" }}>SLA Escalation Trend (Weekly)</h3>
-          <div style={{ height: "300px" }}>
-            {lineData.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={lineData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                  <XAxis dataKey="week" stroke="#64748b" fontSize={12} />
-                  <YAxis stroke="#64748b" fontSize={12} allowDecimals={false} />
-                  <Tooltip cursor={{ stroke: "#e2e8f0" }} />
-                  <Line type="monotone" dataKey="escalated" stroke="#dc2626" strokeWidth={3} dot={{ r: 4 }} name="Escalated Alerts" />
-                </LineChart>
-              </ResponsiveContainer>
-            ) : (
-              <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%", color: "#94a3b8" }}>
-                No data available
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+      )}
     </div>
   );
 }
