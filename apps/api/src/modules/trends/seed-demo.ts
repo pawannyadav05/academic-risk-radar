@@ -228,6 +228,7 @@ export async function seedDemoDatabase(customMongoUri?: string): Promise<SeedDem
       enrolmentId: "12409921",
       sectionIds: ["SEC-CSE-101"],
       programme: "B.Tech Computer Science & Engineering",
+      cgpa: 8.85,
     },
     {
       _id: "12409922",
@@ -235,6 +236,7 @@ export async function seedDemoDatabase(customMongoUri?: string): Promise<SeedDem
       enrolmentId: "12409922",
       sectionIds: ["SEC-CSE-101"],
       programme: "B.Tech Computer Science & Engineering",
+      cgpa: 7.40,
     },
     {
       _id: "12409923",
@@ -242,6 +244,7 @@ export async function seedDemoDatabase(customMongoUri?: string): Promise<SeedDem
       enrolmentId: "12409923",
       sectionIds: ["SEC-CSE-101"],
       programme: "B.Tech Computer Science & Engineering",
+      cgpa: 8.20,
     },
     {
       _id: "12409924",
@@ -249,6 +252,7 @@ export async function seedDemoDatabase(customMongoUri?: string): Promise<SeedDem
       enrolmentId: "12409924",
       sectionIds: ["SEC-CSE-101"],
       programme: "B.Tech Computer Science & Engineering",
+      cgpa: 9.15,
     },
     {
       _id: "12409925",
@@ -256,6 +260,7 @@ export async function seedDemoDatabase(customMongoUri?: string): Promise<SeedDem
       enrolmentId: "12409925",
       sectionIds: ["SEC-CSE-101"],
       programme: "B.Tech Computer Science & Engineering",
+      cgpa: 7.90,
     },
   ];
 

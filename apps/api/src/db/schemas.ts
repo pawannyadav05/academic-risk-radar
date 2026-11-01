@@ -22,6 +22,7 @@ const StudentSchema = new Schema<Student>({
   enrolmentId: { type: String, required: true, unique: true },
   sectionIds: [{ type: String }],
   programme: { type: String, required: true },
+  cgpa: { type: Number, default: 7.4 },
 });
 export const StudentModel = mongoose.model<Student>("Student", StudentSchema);
 

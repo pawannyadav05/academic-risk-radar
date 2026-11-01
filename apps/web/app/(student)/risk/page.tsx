@@ -26,6 +26,7 @@ interface StudentSession {
 
 interface AcademicProfile {
   studentId: string;
+  cgpa?: number;
   attendance?: {
     totalSessions: number;
     attendanceRate: number;
@@ -131,8 +132,10 @@ export default function StudentRiskPage() {
   // Derived metrics from real API responses
   const attendanceRate = profile?.computedMetrics?.attendanceRate ?? 1.0;
   const attendancePct = Math.round(attendanceRate * 100);
-  const assessmentAvg = profile?.computedMetrics?.assessmentAvg ?? 0.8;
-  const cgpa = (assessmentAvg * 10).toFixed(2);
+  const assessmentAvg = profile?.computedMetrics?.assessmentAvg ?? 0.75;
+  const assessmentAvgPct = Math.round(assessmentAvg * 100);
+  // Official institutional CGPA from academic record — not affected by individual assessments
+  const cgpa = (profile?.cgpa ?? 7.4).toFixed(2);
   const rawRiskScore = (risk.factors || []).reduce((acc, f) => acc + f.contribution, 0);
   const riskPct = Math.round(rawRiskScore * 100);
   const band: RiskBand = risk.band;
@@ -189,7 +192,7 @@ export default function StudentRiskPage() {
 
           <AssessmentHistoryTable
             records={profile?.assessments?.records}
-            cgpa={cgpa}
+            assessmentAvgPct={assessmentAvgPct}
           />
         </div>
       ) : (

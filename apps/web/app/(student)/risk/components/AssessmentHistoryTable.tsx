@@ -13,12 +13,12 @@ export interface AssessmentRecordItem {
 
 interface AssessmentHistoryTableProps {
   records?: AssessmentRecordItem[];
-  cgpa: string;
+  assessmentAvgPct: number;
 }
 
 export function AssessmentHistoryTable({
   records = [],
-  cgpa,
+  assessmentAvgPct,
 }: AssessmentHistoryTableProps) {
   return (
     <div
@@ -36,13 +36,13 @@ export function AssessmentHistoryTable({
             Recorded assessments
           </h3>
           <p style={{ margin: "0.2rem 0 0", fontSize: "0.8125rem", color: "#5B6B75" }}>
-            All past assessment marks are preserved and factored into your cumulative grade average.
+            All past assessment marks are preserved and factored directly into your academic risk score.
           </p>
         </div>
         <div style={{ textAlign: "right" }}>
-          <span style={{ fontSize: "0.75rem", color: "#5B6B75", display: "block" }}>Cumulative CGPA</span>
-          <span style={{ fontSize: "1.125rem", fontWeight: 700, color: "#2E8B7A", fontVariantNumeric: "tabular-nums" }}>
-            {cgpa} / 10.0
+          <span style={{ fontSize: "0.75rem", color: "#5B6B75", display: "block" }}>Assessment average</span>
+          <span style={{ fontSize: "1.125rem", fontWeight: 700, color: assessmentAvgPct < 60 ? "#D49A1F" : "#2E8B7A", fontVariantNumeric: "tabular-nums" }}>
+            {assessmentAvgPct}%
           </span>
         </div>
       </div>

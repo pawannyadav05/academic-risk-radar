@@ -4,6 +4,7 @@ export interface Student {
   enrolmentId: string;
   sectionIds: string[];
   programme: string;
+  cgpa?: number;
 }
 
 export interface AttendanceRecord {
