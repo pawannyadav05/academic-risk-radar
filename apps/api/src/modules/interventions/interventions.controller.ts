@@ -1,3 +1,21 @@
+/**
+ * Module M6: Intervention & Outcome Tracking Controller
+ * Owned by Team Member 4 (Piyush Kumar Singh)
+ *
+ * Provides database persistence, RBAC ownership enforcement, and closed-loop
+ * lifecycle tracking for mentor intervention records.
+ *
+ * Capabilities:
+ * - createIntervention: Records a mentor's intervention linked to an active alert.
+ * - updateInterventionOutcome: Records post-intervention evaluation (improved, no_change, deteriorated, pending).
+ * - withdrawIntervention: Soft-delete withdrawal of mistakenly created interventions with audit tracking.
+ * - listInterventions: Paginated mentor inbox retrieval with status filtering (hiding withdrawn by default).
+ *
+ * Security & Data Integrity:
+ * - NoSQL Injection Prevention: Strict regex allowlisting (`sanitizeId`) and explicit `$eq` / `$ne` operators.
+ * - Mentor Ownership Guard: Mentors can only update, list, or withdraw interventions assigned to them.
+ */
+
 import { Request, Response } from "express";
 import crypto from "crypto";
 import mongoose from "mongoose";
