@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import bcrypt from "bcryptjs";
 import { UserModel } from "../db/schemas.js";
-import { signToken, SafeUserClaims } from "./jwt.service.js";
+import { signToken, SafeUserClaims, SESSION_COOKIE_NAME } from "./jwt.service.js";
 
 /**
  * POST /api/v1/auth/login
@@ -47,6 +47,14 @@ export async function login(req: Request, res: Response) {
 
     const token = signToken(safeClaims);
 
+    res.cookie(SESSION_COOKIE_NAME, token, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 12 * 60 * 60 * 1000, // 12 hours
+    });
+
     return res.status(200).json({
       status: "success",
       token,
@@ -63,9 +71,12 @@ export async function login(req: Request, res: Response) {
 
 /**
  * POST /api/v1/auth/logout
- * Stateless logout endpoint.
+ * Stateless logout endpoint that clears session cookie.
  */
 export async function logout(_req: Request, res: Response) {
+  res.clearCookie(SESSION_COOKIE_NAME, {
+    path: "/",
+  });
   return res.status(200).json({
     status: "success",
     message: "Logged out successfully",

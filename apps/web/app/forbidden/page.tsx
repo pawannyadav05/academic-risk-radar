@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { ShieldAlert, ArrowLeft, LogOut } from "lucide-react";
+import { ShieldAlert, LogOut } from "lucide-react";
 import { getSession, ROLE_HOME_ROUTES } from "@/lib/auth";
 import { logoutAction } from "@/actions/auth";
 
@@ -20,17 +20,17 @@ export default async function ForbiddenPage() {
         alignItems: "center",
         justifyContent: "center",
         padding: "1rem",
+        fontFamily: "var(--font-atkinson, system-ui, sans-serif)",
       }}
     >
       <div
         style={{
-          background: "#FFFDF9",
-          border: "1px solid #E6DFD5",
-          borderRadius: "10px",
-          padding: "2.5rem 2rem",
+          background: "#FFFFFF",
+          border: "1px solid #D9DFDD",
+          borderRadius: "8px",
+          padding: "2rem",
           maxWidth: "480px",
           width: "100%",
-          boxShadow: "0 2px 8px rgba(43, 38, 35, 0.04)",
         }}
       >
         <div
@@ -38,66 +38,52 @@ export default async function ForbiddenPage() {
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
-            width: "44px",
-            height: "44px",
-            borderRadius: "6px",
-            background: "#E4ECE9",
-            color: "#3F5E5A",
-            marginBottom: "1.25rem",
+            width: "40px",
+            height: "40px",
+            borderRadius: "4px",
+            background: "#F2F4F3",
+            color: "#8A4A7B",
+            marginBottom: "1rem",
           }}
         >
-          <ShieldAlert size={22} strokeWidth={1.5} />
+          <ShieldAlert size={20} strokeWidth={1.75} />
         </div>
-
-        <span
-          style={{
-            display: "block",
-            fontSize: "0.75rem",
-            textTransform: "uppercase",
-            letterSpacing: "0.08em",
-            fontWeight: 600,
-            color: "#B5654A",
-            marginBottom: "0.35rem",
-          }}
-        >
-          403 · Access Restricted
-        </span>
 
         <h1
           style={{
-            margin: "0 0 0.75rem",
-            fontSize: "1.375rem",
-            fontWeight: 600,
-            color: "#2B2623",
+            margin: "0 0 0.5rem",
+            fontSize: "1.25rem",
+            fontWeight: 700,
+            color: "#1B2A33",
             lineHeight: 1.3,
           }}
         >
-          Institutional Privacy Boundary
+          Access restricted
         </h1>
 
         <p
           style={{
             margin: "0 0 1.25rem",
-            fontSize: "0.9375rem",
+            fontSize: "0.875rem",
             lineHeight: 1.5,
-            color: "#6F665E",
+            color: "#5B6B75",
           }}
         >
-          Your active role ({session?.role ? <strong>{session.role}</strong> : "guest"}) is not authorized to access this resource. Under institutional governance rules, individual records, mentor logs, and administrative controls are isolated by role.
+          Your current account role does not have permission to view this page. Records and controls are separated by institutional role.
         </p>
 
         <div
           style={{
-            background: "#FAF7F2",
-            border: "1px solid #E6DFD5",
-            borderRadius: "6px",
-            padding: "0.875rem 1rem",
+            background: "#F2F4F3",
+            border: "1px solid #D9DFDD",
+            borderRadius: "4px",
+            padding: "0.75rem 1rem",
             fontSize: "0.8125rem",
-            color: "#6F665E",
-            marginBottom: "1.75rem",
+            color: "#5B6B75",
+            marginBottom: "1.5rem",
           }}
         >
-          Signed in as <strong>{session?.name || "Unknown"}</strong> ({session?.email || "No email"}).
+          Signed in as <strong style={{ color: "#1B2A33" }}>{session?.name || "Unknown"}</strong> ({session?.role || "guest"}).
         </div>
 
         <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
@@ -107,17 +93,16 @@ export default async function ForbiddenPage() {
               display: "inline-flex",
               alignItems: "center",
               gap: "0.4rem",
-              background: "#3F5E5A",
-              color: "#FFFDF9",
-              padding: "0.625rem 1.125rem",
-              borderRadius: "6px",
-              fontSize: "0.875rem",
-              fontWeight: 500,
+              background: "#2D5BA3",
+              color: "#FFFFFF",
+              padding: "0.5rem 1rem",
+              borderRadius: "4px",
+              fontSize: "0.8125rem",
+              fontWeight: 600,
               textDecoration: "none",
             }}
           >
-            <ArrowLeft size={16} strokeWidth={1.5} />
-            Return to Dashboard
+            Go to dashboard
           </Link>
 
           <form action={logoutAction} style={{ margin: 0 }}>
@@ -127,18 +112,18 @@ export default async function ForbiddenPage() {
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "0.4rem",
-                background: "transparent",
-                color: "#6F665E",
-                border: "1px solid #E6DFD5",
-                padding: "0.625rem 1rem",
-                borderRadius: "6px",
-                fontSize: "0.875rem",
-                fontWeight: 500,
+                background: "#FFFFFF",
+                color: "#5B6B75",
+                border: "1px solid #D9DFDD",
+                padding: "0.5rem 1rem",
+                borderRadius: "4px",
+                fontSize: "0.8125rem",
+                fontWeight: 600,
                 cursor: "pointer",
               }}
             >
-              <LogOut size={16} strokeWidth={1.5} />
-              Switch Account
+              <LogOut size={14} strokeWidth={1.75} />
+              Sign out
             </button>
           </form>
         </div>

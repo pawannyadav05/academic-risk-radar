@@ -11,11 +11,8 @@ export function StudentRiskEmpty({ onRefresh, studentName, enrolmentId }: Studen
   return (
     <div
       style={{
-        fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif",
-        color: "#e2e8f0",
-        minHeight: "calc(100vh - 60px)",
-        background: "#090e1a",
-        margin: "-2rem",
+        fontFamily: "var(--font-atkinson, system-ui, sans-serif)",
+        color: "#1B2A33",
         padding: "3rem 1.5rem",
         display: "flex",
         flexDirection: "column",
@@ -25,13 +22,12 @@ export function StudentRiskEmpty({ onRefresh, studentName, enrolmentId }: Studen
     >
       <div
         style={{
-          background: "#0f172a",
-          border: "1px solid #1e293b",
-          borderRadius: "16px",
+          background: "#FFFFFF",
+          border: "1px solid #D9DFDD",
+          borderRadius: "8px",
           padding: "2.5rem 2rem",
           maxWidth: "540px",
           textAlign: "center",
-          boxShadow: "0 10px 25px -5px rgba(0, 0, 0, 0.3)",
         }}
       >
         <div
@@ -39,28 +35,28 @@ export function StudentRiskEmpty({ onRefresh, studentName, enrolmentId }: Studen
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
-            width: "56px",
-            height: "56px",
-            borderRadius: "50%",
-            background: "rgba(59, 130, 246, 0.12)",
-            color: "#3b82f6",
+            width: "48px",
+            height: "48px",
+            borderRadius: "4px",
+            background: "#F2F4F3",
+            color: "#2D5BA3",
             marginBottom: "1.25rem",
           }}
         >
-          <Info size={28} />
+          <Info size={24} />
         </div>
 
-        <h2 style={{ fontSize: "1.25rem", fontWeight: "700", color: "#f8fafc", margin: "0 0 0.5rem" }}>
-          Welcome, {studentName || "Student"}!
+        <h2 style={{ fontSize: "1.25rem", fontWeight: 700, color: "#1B2A33", margin: "0 0 0.5rem" }}>
+          Academic standing not yet available
         </h2>
-        {enrolmentId && (
-          <p style={{ fontSize: "0.85rem", color: "#64748b", margin: "0 0 1rem" }}>
-            Student ID: {enrolmentId}
+        {studentName && (
+          <p style={{ fontSize: "0.875rem", color: "#5B6B75", margin: "0 0 0.25rem" }}>
+            Student: {studentName} {enrolmentId ? `(${enrolmentId})` : ""}
           </p>
         )}
 
-        <p style={{ fontSize: "0.9rem", color: "#94a3b8", lineHeight: 1.6, margin: "0 0 1.75rem" }}>
-          Your academic risk profile has not been calculated yet. Once your instructors record attendance, assessments, or assignment submissions for your section, your personalized standing will automatically appear here.
+        <p style={{ fontSize: "0.875rem", color: "#5B6B75", lineHeight: 1.6, margin: "0.5rem 0 1.75rem" }}>
+          Your academic profile will appear once instructors submit attendance and assessment records for your registered courses.
         </p>
 
         <button
@@ -69,19 +65,18 @@ export function StudentRiskEmpty({ onRefresh, studentName, enrolmentId }: Studen
             display: "inline-flex",
             alignItems: "center",
             gap: "0.5rem",
-            padding: "0.65rem 1.25rem",
-            background: "#2563eb",
-            color: "#ffffff",
+            padding: "0.6rem 1.25rem",
+            background: "#2D5BA3",
+            color: "#FFFFFF",
             border: "none",
-            borderRadius: "8px",
+            borderRadius: "4px",
             fontSize: "0.875rem",
-            fontWeight: "600",
+            fontWeight: 600,
             cursor: "pointer",
-            transition: "background 0.15s ease",
           }}
         >
-          <RefreshCw size={16} />
-          Check For Updates
+          <RefreshCw size={14} />
+          Check for updates
         </button>
       </div>
     </div>

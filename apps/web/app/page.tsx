@@ -1,29 +1,33 @@
 import React from "react";
+import Link from "next/link";
 
 export default function HomePage() {
   return (
-    <div style={{ background: "#ffffff", padding: "2rem", borderRadius: "8px", boxShadow: "0 1px 3px rgba(0,0,0,0.1)" }}>
-      <h2>Welcome to Academic Risk Radar</h2>
-      <p style={{ color: "#475569" }}>
-        An early-support intervention system designed to consolidate attendance, assessment, assignment, and LMS engagement signals.
+    <div style={{ background: "#FFFFFF", padding: "2rem", borderRadius: "8px", border: "1px solid #D9DFDD" }}>
+      <h2 style={{ margin: "0 0 0.5rem", fontSize: "1.375rem", fontWeight: 700, color: "#1B2A33" }}>
+        Academic Risk Radar
+      </h2>
+      <p style={{ margin: 0, color: "#5B6B75", fontSize: "0.9375rem", maxWidth: "70ch" }}>
+        An academic early-warning system that consolidates attendance, assessment, assignment, and LMS engagement signals to help mentors identify student needs early.
       </p>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "1rem", marginTop: "1.5rem" }}>
-        <a href="/risk" style={{ padding: "1.5rem", border: "1px solid #e2e8f0", borderRadius: "6px", textDecoration: "none", color: "#1e293b" }}>
-          <h3 style={{ marginTop: 0 }}>Student Early Support View</h3>
-          <p style={{ color: "#64748b", fontSize: "0.875rem" }}>View academic indicators and contributing risk factors in a clear, supportive interface.</p>
-        </a>
-        <a href="/connectors" style={{ padding: "1.5rem", border: "1px solid #e2e8f0", borderRadius: "6px", textDecoration: "none", color: "#1e293b" }}>
-          <h3 style={{ marginTop: 0, color: "#0284c7" }}>Data Connectors & Ingestion</h3>
-          <p style={{ color: "#64748b", fontSize: "0.875rem" }}>Manage institutional data feeds, trigger CSV imports, and inspect quarantined records (Admin / M1).</p>
-        </a>
-        <a href="/model-versions" style={{ padding: "1.5rem", border: "1px solid #e2e8f0", borderRadius: "6px", textDecoration: "none", color: "#1e293b" }}>
-          <h3 style={{ marginTop: 0 }}>Scoring Model Management</h3>
-          <p style={{ color: "#64748b", fontSize: "0.875rem" }}>Configure weights, preview band-change impact, and manage model versions (Admin).</p>
-        </a>
-        <a href="/audit" style={{ padding: "1.5rem", border: "1px solid #e2e8f0", borderRadius: "6px", textDecoration: "none", color: "#1e293b" }}>
-          <h3 style={{ marginTop: 0 }}>System Audit Logs</h3>
-          <p style={{ color: "#64748b", fontSize: "0.875rem" }}>View immutable audit trail of system configuration and scoring model changes (Admin).</p>
-        </a>
+
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(250px, 1fr))", gap: "1rem", marginTop: "1.75rem" }}>
+        <Link href="/risk" style={{ padding: "1.25rem", border: "1px solid #D9DFDD", borderRadius: "4px", textDecoration: "none", color: "#1B2A33", background: "#FFFFFF" }}>
+          <h3 style={{ margin: "0 0 0.35rem", fontSize: "1rem", fontWeight: 600, color: "#2D5BA3" }}>Student standing</h3>
+          <p style={{ margin: 0, color: "#5B6B75", fontSize: "0.8125rem", lineHeight: 1.5 }}>View attendance, grades, and contributing factors in a clear view.</p>
+        </Link>
+        <Link href="/inbox" style={{ padding: "1.25rem", border: "1px solid #D9DFDD", borderRadius: "4px", textDecoration: "none", color: "#1B2A33", background: "#FFFFFF" }}>
+          <h3 style={{ margin: "0 0 0.35rem", fontSize: "1rem", fontWeight: 600, color: "#2D5BA3" }}>Mentor alerts</h3>
+          <p style={{ margin: 0, color: "#5B6B75", fontSize: "0.8125rem", lineHeight: 1.5 }}>Review assigned mentee alerts, acknowledge items, and log mentoring sessions.</p>
+        </Link>
+        <Link href="/connectors" style={{ padding: "1.25rem", border: "1px solid #D9DFDD", borderRadius: "4px", textDecoration: "none", color: "#1B2A33", background: "#FFFFFF" }}>
+          <h3 style={{ margin: "0 0 0.35rem", fontSize: "1rem", fontWeight: 600, color: "#2D5BA3" }}>Data connectors</h3>
+          <p style={{ margin: 0, color: "#5B6B75", fontSize: "0.8125rem", lineHeight: 1.5 }}>Manage institutional data feeds, trigger CSV imports, and inspect quarantine records.</p>
+        </Link>
+        <Link href="/model-versions" style={{ padding: "1.25rem", border: "1px solid #D9DFDD", borderRadius: "4px", textDecoration: "none", color: "#1B2A33", background: "#FFFFFF" }}>
+          <h3 style={{ margin: "0 0 0.35rem", fontSize: "1rem", fontWeight: 600, color: "#2D5BA3" }}>Risk model versions</h3>
+          <p style={{ margin: 0, color: "#5B6B75", fontSize: "0.8125rem", lineHeight: 1.5 }}>Configure factor weights, preview band thresholds, and view model versions.</p>
+        </Link>
       </div>
     </div>
   );

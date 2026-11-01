@@ -4,23 +4,19 @@ export function StudentRiskSkeleton() {
   return (
     <div
       style={{
-        fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif",
-        color: "#e2e8f0",
-        minHeight: "calc(100vh - 60px)",
-        background: "#090e1a",
-        margin: "-2rem",
+        fontFamily: "var(--font-atkinson, system-ui, sans-serif)",
+        color: "#1B2A33",
         padding: "1.5rem",
       }}
     >
       {/* Header Skeleton */}
       <div
         style={{
-          background: "#0f172a",
-          borderRadius: "16px",
-          height: "240px",
+          background: "#FFFFFF",
+          borderRadius: "8px",
+          height: "200px",
           marginBottom: "1.25rem",
-          border: "1px solid #1e293b",
-          animation: "pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+          border: "1px solid #D9DFDD",
         }}
       />
 
@@ -34,11 +30,10 @@ export function StudentRiskSkeleton() {
       >
         <div
           style={{
-            background: "#0f172a",
-            borderRadius: "16px",
-            height: "360px",
-            border: "1px solid #1e293b",
-            animation: "pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+            background: "#FFFFFF",
+            borderRadius: "8px",
+            height: "320px",
+            border: "1px solid #D9DFDD",
           }}
         />
         <div
@@ -52,11 +47,10 @@ export function StudentRiskSkeleton() {
             <div
               key={i}
               style={{
-                background: "#0f172a",
-                borderRadius: "16px",
+                background: "#FFFFFF",
+                borderRadius: "8px",
                 height: "280px",
-                border: "1px solid #1e293b",
-                animation: "pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite",
+                border: "1px solid #D9DFDD",
               }}
             />
           ))}

@@ -1,14 +1,15 @@
 import React from "react";
 import { RiskBand } from "@academic-risk-radar/shared-types";
+import { CheckCircle, Clock, HelpCircle, AlertCircle } from "lucide-react";
 
 export const BAND_CONFIG: Record<
   RiskBand,
-  { label: string; color: string; bg: string; border: string }
+  { label: string; color: string; bg: string; border: string; icon: React.ReactNode }
 > = {
-  low: { label: "Low Risk", color: "#22c55e", bg: "rgba(34,197,94,0.10)", border: "rgba(34,197,94,0.25)" },
-  moderate: { label: "Moderate Risk", color: "#f59e0b", bg: "rgba(245,158,11,0.10)", border: "rgba(245,158,11,0.25)" },
-  high: { label: "High Risk", color: "#ef4444", bg: "rgba(239,68,68,0.10)", border: "rgba(239,68,68,0.25)" },
-  critical: { label: "Critical Risk", color: "#dc2626", bg: "rgba(220,38,38,0.12)", border: "rgba(220,38,38,0.30)" },
+  low: { label: "On track", color: "#2E8B7A", bg: "#F2F4F3", border: "#2E8B7A", icon: <CheckCircle size={14} /> },
+  moderate: { label: "Check in suggested", color: "#D49A1F", bg: "#F2F4F3", border: "#D49A1F", icon: <Clock size={14} /> },
+  high: { label: "Support recommended", color: "#8A4A7B", bg: "#F2F4F3", border: "#8A4A7B", icon: <HelpCircle size={14} /> },
+  critical: { label: "Immediate support", color: "#8A4A7B", bg: "#F2F4F3", border: "#8A4A7B", icon: <AlertCircle size={14} /> },
 };
 
 interface StudentProfileCardProps {
@@ -36,7 +37,6 @@ export function StudentProfileCard({
   activeTab,
   onTabChange,
   computedAt,
-  modelVersion,
 }: StudentProfileCardProps) {
   const bandInfo = BAND_CONFIG[band] || BAND_CONFIG.low;
   const initials = name
@@ -47,27 +47,26 @@ export function StudentProfileCard({
     .toUpperCase() || "ST";
 
   return (
-    <div style={{ background: "#0f172a", borderRadius: "16px", overflow: "hidden", marginBottom: "1.25rem", border: "1px solid #1e293b" }}>
+    <div style={{ background: "#FFFFFF", borderRadius: "8px", overflow: "hidden", marginBottom: "1.25rem", border: "1px solid #D9DFDD" }}>
       {/* Top Banner */}
       <div style={{
-        height: "110px",
-        background: "linear-gradient(120deg, #0d1f3c 0%, #162544 50%, #0f2238 100%)",
-        borderBottom: "1px solid #1e293b",
+        height: "90px",
+        background: "#F2F4F3",
+        borderBottom: "1px solid #D9DFDD",
         position: "relative",
         display: "flex",
         alignItems: "flex-end",
         justifyContent: "center",
       }}>
         <div style={{
-          position: "absolute", bottom: "-40px",
-          width: "80px", height: "80px",
+          position: "absolute", bottom: "-36px",
+          width: "72px", height: "72px",
           borderRadius: "50%",
-          border: `2.5px solid ${bandInfo.color}`,
-          background: "#1e293b",
+          border: `2px solid ${bandInfo.color}`,
+          background: "#FFFFFF",
           display: "flex", alignItems: "center", justifyContent: "center",
-          fontSize: "1.1rem", fontWeight: "700", color: "#f8fafc",
+          fontSize: "1.1rem", fontWeight: "700", color: "#1B2A33",
           letterSpacing: "0.05em",
-          boxShadow: `0 0 0 3px #0f172a, 0 0 18px ${bandInfo.color}55`,
           zIndex: 2,
         }}>
           {initials}
@@ -75,57 +74,55 @@ export function StudentProfileCard({
       </div>
 
       {/* Main Stats Row */}
-      <div style={{ paddingTop: "3rem", paddingBottom: "1.25rem", paddingInline: "2rem" }}>
+      <div style={{ paddingTop: "2.75rem", paddingBottom: "1.25rem", paddingInline: "2rem" }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", alignItems: "center", gap: "1rem", textAlign: "center" }}>
           <div>
-            <div style={{ fontSize: "2rem", fontWeight: "800", color: "#22c55e", lineHeight: 1 }}>{cgpa}</div>
-            <div style={{ fontSize: "0.7rem", color: "#475569", marginTop: "0.3rem", textTransform: "uppercase", letterSpacing: "0.1em" }}>CGPA</div>
+            <div style={{ fontSize: "2rem", fontWeight: "700", color: "#2E8B7A", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>{cgpa}</div>
+            <div style={{ fontSize: "0.75rem", color: "#5B6B75", marginTop: "0.3rem" }}>CGPA</div>
           </div>
 
           <div>
-            <div style={{ fontSize: "1.15rem", fontWeight: "700", color: "#f1f5f9" }}>{name}</div>
-            <div style={{ fontSize: "0.78rem", color: "#64748b", marginTop: "0.2rem" }}>{programme} {section ? `(${section})` : ""}</div>
-            <div style={{ fontSize: "0.72rem", color: "#475569", marginTop: "0.1rem" }}>{enrolmentId}</div>
+            <div style={{ fontSize: "1.125rem", fontWeight: "700", color: "#1B2A33" }}>{name}</div>
+            <div style={{ fontSize: "0.8125rem", color: "#5B6B75", marginTop: "0.2rem" }}>{programme} {section ? `(${section})` : ""}</div>
+            <div style={{ fontSize: "0.75rem", color: "#5B6B75", marginTop: "0.1rem", fontVariantNumeric: "tabular-nums" }}>{enrolmentId}</div>
             <div style={{
               display: "inline-flex", alignItems: "center", gap: "0.35rem",
-              marginTop: "0.5rem", padding: "0.2rem 0.7rem",
-              borderRadius: "9999px", fontSize: "0.72rem", fontWeight: "600",
+              marginTop: "0.5rem", padding: "0.2rem 0.6rem",
+              borderRadius: "4px", fontSize: "0.75rem", fontWeight: "600",
               color: bandInfo.color, background: bandInfo.bg, border: `1px solid ${bandInfo.border}`,
             }}>
-              <span style={{ width: 6, height: 6, borderRadius: "50%", background: bandInfo.color, display: "inline-block" }} />
+              {bandInfo.icon}
               {bandInfo.label}
             </div>
           </div>
 
           <div>
-            <div style={{ fontSize: "2rem", fontWeight: "800", color: "#f59e0b", lineHeight: 1 }}>{attendancePct}%</div>
-            <div style={{ fontSize: "0.7rem", color: "#475569", marginTop: "0.3rem", textTransform: "uppercase", letterSpacing: "0.1em" }}>Attendance</div>
+            <div style={{ fontSize: "2rem", fontWeight: "700", color: attendancePct < 75 ? "#D49A1F" : "#2E8B7A", lineHeight: 1, fontVariantNumeric: "tabular-nums" }}>{attendancePct}%</div>
+            <div style={{ fontSize: "0.75rem", color: "#5B6B75", marginTop: "0.3rem" }}>Attendance</div>
           </div>
         </div>
       </div>
 
       {/* Tab Navigation */}
-      <div style={{ display: "flex", alignItems: "center", borderTop: "1px solid #1e293b", paddingInline: "1.5rem" }}>
+      <div style={{ display: "flex", alignItems: "center", borderTop: "1px solid #D9DFDD", paddingInline: "1.5rem" }}>
         {(["overview", "factors"] as const).map((tab) => (
           <button
             key={tab}
             onClick={() => onTabChange(tab)}
             style={{
               padding: "0.85rem 1.1rem", border: "none", background: "transparent",
-              color: activeTab === tab ? "#f97316" : "#475569", fontWeight: activeTab === tab ? 600 : 400,
-              fontSize: "0.83rem", cursor: "pointer",
-              borderBottom: activeTab === tab ? "2px solid #f97316" : "2px solid transparent",
+              color: activeTab === tab ? "#2D5BA3" : "#5B6B75", fontWeight: activeTab === tab ? 600 : 400,
+              fontSize: "0.8125rem", cursor: "pointer",
+              borderBottom: activeTab === tab ? "2px solid #2D5BA3" : "2px solid transparent",
               display: "flex", alignItems: "center", gap: "0.4rem",
             }}
           >
-            <span>{tab === "overview" ? "🧮" : "📊"}</span>
-            {tab === "overview" ? "Risk Overview" : "Factor Breakdown"}
+            {tab === "overview" ? "Standing overview" : "Factor breakdown"}
           </button>
         ))}
         {computedAt && (
-          <span style={{ marginLeft: "auto", fontSize: "0.7rem", color: "#64748b" }}>
-            Last computed: {new Date(computedAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
-            {modelVersion ? ` · Model ${modelVersion}` : ""}
+          <span style={{ marginLeft: "auto", fontSize: "0.75rem", color: "#5B6B75", fontVariantNumeric: "tabular-nums" }}>
+            Last updated {new Date(computedAt).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })}
           </span>
         )}
       </div>

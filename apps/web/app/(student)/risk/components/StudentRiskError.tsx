@@ -10,11 +10,8 @@ export function StudentRiskError({ message, onRetry }: StudentRiskErrorProps) {
   return (
     <div
       style={{
-        fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif",
-        color: "#e2e8f0",
-        minHeight: "calc(100vh - 60px)",
-        background: "#090e1a",
-        margin: "-2rem",
+        fontFamily: "var(--font-atkinson, system-ui, sans-serif)",
+        color: "#1B2A33",
         padding: "3rem 1.5rem",
         display: "flex",
         flexDirection: "column",
@@ -24,9 +21,9 @@ export function StudentRiskError({ message, onRetry }: StudentRiskErrorProps) {
     >
       <div
         style={{
-          background: "#0f172a",
-          border: "1px solid rgba(239, 68, 68, 0.3)",
-          borderRadius: "16px",
+          background: "#FFFFFF",
+          border: "1px solid #8A4A7B",
+          borderRadius: "8px",
           padding: "2.5rem 2rem",
           maxWidth: "480px",
           textAlign: "center",
@@ -37,22 +34,22 @@ export function StudentRiskError({ message, onRetry }: StudentRiskErrorProps) {
             display: "inline-flex",
             alignItems: "center",
             justifyContent: "center",
-            width: "56px",
-            height: "56px",
-            borderRadius: "50%",
-            background: "rgba(239, 68, 68, 0.12)",
-            color: "#ef4444",
+            width: "48px",
+            height: "48px",
+            borderRadius: "4px",
+            background: "#F2F4F3",
+            color: "#8A4A7B",
             marginBottom: "1.25rem",
           }}
         >
-          <AlertCircle size={28} />
+          <AlertCircle size={24} />
         </div>
 
-        <h2 style={{ fontSize: "1.25rem", fontWeight: "700", color: "#f8fafc", margin: "0 0 0.5rem" }}>
-          Unable to Load Academic Standing
+        <h2 style={{ fontSize: "1.25rem", fontWeight: 700, color: "#1B2A33", margin: "0 0 0.5rem" }}>
+          Unable to load academic standing
         </h2>
 
-        <p style={{ fontSize: "0.875rem", color: "#fca5a5", lineHeight: 1.5, margin: "0 0 1.75rem" }}>
+        <p style={{ fontSize: "0.875rem", color: "#5B6B75", lineHeight: 1.5, margin: "0 0 1.75rem" }}>
           {message}
         </p>
 
@@ -62,18 +59,18 @@ export function StudentRiskError({ message, onRetry }: StudentRiskErrorProps) {
             display: "inline-flex",
             alignItems: "center",
             gap: "0.5rem",
-            padding: "0.65rem 1.25rem",
-            background: "#ef4444",
-            color: "#ffffff",
+            padding: "0.6rem 1.25rem",
+            background: "#2D5BA3",
+            color: "#FFFFFF",
             border: "none",
-            borderRadius: "8px",
+            borderRadius: "4px",
             fontSize: "0.875rem",
-            fontWeight: "600",
+            fontWeight: 600,
             cursor: "pointer",
           }}
         >
-          <RefreshCw size={16} />
-          Retry Connection
+          <RefreshCw size={14} />
+          Try again
         </button>
       </div>
     </div>
