@@ -88,6 +88,16 @@ export function parseAttendanceCsv(
     return { valid, quarantined, totalRows: rows.length };
   }
 
+  if (!hasPercentageCol && !headerMap.has("sectionid")) {
+    quarantined.push({
+      originalCollection: "attendanceRecords",
+      rawRecord: header,
+      reason: "Missing required header column: sectionId",
+      ingestedAt,
+    });
+    return { valid, quarantined, totalRows: rows.length };
+  }
+
   if (!hasPercentageCol && !hasStatusCol) {
     quarantined.push({
       originalCollection: "attendanceRecords",

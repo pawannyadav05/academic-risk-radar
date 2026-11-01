@@ -55,8 +55,8 @@ describe("M2: Student Academic Profile Aggregator", () => {
     assert.equal(profile.assessments.averageScoreRatio, 0.85);
     assert.equal(profile.computedMetrics.assessmentAvg, 0.85);
     assert.equal(profile.assessments.records.length, 2);
-    assert.equal(profile.assessments.records[0].percentage, 80);
-    assert.equal(profile.assessments.records[1].percentage, 90);
+    assert.equal(profile.assessments.records[0].percentage, 90);
+    assert.equal(profile.assessments.records[1].percentage, 80);
   });
 
   it("should calculate missing assignment ratio accurately", () => {
