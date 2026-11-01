@@ -10,7 +10,7 @@ import {
 } from "../lib/auth";
 
 const LoginSchema = z.object({
-  email: z.string().email("Enter a valid academic email address"),
+  email: z.string().min(1, "Enter a valid institutional email or student ID"),
   password: z.string().min(1, "Password is required"),
   returnUrl: z.string().optional(),
 });

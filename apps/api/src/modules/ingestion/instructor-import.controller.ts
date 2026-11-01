@@ -1,4 +1,5 @@
 import { Request, Response } from "express";
+import crypto from "crypto";
 import {
   importAttendanceFromCsv,
   importAssessmentFromCsv,
@@ -10,6 +11,17 @@ import {
   parseLmsActivityCsv,
 } from "./csv-importers.js";
 import { enqueueBatchScoringJob } from "../scoring/queue.js";
+import {
+  AlertModel,
+  MentorAssignmentModel,
+  RiskModelVersionModel,
+  RiskSnapshotModel,
+} from "../../db/schemas.js";
+import {
+  computeRiskSnapshot,
+  DEFAULT_MODEL_VERSION,
+} from "@academic-risk-radar/scoring-engine";
+import { getStudentConsolidatedProfile } from "../profile/profile-aggregator.js";
 
 /**
  * Sanitize route parameter string to prevent injection
@@ -125,6 +137,73 @@ export async function importSectionAcademicData(req: Request, res: Response) {
         scoringJobEnqueued = true;
       } catch (queueErr: any) {
         console.warn(`[InstructorImport] Scoring queue enqueue note: ${queueErr.message}`);
+      }
+
+      // Synchronous live recalculation guarantee so student and mentor screens update immediately
+      try {
+        let activeVersion = DEFAULT_MODEL_VERSION;
+        const versionDoc = await RiskModelVersionModel.findOne().sort({ effectiveFrom: -1 }).lean();
+        if (versionDoc) {
+          const weights =
+            versionDoc.weights instanceof Map
+              ? Object.fromEntries(versionDoc.weights)
+              : versionDoc.weights;
+          activeVersion = {
+            version: versionDoc.version,
+            effectiveFrom: versionDoc.effectiveFrom,
+            weights: weights || DEFAULT_MODEL_VERSION.weights,
+            thresholds: versionDoc.thresholds || DEFAULT_MODEL_VERSION.thresholds,
+            createdBy: versionDoc.createdBy,
+            previousVersion: versionDoc.previousVersion ?? null,
+          };
+        }
+
+        const now = new Date().toISOString();
+        for (const sid of uniqueStudentIds) {
+          const profile = await getStudentConsolidatedProfile(sid);
+          const snapshot = computeRiskSnapshot(
+            sid,
+            {
+              attendanceRate: profile.computedMetrics.attendanceRate,
+              assessmentAvg: profile.computedMetrics.assessmentAvg,
+              missingAssignmentsRatio: profile.computedMetrics.missingAssignmentsRatio,
+              lmsEngagementRatio: profile.computedMetrics.lmsEngagementRatio,
+              trendDeteriorationSignal: 0.05,
+            },
+            activeVersion,
+            now
+          );
+          await RiskSnapshotModel.create(snapshot);
+
+          // Stage 2 M5 Hook: Automatically generate/deduplicate alert for high/critical students
+          if (["high", "critical"].includes(snapshot.band)) {
+            const assignment = await MentorAssignmentModel.findOne({
+              studentId: sid,
+              assignedTo: null,
+            }).lean();
+            const mentorId = assignment?.mentorId || "MTR-001";
+            const existingAlert = await AlertModel.findOne({ studentId: sid, status: "open" });
+            if (existingAlert) {
+              existingAlert.riskSnapshotId = snapshot._id;
+              await existingAlert.save();
+            } else {
+              const slaDeadline = new Date(Date.now() + 48 * 3600 * 1000).toISOString();
+              await AlertModel.create({
+                _id: crypto.randomUUID(),
+                studentId: sid,
+                mentorId,
+                riskSnapshotId: snapshot._id,
+                status: "open",
+                createdAt: now,
+                acknowledgedAt: null,
+                escalatedAt: null,
+                slaDeadline,
+              });
+            }
+          }
+        }
+      } catch (syncErr: any) {
+        console.warn(`[InstructorImport] Live scoring recalculation note: ${syncErr.message}`);
       }
     }
 

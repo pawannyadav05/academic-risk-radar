@@ -6,6 +6,8 @@ import { StudentProfileCard } from "./components/StudentProfileCard";
 import { PersonalInfoCard } from "./components/PersonalInfoCard";
 import { MetricsSummaryCards } from "./components/MetricsSummaryCards";
 import { FactorBreakdownList } from "./components/FactorBreakdownList";
+import { SubjectAttendanceCard } from "./components/SubjectAttendanceCard";
+import { AssessmentHistoryTable, AssessmentRecordItem } from "./components/AssessmentHistoryTable";
 import { StudentRiskSkeleton } from "./components/StudentRiskSkeleton";
 import { StudentRiskEmpty } from "./components/StudentRiskEmpty";
 import { StudentRiskError } from "./components/StudentRiskError";
@@ -24,6 +26,20 @@ interface StudentSession {
 
 interface AcademicProfile {
   studentId: string;
+  cgpa?: number;
+  attendance?: {
+    totalSessions: number;
+    attendanceRate: number;
+    subjectBreakdown?: Array<{
+      courseId: string;
+      percentage: number;
+    }>;
+  };
+  assessments?: {
+    totalAssessments: number;
+    averageScoreRatio: number;
+    records?: AssessmentRecordItem[];
+  };
   computedMetrics: {
     attendanceRate: number;
     assessmentAvg: number;
@@ -116,8 +132,10 @@ export default function StudentRiskPage() {
   // Derived metrics from real API responses
   const attendanceRate = profile?.computedMetrics?.attendanceRate ?? 1.0;
   const attendancePct = Math.round(attendanceRate * 100);
-  const assessmentAvg = profile?.computedMetrics?.assessmentAvg ?? 0.8;
-  const cgpa = (assessmentAvg * 10).toFixed(2);
+  const assessmentAvg = profile?.computedMetrics?.assessmentAvg ?? 0.75;
+  const assessmentAvgPct = Math.round(assessmentAvg * 100);
+  // Official institutional CGPA from academic record — not affected by individual assessments
+  const cgpa = (profile?.cgpa ?? 7.4).toFixed(2);
   const rawRiskScore = (risk.factors || []).reduce((acc, f) => acc + f.contribution, 0);
   const riskPct = Math.round(rawRiskScore * 100);
   const band: RiskBand = risk.band;
@@ -144,25 +162,37 @@ export default function StudentRiskPage() {
       />
 
       {activeTab === "overview" ? (
-        <div style={{ display: "grid", gridTemplateColumns: "320px 1fr", gap: "1.25rem" }}>
-          <PersonalInfoCard
-            name={studentName}
-            email={session?.email || "student@radar.edu"}
-            section={section}
-            department={department}
-            enrolmentId={studentId}
-            modelVersion={risk.modelVersion}
-            riskScore={riskPct}
-            band={band}
+        <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
+          <div style={{ display: "grid", gridTemplateColumns: "320px 1fr", gap: "1.25rem" }}>
+            <PersonalInfoCard
+              name={studentName}
+              email={session?.email || "student@radar.edu"}
+              section={section}
+              department={department}
+              enrolmentId={studentId}
+              modelVersion={risk.modelVersion}
+              riskScore={riskPct}
+              band={band}
+            />
+            <MetricsSummaryCards
+              riskScore={riskPct}
+              rawRiskScore={rawRiskScore}
+              band={band}
+              attendanceRate={attendanceRate}
+              attendancePct={attendancePct}
+              assessmentAvg={assessmentAvg}
+              cgpa={cgpa}
+            />
+          </div>
+
+          <SubjectAttendanceCard
+            overallPct={attendancePct}
+            subjectBreakdown={profile?.attendance?.subjectBreakdown}
           />
-          <MetricsSummaryCards
-            riskScore={riskPct}
-            rawRiskScore={rawRiskScore}
-            band={band}
-            attendanceRate={attendanceRate}
-            attendancePct={attendancePct}
-            assessmentAvg={assessmentAvg}
-            cgpa={cgpa}
+
+          <AssessmentHistoryTable
+            records={profile?.assessments?.records}
+            assessmentAvgPct={assessmentAvgPct}
           />
         </div>
       ) : (

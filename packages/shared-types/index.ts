@@ -4,13 +4,16 @@ export interface Student {
   enrolmentId: string;
   sectionIds: string[];
   programme: string;
+  cgpa?: number;
 }
 
 export interface AttendanceRecord {
   studentId: string;
   sectionId: string;
+  courseId?: string;
   date: string;       // ISO date
-  status: "present" | "absent" | "late";
+  status?: "present" | "absent" | "late";
+  percentage?: number;
   sourceRef: string;
 }
 

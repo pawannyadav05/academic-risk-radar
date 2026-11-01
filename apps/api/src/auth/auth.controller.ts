@@ -18,9 +18,17 @@ export async function login(req: Request, res: Response) {
   }
 
   const normalizedEmail = email.trim().toLowerCase();
+  const rawInput = email.trim();
 
   try {
-    const user = await UserModel.findOne({ email: normalizedEmail });
+    const user = await UserModel.findOne({
+      $or: [
+        { email: normalizedEmail },
+        { identityId: normalizedEmail },
+        { identityId: rawInput },
+        { _id: rawInput },
+      ],
+    });
 
     if (!user || !user.passwordHash) {
       return res.status(401).json({

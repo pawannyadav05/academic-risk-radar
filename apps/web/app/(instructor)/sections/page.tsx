@@ -42,14 +42,30 @@ interface ImportFeedback {
 }
 
 const SAMPLE_CSV: Record<string, string> = {
-  attendance: `studentId,sectionId,date,status,sourceRef
-STU-001,SEC-CSE-101,2026-03-01T09:00:00Z,absent,RFID_01
-STU-001,SEC-CSE-101,2026-03-02T09:00:00Z,absent,RFID_01
-STU-002,SEC-CSE-101,2026-03-01T09:00:00Z,present,RFID_01`,
-  assessment: `studentId,courseId,type,score,maxScore,date,sourceRef
-STU-001,CSE101,Quiz,12,20,2026-03-01T10:00:00Z,ERP_MOCK
-STU-001,CSE101,Midterm,48,100,2026-03-15T10:00:00Z,ERP_MOCK
-STU-002,CSE101,Quiz,18,20,2026-03-01T10:00:00Z,ERP_MOCK`,
+  attendance: `studentId,courseId,percentage
+12409922,CS101,65
+12409921,CS101,88
+12409923,CS101,92
+12409924,CS101,85
+12409925,CS101,90`,
+  attendance_cs102: `studentId,courseId,percentage
+12409922,CS102,75
+12409921,CS102,91
+12409923,CS102,89
+12409924,CS102,94
+12409925,CS102,88`,
+  assessment: `studentId,courseId,type,score,maxScore,date
+12409922,CS101,Quiz 2,14,20,2026-03-20T10:00:00Z
+12409921,CS101,Quiz 2,18,20,2026-03-20T10:00:00Z
+12409923,CS101,Quiz 2,19,20,2026-03-20T10:00:00Z
+12409924,CS101,Quiz 2,16,20,2026-03-20T10:00:00Z
+12409925,CS101,Quiz 2,17,20,2026-03-20T10:00:00Z`,
+  assessment_cs102: `studentId,courseId,type,score,maxScore,date
+12409922,CS102,Lab 2,36,50,2026-03-22T14:00:00Z
+12409921,CS102,Lab 2,47,50,2026-03-22T14:00:00Z
+12409923,CS102,Lab 2,42,50,2026-03-22T14:00:00Z
+12409924,CS102,Lab 2,49,50,2026-03-22T14:00:00Z
+12409925,CS102,Lab 2,44,50,2026-03-22T14:00:00Z`,
 };
 
 export default function InstructorSectionsPage() {
@@ -314,9 +330,27 @@ export default function InstructorSectionsPage() {
           </div>
 
           <div style={{ marginBottom: "1rem" }}>
-            <label style={{ display: "block", fontSize: "0.8125rem", fontWeight: 600, color: "#1B2A33", marginBottom: "0.35rem" }}>
-              CSV content preview or direct entry
-            </label>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.35rem" }}>
+              <label style={{ fontSize: "0.8125rem", fontWeight: 600, color: "#1B2A33" }}>
+                CSV content preview or direct entry
+              </label>
+              <div style={{ display: "flex", gap: "0.5rem" }}>
+                <button
+                  type="button"
+                  onClick={() => setCsvContent(importSource === "attendance" ? SAMPLE_CSV.attendance : SAMPLE_CSV.assessment)}
+                  style={{ background: "#FFFFFF", border: "1px solid #D9DFDD", borderRadius: "4px", padding: "0.2rem 0.5rem", fontSize: "0.75rem", color: "#2D5BA3", cursor: "pointer" }}
+                >
+                  Load CS101 ({importSource})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setCsvContent(importSource === "attendance" ? SAMPLE_CSV.attendance_cs102 : SAMPLE_CSV.assessment_cs102)}
+                  style={{ background: "#FFFFFF", border: "1px solid #D9DFDD", borderRadius: "4px", padding: "0.2rem 0.5rem", fontSize: "0.75rem", color: "#2D5BA3", cursor: "pointer" }}
+                >
+                  Load CS102 ({importSource})
+                </button>
+              </div>
+            </div>
             <textarea
               rows={4}
               value={csvContent}
@@ -334,6 +368,9 @@ export default function InstructorSectionsPage() {
                 boxSizing: "border-box",
               }}
             />
+            <p style={{ margin: "0.35rem 0 0", fontSize: "0.75rem", color: "#5B6B75" }}>
+              Overall attendance is automatically calculated as the average across both instructors (CS101 + CS102). Previous assessments are permanently preserved.
+            </p>
           </div>
 
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
