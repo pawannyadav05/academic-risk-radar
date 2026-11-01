@@ -24,19 +24,75 @@ export const ROLE_HOME_ROUTES: Record<UserRole, string> = {
 };
 
 /**
- * Decode JWT payload on server components without native crypto dependency.
+ * Resolve JWT Secret safely. In production mode, throwing ensures no default fallback is ever used.
  */
-export function decodeJwtPayload(token: string): SessionUser | null {
+export function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("FATAL: JWT_SECRET environment variable is mandatory in production mode.");
+    }
+    return "academic-risk-radar-dev-jwt-secret-change-in-production";
+  }
+  return secret;
+}
+
+/**
+ * Decode Base64URL string to Uint8Array for Web Crypto API
+ */
+function base64UrlToUint8Array(base64Url: string): Uint8Array {
+  const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+  const padLength = (4 - (base64.length % 4)) % 4;
+  const padded = base64 + "=".repeat(padLength);
+  const binary = atob(padded);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+
+/**
+ * Cryptographically verify and decode an incoming JWT token using Web Crypto HMAC-SHA256.
+ * Rejects unsigned, tampered, or expired tokens without trusting base64 claims.
+ */
+export async function verifyJwtToken(token: string): Promise<SessionUser | null> {
   try {
+    if (!token || typeof token !== "string") return null;
     const parts = token.split(".");
     if (parts.length !== 3) return null;
 
-    const base64Url = parts[1];
-    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
-    const jsonStr = Buffer.from(base64, "base64").toString("utf-8");
-    const decoded = JSON.parse(jsonStr);
+    const [headerB64, payloadB64, signatureB64] = parts;
+    const secret = getJwtSecret();
+    if (!secret) return null;
 
-    // Check expiration
+    const encoder = new TextEncoder();
+    const keyData = encoder.encode(secret);
+    const key = await crypto.subtle.importKey(
+      "raw",
+      keyData as unknown as ArrayBuffer,
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["verify"]
+    );
+
+    const signatureBytes = base64UrlToUint8Array(signatureB64);
+    const dataBytes = encoder.encode(`${headerB64}.${payloadB64}`);
+
+    const isValid = await crypto.subtle.verify(
+      "HMAC",
+      key,
+      signatureBytes as unknown as ArrayBuffer,
+      dataBytes as unknown as ArrayBuffer
+    );
+    if (!isValid) {
+      return null;
+    }
+
+    const payloadJson = new TextDecoder().decode(base64UrlToUint8Array(payloadB64));
+    const decoded = JSON.parse(payloadJson);
+
+    // Verify expiration
     if (decoded.exp && decoded.exp * 1000 < Date.now()) {
       return null;
     }
@@ -60,31 +116,17 @@ export function decodeJwtPayload(token: string): SessionUser | null {
 }
 
 /**
- * Retrieve the current active session on the server side from the signed session token cookie.
+ * Retrieve the current active session on the server side from the cryptographically verified JWT cookie.
  */
 export async function getSession(): Promise<SessionUser | null> {
   const cookieStore = cookies();
-  const token = cookieStore.get(SESSION_COOKIE_NAME)?.value || cookieStore.get("arr_session")?.value;
+  const token = cookieStore.get(SESSION_COOKIE_NAME)?.value;
 
   if (!token) {
     return null;
   }
 
-  // First try parsing as signed JWT
-  const user = decodeJwtPayload(token);
-  if (user) {
-    return user;
-  }
-
-  // Backward compatibility fallback for transitional JSON cookie
-  try {
-    const parsed = JSON.parse(decodeURIComponent(token));
-    if (parsed && parsed.id && parsed.role) {
-      return parsed as SessionUser;
-    }
-  } catch (_) {}
-
-  return null;
+  return verifyJwtToken(token);
 }
 
 /**

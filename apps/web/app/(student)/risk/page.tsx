@@ -125,12 +125,8 @@ export default function StudentRiskPage() {
   return (
     <div
       style={{
-        fontFamily: "'Inter', 'Segoe UI', system-ui, sans-serif",
-        color: "#e2e8f0",
-        minHeight: "calc(100vh - 60px)",
-        background: "#090e1a",
-        margin: "-2rem",
-        padding: "1.5rem",
+        fontFamily: "var(--font-atkinson, system-ui, sans-serif)",
+        color: "#1B2A33",
       }}
     >
       <StudentProfileCard

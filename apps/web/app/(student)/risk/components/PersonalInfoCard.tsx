@@ -26,50 +26,50 @@ export function PersonalInfoCard({
   const bandInfo = BAND_CONFIG[band] || BAND_CONFIG.low;
 
   return (
-    <div style={{ background: "#0f172a", borderRadius: "16px", padding: "1.5rem", border: "1px solid #1e293b" }}>
+    <div style={{ background: "#FFFFFF", borderRadius: "8px", padding: "1.5rem", border: "1px solid #D9DFDD" }}>
       <div style={{
-        fontSize: "0.95rem", fontWeight: "700", color: "#f1f5f9",
+        fontSize: "0.9375rem", fontWeight: "700", color: "#1B2A33",
         marginBottom: "1.25rem", paddingBottom: "0.75rem",
-        borderBottom: "1px solid #1e293b",
+        borderBottom: "1px solid #D9DFDD",
       }}>
         Academic standing details
       </div>
 
       {[
-        { icon: "👤", label: "Student Name", value: name },
-        { icon: "✉️", label: "Email", value: email },
-        { icon: "🆔", label: "Student ID", value: enrolmentId },
-        { icon: "🏫", label: "Section", value: section || "Assigned Section" },
-        { icon: "🏛️", label: "Department", value: department || "Computer Science" },
+        { label: "Student name", value: name },
+        { label: "Institutional email", value: email },
+        { label: "Student ID", value: enrolmentId },
+        { label: "Assigned section", value: section || "Assigned Section" },
+        { label: "Department", value: department || "Computer Science" },
       ].map((row, i, arr) => (
         <div key={i} style={{
-          display: "flex", alignItems: "center", gap: "0.75rem",
+          display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: "0.75rem",
           padding: "0.6rem 0",
-          borderBottom: i < arr.length - 1 ? "1px solid #0d1526" : "none",
+          borderBottom: i < arr.length - 1 ? "1px solid #F2F4F3" : "none",
         }}>
-          <span style={{ fontSize: "1rem", flexShrink: 0 }}>{row.icon}</span>
-          <span style={{ fontSize: "0.82rem", color: "#94a3b8", lineHeight: 1.4, wordBreak: "break-all" }}>
+          <span style={{ fontSize: "0.8125rem", color: "#5B6B75" }}>{row.label}</span>
+          <span style={{ fontSize: "0.8125rem", color: "#1B2A33", fontWeight: 500, fontVariantNumeric: "tabular-nums", textAlign: "right" }}>
             {row.value}
           </span>
         </div>
       ))}
 
-      {/* Scoring Engine Meta Box */}
-      <div style={{ marginTop: "1.25rem", padding: "0.875rem 1rem", background: "#090e1a", borderRadius: "10px", border: "1px solid #1e293b" }}>
-        <div style={{ fontSize: "0.65rem", color: "#64748b", textTransform: "uppercase", letterSpacing: "0.1em", marginBottom: "0.6rem" }}>
-          Scoring Engine
+      {/* About your score */}
+      <div style={{ marginTop: "1.25rem", padding: "0.875rem 1rem", background: "#F2F4F3", borderRadius: "4px", border: "1px solid #D9DFDD" }}>
+        <div style={{ fontSize: "0.75rem", fontWeight: 600, color: "#1B2A33", marginBottom: "0.6rem" }}>
+          About your standing
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.35rem" }}>
-          <span style={{ fontSize: "0.78rem", color: "#64748b" }}>Model Version</span>
-          <span style={{ fontSize: "0.78rem", color: "#f97316", fontWeight: 600 }}>{modelVersion}</span>
+          <span style={{ fontSize: "0.8125rem", color: "#5B6B75" }}>Scoring model</span>
+          <span style={{ fontSize: "0.8125rem", color: "#1B2A33", fontWeight: 600 }}>{modelVersion}</span>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.35rem" }}>
-          <span style={{ fontSize: "0.78rem", color: "#64748b" }}>Composite Risk</span>
-          <span style={{ fontSize: "0.78rem", color: bandInfo.color, fontWeight: 600 }}>{riskScore} / 100</span>
+          <span style={{ fontSize: "0.8125rem", color: "#5B6B75" }}>Standing score</span>
+          <span style={{ fontSize: "0.8125rem", color: bandInfo.color, fontWeight: 600, fontVariantNumeric: "tabular-nums" }}>{riskScore} / 100</span>
         </div>
         <div style={{ display: "flex", justifyContent: "space-between" }}>
-          <span style={{ fontSize: "0.78rem", color: "#64748b" }}>Assigned Band</span>
-          <span style={{ fontSize: "0.78rem", color: bandInfo.color, fontWeight: 600 }}>{bandInfo.label}</span>
+          <span style={{ fontSize: "0.8125rem", color: "#5B6B75" }}>Status</span>
+          <span style={{ fontSize: "0.8125rem", color: bandInfo.color, fontWeight: 600 }}>{bandInfo.label}</span>
         </div>
       </div>
     </div>

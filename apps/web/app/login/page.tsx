@@ -1,5 +1,4 @@
 import React from "react";
-import { Shield } from "lucide-react";
 import { LoginForm } from "./LoginForm";
 
 export const metadata = {
@@ -33,32 +32,13 @@ export default function LoginPage({
       >
         {/* Header */}
         <div style={{ textAlign: "center", marginBottom: "2rem" }}>
-          <div
-            style={{
-              display: "inline-flex",
-              alignItems: "center",
-              gap: "0.5rem",
-              background: "#E4ECE9",
-              color: "#3F5E5A",
-              padding: "0.35rem 0.75rem",
-              borderRadius: "20px",
-              fontSize: "0.75rem",
-              fontWeight: 600,
-              letterSpacing: "0.06em",
-              textTransform: "uppercase",
-              marginBottom: "0.75rem",
-            }}
-          >
-            <Shield size={14} strokeWidth={2} />
-            Institutional Access Control · Week 9
-          </div>
           <h1
             style={{
               margin: "0 0 0.5rem",
               fontSize: "2rem",
               fontWeight: 600,
-              color: "#FAF7F2",
-              fontFamily: "Source Serif 4, Georgia, serif",
+              color: "#1B2A33",
+              fontFamily: "var(--font-atkinson, system-ui, sans-serif)",
               letterSpacing: "-0.01em",
             }}
           >
@@ -68,7 +48,7 @@ export default function LoginPage({
             style={{
               margin: 0,
               fontSize: "0.9375rem",
-              color: "#94A3B8",
+              color: "#5B6B75",
               lineHeight: 1.5,
             }}
           >
@@ -83,21 +63,9 @@ export default function LoginPage({
             border: "1px solid #E6DFD5",
             borderRadius: "8px",
             padding: "2.25rem 2rem",
-            boxShadow: "0 1px 3px rgba(43,38,35,0.06), 0 4px 16px rgba(43,38,35,0.06)",
           }}
         >
           <div style={{ marginBottom: "1.5rem" }}>
-            <span
-              style={{
-                fontSize: "0.6875rem",
-                fontWeight: 600,
-                textTransform: "uppercase",
-                letterSpacing: "0.08em",
-                color: "#6F665E",
-              }}
-            >
-              Secure Sign In
-            </span>
             <h2
               style={{
                 margin: "0.25rem 0 0",
@@ -106,7 +74,7 @@ export default function LoginPage({
                 color: "#2B2623",
               }}
             >
-              Account Credentials
+              Sign in
             </h2>
           </div>
 
@@ -123,7 +91,7 @@ export default function LoginPage({
               lineHeight: 1.4,
             }}
           >
-            Protected by cryptographic JSON Web Tokens and role-based access control. Refer to <code>README.md</code> for evaluation credentials.
+            Access is limited to registered institutional accounts. Contact your administrator if you cannot sign in.
           </div>
         </div>
       </div>

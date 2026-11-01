@@ -53,6 +53,7 @@ export default function ConnectorsPage() {
   const [status, setStatus] = useState<ConnectorStatus | null>(null);
   const [quarantined, setQuarantined] = useState<QuarantineItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
   const [selectedConnector, setSelectedConnector] = useState<string>("attendance");
   const [csvContent, setCsvContent] = useState<string>(SAMPLE_DATA.attendance);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -63,50 +64,34 @@ export default function ConnectorsPage() {
     stats?: any;
   } | null>(null);
 
-  const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api/v1";
+  const API_BASE = "/api/v1";
 
   // Fetch connector stats & quarantine table
   const fetchStatus = async () => {
     try {
       setLoading(true);
-      const res = await fetch(`${API_BASE}/admin/connectors/status`);
-      if (res.ok) {
-        const data = await res.json();
-        setStatus(data);
-      }
-
-      const qRes = await fetch(`${API_BASE}/admin/connectors/quarantine?limit=15`);
-      if (qRes.ok) {
-        const qData = await qRes.json();
-        setQuarantined(qData.quarantined || []);
-      }
-    } catch {
-      // Mock fallback for UI preview if API is not running locally
-      setStatus({
-        status: "operational",
-        sources: {
-          attendance: { count: 1240, health: "active" },
-          assessments: { count: 350, health: "active" },
-          assignments: { count: 820, health: "active" },
-          lmsActivity: { count: 2150, health: "active" },
-        },
-        quarantine: { totalRecords: 12 },
-        lastChecked: new Date().toISOString(),
+      setFetchError(null);
+      const res = await fetch(`${API_BASE}/admin/connectors/status`, {
+        credentials: "include",
       });
-      setQuarantined([
-        {
-          originalCollection: "attendanceRecords",
-          rawRecord: { studentId: "", sectionId: "SEC_A", date: "2026-03-01T09:00:00Z" },
-          reason: "studentId is required and cannot be empty",
-          ingestedAt: new Date(Date.now() - 3600000).toISOString(),
-        },
-        {
-          originalCollection: "assessmentRecords",
-          rawRecord: { studentId: "STD003", score: 110, maxScore: 100 },
-          reason: "score (110) must be between 0 and maxScore (100)",
-          ingestedAt: new Date(Date.now() - 7200000).toISOString(),
-        },
-      ]);
+      if (!res.ok) {
+        throw new Error(`Failed to load connector status (HTTP ${res.status})`);
+      }
+      const data = await res.json();
+      setStatus(data);
+
+      const qRes = await fetch(`${API_BASE}/admin/connectors/quarantine?limit=15`, {
+        credentials: "include",
+      });
+      if (!qRes.ok) {
+        throw new Error(`Failed to load quarantine records (HTTP ${qRes.status})`);
+      }
+      const qData = await qRes.json();
+      setQuarantined(qData.quarantined || []);
+    } catch (err: any) {
+      setFetchError(err.message || "Failed to load connector data from API");
+      setStatus(null);
+      setQuarantined([]);
     } finally {
       setLoading(false);
     }
@@ -146,6 +131,7 @@ export default function ConnectorsPage() {
       const res = await fetch(`${API_BASE}/admin/connectors/${selectedConnector}/sync`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ csvData: csvContent }),
       });
 
@@ -183,15 +169,15 @@ export default function ConnectorsPage() {
   };
 
   return (
-    <div style={{ color: "#f1f5f9" }}>
+    <div style={{ color: "#1B2A33" }}>
       {/* Page Header */}
       <div style={{ marginBottom: "2rem" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
           <div>
-            <h1 style={{ fontSize: "1.75rem", fontWeight: 700, margin: "0 0 0.5rem 0", color: "#f8fafc" }}>
-              Institutional Data Connectors & Ingestion (Module M1)
+            <h1 style={{ fontSize: "1.75rem", fontWeight: 700, margin: "0 0 0.5rem 0", color: "#1B2A33" }}>
+              Institutional Data Connectors &amp; Ingestion
             </h1>
-            <p style={{ margin: 0, color: "#94a3b8", fontSize: "0.95rem" }}>
+            <p style={{ margin: 0, color: "#5B6B75", fontSize: "0.95rem" }}>
               Normalisation pipeline, asynchronous BullMQ workers, and duplicate-proof idempotent storage.
             </p>
           </div>
@@ -199,10 +185,10 @@ export default function ConnectorsPage() {
             onClick={fetchStatus}
             disabled={loading}
             style={{
-              background: "#1e293b",
-              color: "#38bdf8",
-              border: "1px solid #334155",
-              borderRadius: "6px",
+              background: "#FFFFFF",
+              color: "#2D5BA3",
+              border: "1px solid #D9DFDD",
+              borderRadius: "4px",
               padding: "0.6rem 1.2rem",
               fontWeight: 600,
               cursor: "pointer",
@@ -216,6 +202,48 @@ export default function ConnectorsPage() {
         </div>
       </div>
 
+      {/* Controlled Error State */}
+      {fetchError && (
+        <div
+          style={{
+            background: "#FFFFFF",
+            border: "1px solid #8A4A7B",
+            borderRadius: "8px",
+            padding: "1rem 1.25rem",
+            marginBottom: "1.5rem",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: "1rem",
+          }}
+        >
+          <div>
+            <div style={{ color: "#8A4A7B", fontWeight: 600, fontSize: "0.95rem" }}>
+              Connector Telemetry Unavailable
+            </div>
+            <div style={{ color: "#5B6B75", fontSize: "0.85rem", marginTop: "0.25rem" }}>
+              {fetchError}
+            </div>
+          </div>
+          <button
+            onClick={fetchStatus}
+            disabled={loading}
+            style={{
+              background: "#8A4A7B",
+              color: "#fff",
+              border: "none",
+              borderRadius: "4px",
+              padding: "0.5rem 1rem",
+              fontWeight: 600,
+              cursor: "pointer",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {loading ? "Retrying..." : "Retry"}
+          </button>
+        </div>
+      )}
+
       {/* 1. Connector Status Overview Cards */}
       <div
         style={{
@@ -226,79 +254,79 @@ export default function ConnectorsPage() {
         }}
       >
         {/* Attendance */}
-        <div style={{ background: "#0b1222", border: "1px solid #1e293b", borderRadius: "8px", padding: "1.25rem" }}>
+        <div style={{ background: "#FFFFFF", border: "1px solid #D9DFDD", borderRadius: "8px", padding: "1.25rem" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
-            <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "#94a3b8", textTransform: "uppercase" }}>Attendance</span>
-            <span style={{ fontSize: "0.7rem", background: "rgba(34,197,94,0.15)", color: "#22c55e", padding: "0.15rem 0.5rem", borderRadius: "12px", border: "1px solid rgba(34,197,94,0.3)" }}>
+            <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "#5B6B75", textTransform: "uppercase" }}>Attendance</span>
+            <span style={{ fontSize: "0.7rem", background: "#F2F4F3", color: "#2E8B7A", padding: "0.15rem 0.5rem", borderRadius: "4px", border: "1px solid #2E8B7A" }}>
               {status?.sources.attendance.health || "active"}
             </span>
           </div>
-          <div style={{ fontSize: "1.75rem", fontWeight: 700, color: "#f8fafc" }}>
+          <div style={{ fontSize: "1.75rem", fontWeight: 700, color: "#1B2A33" }}>
             {status?.sources.attendance.count.toLocaleString() ?? "0"}
           </div>
-          <div style={{ fontSize: "0.75rem", color: "#64748b", marginTop: "0.3rem" }}>records in attendanceRecords</div>
+          <div style={{ fontSize: "0.75rem", color: "#5B6B75", marginTop: "0.3rem" }}>records in attendanceRecords</div>
         </div>
 
         {/* Assessments */}
-        <div style={{ background: "#0b1222", border: "1px solid #1e293b", borderRadius: "8px", padding: "1.25rem" }}>
+        <div style={{ background: "#FFFFFF", border: "1px solid #D9DFDD", borderRadius: "8px", padding: "1.25rem" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
-            <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "#94a3b8", textTransform: "uppercase" }}>Assessments</span>
-            <span style={{ fontSize: "0.7rem", background: "rgba(34,197,94,0.15)", color: "#22c55e", padding: "0.15rem 0.5rem", borderRadius: "12px", border: "1px solid rgba(34,197,94,0.3)" }}>
+            <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "#5B6B75", textTransform: "uppercase" }}>Assessments</span>
+            <span style={{ fontSize: "0.7rem", background: "#F2F4F3", color: "#2E8B7A", padding: "0.15rem 0.5rem", borderRadius: "4px", border: "1px solid #2E8B7A" }}>
               {status?.sources.assessments.health || "active"}
             </span>
           </div>
-          <div style={{ fontSize: "1.75rem", fontWeight: 700, color: "#f8fafc" }}>
+          <div style={{ fontSize: "1.75rem", fontWeight: 700, color: "#1B2A33" }}>
             {status?.sources.assessments.count.toLocaleString() ?? "0"}
           </div>
-          <div style={{ fontSize: "0.75rem", color: "#64748b", marginTop: "0.3rem" }}>records in assessmentRecords</div>
+          <div style={{ fontSize: "0.75rem", color: "#5B6B75", marginTop: "0.3rem" }}>records in assessmentRecords</div>
         </div>
 
         {/* Assignments */}
-        <div style={{ background: "#0b1222", border: "1px solid #1e293b", borderRadius: "8px", padding: "1.25rem" }}>
+        <div style={{ background: "#FFFFFF", border: "1px solid #D9DFDD", borderRadius: "8px", padding: "1.25rem" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
-            <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "#94a3b8", textTransform: "uppercase" }}>Assignments</span>
-            <span style={{ fontSize: "0.7rem", background: "rgba(34,197,94,0.15)", color: "#22c55e", padding: "0.15rem 0.5rem", borderRadius: "12px", border: "1px solid rgba(34,197,94,0.3)" }}>
+            <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "#5B6B75", textTransform: "uppercase" }}>Assignments</span>
+            <span style={{ fontSize: "0.7rem", background: "#F2F4F3", color: "#2E8B7A", padding: "0.15rem 0.5rem", borderRadius: "4px", border: "1px solid #2E8B7A" }}>
               {status?.sources.assignments.health || "active"}
             </span>
           </div>
-          <div style={{ fontSize: "1.75rem", fontWeight: 700, color: "#f8fafc" }}>
+          <div style={{ fontSize: "1.75rem", fontWeight: 700, color: "#1B2A33" }}>
             {status?.sources.assignments.count.toLocaleString() ?? "0"}
           </div>
-          <div style={{ fontSize: "0.75rem", color: "#64748b", marginTop: "0.3rem" }}>records in assignmentSubmissions</div>
+          <div style={{ fontSize: "0.75rem", color: "#5B6B75", marginTop: "0.3rem" }}>records in assignmentSubmissions</div>
         </div>
 
         {/* LMS Activity */}
-        <div style={{ background: "#0b1222", border: "1px solid #1e293b", borderRadius: "8px", padding: "1.25rem" }}>
+        <div style={{ background: "#FFFFFF", border: "1px solid #D9DFDD", borderRadius: "8px", padding: "1.25rem" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
-            <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "#94a3b8", textTransform: "uppercase" }}>LMS Activity</span>
-            <span style={{ fontSize: "0.7rem", background: "rgba(34,197,94,0.15)", color: "#22c55e", padding: "0.15rem 0.5rem", borderRadius: "12px", border: "1px solid rgba(34,197,94,0.3)" }}>
+            <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "#5B6B75", textTransform: "uppercase" }}>LMS Activity</span>
+            <span style={{ fontSize: "0.7rem", background: "#F2F4F3", color: "#2E8B7A", padding: "0.15rem 0.5rem", borderRadius: "4px", border: "1px solid #2E8B7A" }}>
               {status?.sources.lmsActivity.health || "active"}
             </span>
           </div>
-          <div style={{ fontSize: "1.75rem", fontWeight: 700, color: "#f8fafc" }}>
+          <div style={{ fontSize: "1.75rem", fontWeight: 700, color: "#1B2A33" }}>
             {status?.sources.lmsActivity.count.toLocaleString() ?? "0"}
           </div>
-          <div style={{ fontSize: "0.75rem", color: "#64748b", marginTop: "0.3rem" }}>records in lmsActivity</div>
+          <div style={{ fontSize: "0.75rem", color: "#5B6B75", marginTop: "0.3rem" }}>records in lmsActivity</div>
         </div>
 
         {/* Quarantine */}
-        <div style={{ background: "#0b1222", border: "1px solid #1e293b", borderRadius: "8px", padding: "1.25rem" }}>
+        <div style={{ background: "#FFFFFF", border: "1px solid #D9DFDD", borderRadius: "8px", padding: "1.25rem" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.5rem" }}>
-            <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "#ef4444", textTransform: "uppercase" }}>Quarantine</span>
-            <span style={{ fontSize: "0.7rem", background: "rgba(239,68,68,0.15)", color: "#ef4444", padding: "0.15rem 0.5rem", borderRadius: "12px", border: "1px solid rgba(239,68,68,0.3)" }}>
+            <span style={{ fontSize: "0.85rem", fontWeight: 600, color: "#8A4A7B", textTransform: "uppercase" }}>Quarantine</span>
+            <span style={{ fontSize: "0.7rem", background: "#F2F4F3", color: "#8A4A7B", padding: "0.15rem 0.5rem", borderRadius: "4px", border: "1px solid #8A4A7B" }}>
               Fault-Isolated
             </span>
           </div>
-          <div style={{ fontSize: "1.75rem", fontWeight: 700, color: "#ef4444" }}>
+          <div style={{ fontSize: "1.75rem", fontWeight: 700, color: "#8A4A7B" }}>
             {status?.quarantine.totalRecords.toLocaleString() ?? "0"}
           </div>
-          <div style={{ fontSize: "0.75rem", color: "#64748b", marginTop: "0.3rem" }}>records isolated with error reasons</div>
+          <div style={{ fontSize: "0.75rem", color: "#5B6B75", marginTop: "0.3rem" }}>records isolated with error reasons</div>
         </div>
       </div>
 
       {/* 2. Interactive Ingestion & Sync Workspace */}
-      <div style={{ background: "#0b1222", border: "1px solid #1e293b", borderRadius: "8px", padding: "1.5rem", marginBottom: "2rem" }}>
-        <h2 style={{ fontSize: "1.2rem", fontWeight: 600, margin: "0 0 1rem 0", color: "#f8fafc" }}>
+      <div style={{ background: "#FFFFFF", border: "1px solid #D9DFDD", borderRadius: "8px", padding: "1.5rem", marginBottom: "2rem" }}>
+        <h2 style={{ fontSize: "1.2rem", fontWeight: 600, margin: "0 0 1rem 0", color: "#1B2A33" }}>
           Trigger Connector Ingestion / File Sync
         </h2>
 
@@ -315,11 +343,11 @@ export default function ConnectorsPage() {
               onClick={() => handleConnectorChange(tab.id)}
               style={{
                 padding: "0.6rem 1rem",
-                borderRadius: "6px",
+                borderRadius: "4px",
                 border: "1px solid",
-                borderColor: selectedConnector === tab.id ? "#38bdf8" : "#1e293b",
-                background: selectedConnector === tab.id ? "rgba(56,189,248,0.12)" : "#090e1a",
-                color: selectedConnector === tab.id ? "#38bdf8" : "#94a3b8",
+                borderColor: selectedConnector === tab.id ? "#2D5BA3" : "#D9DFDD",
+                background: selectedConnector === tab.id ? "#F2F4F3" : "#FFFFFF",
+                color: selectedConnector === tab.id ? "#2D5BA3" : "#5B6B75",
                 fontWeight: 600,
                 fontSize: "0.85rem",
                 cursor: "pointer",
@@ -333,12 +361,12 @@ export default function ConnectorsPage() {
         {/* Controls Bar: File Upload or Sample Data Button */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.75rem" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-            <label style={{ fontSize: "0.85rem", color: "#94a3b8" }}>Upload CSV:</label>
+            <label style={{ fontSize: "0.85rem", color: "#5B6B75" }}>Upload CSV:</label>
             <input
               type="file"
               accept=".csv,text/csv"
               onChange={handleFileUpload}
-              style={{ fontSize: "0.8rem", color: "#94a3b8" }}
+              style={{ fontSize: "0.8rem", color: "#5B6B75" }}
             />
           </div>
           <button
@@ -346,8 +374,8 @@ export default function ConnectorsPage() {
             onClick={() => setCsvContent(SAMPLE_DATA[selectedConnector] || "")}
             style={{
               background: "transparent",
-              border: "1px dashed #475569",
-              color: "#94a3b8",
+              border: "1px dashed #D9DFDD",
+              color: "#5B6B75",
               borderRadius: "4px",
               padding: "0.3rem 0.75rem",
               fontSize: "0.75rem",
@@ -366,13 +394,13 @@ export default function ConnectorsPage() {
           placeholder="Paste CSV rows here (first line must be header)..."
           style={{
             width: "100%",
-            background: "#090e1a",
-            color: "#e2e8f0",
+            background: "#F2F4F3",
+            color: "#1B2A33",
             fontFamily: "monospace",
             fontSize: "0.85rem",
             padding: "0.75rem",
-            borderRadius: "6px",
-            border: "1px solid #1e293b",
+            borderRadius: "4px",
+            border: "1px solid #D9DFDD",
             boxSizing: "border-box",
             resize: "vertical",
           }}
@@ -380,17 +408,17 @@ export default function ConnectorsPage() {
 
         {/* Sync Trigger Button */}
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "1rem" }}>
-          <span style={{ fontSize: "0.8rem", color: "#64748b" }}>
-            • Uses BullMQ queue & idempotency upserts • Malformed rows are safely quarantined
+          <span style={{ fontSize: "0.8rem", color: "#5B6B75" }}>
+            • Uses BullMQ queue &amp; idempotency upserts • Malformed rows are safely quarantined
           </span>
           <button
             onClick={handleSyncSubmit}
             disabled={isSubmitting}
             style={{
-              background: "#0284c7",
+              background: "#2D5BA3",
               color: "#ffffff",
               border: "none",
-              borderRadius: "6px",
+              borderRadius: "4px",
               padding: "0.7rem 1.5rem",
               fontWeight: 600,
               fontSize: "0.9rem",
@@ -408,59 +436,54 @@ export default function ConnectorsPage() {
             style={{
               marginTop: "1rem",
               padding: "0.875rem 1rem",
-              borderRadius: "6px",
+              borderRadius: "4px",
               border: "1px solid",
-              background:
-                syncFeedback.type === "queued"
-                  ? "rgba(14,165,233,0.12)"
-                  : syncFeedback.type === "success"
-                  ? "rgba(34,197,94,0.12)"
-                  : "rgba(239,68,68,0.12)",
+              background: "#FFFFFF",
               borderColor:
                 syncFeedback.type === "queued"
-                  ? "rgba(14,165,233,0.4)"
+                  ? "#2D5BA3"
                   : syncFeedback.type === "success"
-                  ? "rgba(34,197,94,0.4)"
-                  : "rgba(239,68,68,0.4)",
+                  ? "#2E8B7A"
+                  : "#8A4A7B",
               color:
                 syncFeedback.type === "queued"
-                  ? "#38bdf8"
+                  ? "#2D5BA3"
                   : syncFeedback.type === "success"
-                  ? "#4ade80"
-                  : "#f87171",
+                  ? "#2E8B7A"
+                  : "#8A4A7B",
               fontSize: "0.9rem",
             }}
           >
             <strong>{syncFeedback.type.toUpperCase()}: </strong>
             {syncFeedback.message}
-            {syncFeedback.jobId && <div style={{ fontSize: "0.8rem", marginTop: "0.25rem", color: "#cbd5e1" }}>BullMQ Job ID: {syncFeedback.jobId}</div>}
+            {syncFeedback.jobId && <div style={{ fontSize: "0.8rem", marginTop: "0.25rem", color: "#5B6B75" }}>BullMQ Job ID: {syncFeedback.jobId}</div>}
           </div>
         )}
       </div>
 
       {/* 3. Quarantine Records Table */}
-      <div style={{ background: "#0b1222", border: "1px solid #1e293b", borderRadius: "8px", padding: "1.5rem" }}>
+      <div style={{ background: "#FFFFFF", border: "1px solid #D9DFDD", borderRadius: "8px", padding: "1.5rem" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
           <div>
-            <h2 style={{ fontSize: "1.2rem", fontWeight: 600, margin: 0, color: "#f8fafc" }}>
+            <h2 style={{ fontSize: "1.2rem", fontWeight: 600, margin: 0, color: "#1B2A33" }}>
               Quarantine Audit Registry
             </h2>
-            <p style={{ margin: "0.25rem 0 0 0", color: "#64748b", fontSize: "0.85rem" }}>
+            <p style={{ margin: "0.25rem 0 0 0", color: "#5B6B75", fontSize: "0.85rem" }}>
               Malformed rows preserved for audit without breaking ingestion runs.
             </p>
           </div>
-          <span style={{ fontSize: "0.8rem", color: "#94a3b8" }}>Showing recent {quarantined.length} records</span>
+          <span style={{ fontSize: "0.8rem", color: "#5B6B75" }}>Showing recent {quarantined.length} records</span>
         </div>
 
         {quarantined.length === 0 ? (
-          <div style={{ padding: "2rem", textAlign: "center", color: "#64748b" }}>
+          <div style={{ padding: "2rem", textAlign: "center", color: "#5B6B75" }}>
             No quarantined records found. All ingestion batches clean!
           </div>
         ) : (
           <div style={{ overflowX: "auto" }}>
             <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem", textAlign: "left" }}>
               <thead>
-                <tr style={{ borderBottom: "1px solid #1e293b", color: "#94a3b8" }}>
+                <tr style={{ borderBottom: "1px solid #D9DFDD", color: "#5B6B75" }}>
                   <th style={{ padding: "0.75rem" }}>Collection</th>
                   <th style={{ padding: "0.75rem" }}>Ingested At</th>
                   <th style={{ padding: "0.75rem" }}>Failure Reason</th>
@@ -469,17 +492,17 @@ export default function ConnectorsPage() {
               </thead>
               <tbody>
                 {quarantined.map((item, idx) => (
-                  <tr key={item._id || idx} style={{ borderBottom: "1px solid #152238" }}>
-                    <td style={{ padding: "0.75rem", color: "#38bdf8", fontWeight: 500 }}>
+                  <tr key={item._id || idx} style={{ borderBottom: "1px solid #D9DFDD" }}>
+                    <td style={{ padding: "0.75rem", color: "#2D5BA3", fontWeight: 500 }}>
                       {item.originalCollection}
                     </td>
-                    <td style={{ padding: "0.75rem", color: "#94a3b8", whiteSpace: "nowrap" }}>
+                    <td style={{ padding: "0.75rem", color: "#5B6B75", whiteSpace: "nowrap" }}>
                       {new Date(item.ingestedAt).toLocaleString()}
                     </td>
-                    <td style={{ padding: "0.75rem", color: "#f87171" }}>
+                    <td style={{ padding: "0.75rem", color: "#8A4A7B" }}>
                       {item.reason}
                     </td>
-                    <td style={{ padding: "0.75rem", fontFamily: "monospace", color: "#cbd5e1", maxWidth: "300px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                    <td style={{ padding: "0.75rem", fontFamily: "monospace", color: "#5B6B75", maxWidth: "300px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
                       {typeof item.rawRecord === "object" ? JSON.stringify(item.rawRecord) : String(item.rawRecord)}
                     </td>
                   </tr>

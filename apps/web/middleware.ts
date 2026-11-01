@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { UserRole } from "@academic-risk-radar/shared-types";
-import { ROLE_HOME_ROUTES, SESSION_COOKIE_NAME, decodeJwtPayload, SessionUser } from "./lib/auth";
+import { ROLE_HOME_ROUTES, SESSION_COOKIE_NAME, verifyJwtToken, SessionUser } from "./lib/auth";
 
 /**
  * Route protection rules mapping URL path prefixes to allowed roles.
@@ -17,7 +17,7 @@ const ROUTE_PERMISSIONS: Array<{ prefix: string; allowed: UserRole[] }> = [
   { prefix: "/risk", allowed: ["student", "mentor", "admin"] },
 ];
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // 1. Bypass static assets, internal Next.js routes, and API proxy
@@ -32,24 +32,12 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 2. Extract session from signed JWT cookie (or legacy session cookie)
-  const tokenCookie = request.cookies.get(SESSION_COOKIE_NAME) || request.cookies.get("arr_session");
+  // 2. Extract session from cryptographically verified JWT cookie
+  const tokenCookie = request.cookies.get(SESSION_COOKIE_NAME);
   let session: SessionUser | null = null;
 
   if (tokenCookie?.value) {
-    session = decodeJwtPayload(tokenCookie.value);
-
-    // Fallback parser if legacy JSON cookie format
-    if (!session) {
-      try {
-        const parsed = JSON.parse(decodeURIComponent(tokenCookie.value));
-        if (parsed && parsed.id && parsed.role) {
-          session = parsed as SessionUser;
-        }
-      } catch {
-        session = null;
-      }
-    }
+    session = await verifyJwtToken(tokenCookie.value);
   }
 
   // 3. Handle login page

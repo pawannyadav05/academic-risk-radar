@@ -14,15 +14,15 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { Users, AlertTriangle, UploadCloud, CheckCircle2, Download, RefreshCw, FileText } from "lucide-react";
+import { Users, AlertTriangle, UploadCloud, CheckCircle2, Download, RefreshCw } from "lucide-react";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api/v1";
+const API_BASE = "/api/v1";
 
 const BAND_COLORS = {
-  low: "#059669",
-  moderate: "#d97706",
-  high: "#dc2626",
-  critical: "#7f1d1d",
+  low: "#2E8B7A",
+  moderate: "#D49A1F",
+  high: "#8A4A7B",
+  critical: "#5B6B75",
 };
 
 interface SectionAnalytics {
@@ -59,13 +59,11 @@ export default function InstructorSectionsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Academic Data Submission Panel state
   const [importSource, setImportSource] = useState<"attendance" | "assessment">("attendance");
   const [csvContent, setCsvContent] = useState<string>(SAMPLE_CSV.attendance);
   const [uploading, setUploading] = useState(false);
   const [feedback, setFeedback] = useState<ImportFeedback | null>(null);
 
-  // 1. Fetch authenticated instructor session & sections
   useEffect(() => {
     async function initSession() {
       try {
@@ -84,7 +82,6 @@ export default function InstructorSectionsPage() {
     initSession();
   }, []);
 
-  // 2. Fetch Section Analytics for selected section
   const fetchAnalytics = useCallback(async () => {
     setLoading(true);
     setError(null);
@@ -92,7 +89,7 @@ export default function InstructorSectionsPage() {
       const res = await fetch(`${API_BASE}/analytics/section/${sectionId}`, {
         credentials: "include",
       });
-      if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to load section analytics`);
+      if (!res.ok) throw new Error(`Failed to load section analytics (HTTP ${res.status})`);
       const json = await res.json();
       setData(json);
     } catch (err: any) {
@@ -106,14 +103,12 @@ export default function InstructorSectionsPage() {
     fetchAnalytics();
   }, [fetchAnalytics]);
 
-  // Handle source switch and populate matching sample CSV template
   const handleSourceChange = (source: "attendance" | "assessment") => {
     setImportSource(source);
     setCsvContent(SAMPLE_CSV[source] || "");
     setFeedback(null);
   };
 
-  // Handle CSV file upload
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -125,7 +120,6 @@ export default function InstructorSectionsPage() {
     reader.readAsText(file);
   };
 
-  // Download sample CSV template helper
   const handleDownloadTemplate = () => {
     const template = SAMPLE_CSV[importSource] || "";
     const blob = new Blob([template], { type: "text/csv;charset=utf-8;" });
@@ -138,7 +132,6 @@ export default function InstructorSectionsPage() {
     document.body.removeChild(link);
   };
 
-  // Submit academic data to POST /api/v1/sections/:sectionId/imports/:source
   const handleSubmitData = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!csvContent.trim()) {
@@ -172,7 +165,6 @@ export default function InstructorSectionsPage() {
         scoringRecalculation: body.scoringRecalculation,
       });
 
-      // Refresh section analytics to reflect newly imported data
       fetchAnalytics();
     } catch (err: any) {
       setFeedback({
@@ -197,22 +189,21 @@ export default function InstructorSectionsPage() {
   const totalAtRisk = data ? data.bandDistribution.high + data.bandDistribution.critical : 0;
 
   return (
-    <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "1.5rem", color: "#1e293b" }}>
-      {/* ── HEADER & SECTION SELECTOR ─────────────────────────────────────── */}
+    <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "1.5rem", color: "#1B2A33" }}>
+      {/* Header and section selector */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem", flexWrap: "wrap", gap: "1rem" }}>
         <div>
-          <span style={{ fontSize: "0.75rem", color: "#3b82f6", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>Instructor Portal</span>
-          <h1 style={{ margin: "0.2rem 0 0", fontSize: "1.75rem", fontWeight: 700, color: "#0f172a" }}>Section: {sectionId}</h1>
-          <p style={{ margin: "0.25rem 0 0", color: "#64748b", fontSize: "0.875rem" }}>Monitor student risk distribution and upload course performance data.</p>
+          <h1 style={{ margin: "0 0 0.25rem", fontSize: "1.5rem", fontWeight: 700, color: "#1B2A33" }}>Section {sectionId}</h1>
+          <p style={{ margin: 0, color: "#5B6B75", fontSize: "0.875rem" }}>Monitor student risk distribution and upload course performance data.</p>
         </div>
 
         {assignedSections.length > 1 && (
           <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <span style={{ fontSize: "0.8125rem", color: "#64748b", fontWeight: 500 }}>Assigned Section:</span>
+            <span style={{ fontSize: "0.8125rem", color: "#5B6B75", fontWeight: 500 }}>Assigned section</span>
             <select
               value={sectionId}
               onChange={(e) => setSectionId(e.target.value)}
-              style={{ background: "#fff", border: "1px solid #cbd5e1", borderRadius: "8px", padding: "0.4rem 0.75rem", fontSize: "0.875rem", fontWeight: 600, color: "#0f172a", cursor: "pointer" }}
+              style={{ background: "#FFFFFF", border: "1px solid #D9DFDD", borderRadius: "4px", padding: "0.4rem 0.75rem", fontSize: "0.875rem", fontWeight: 600, color: "#1B2A33", cursor: "pointer" }}
             >
               {assignedSections.map((sec) => (
                 <option key={sec} value={sec}>{sec}</option>
@@ -222,73 +213,68 @@ export default function InstructorSectionsPage() {
         )}
       </div>
 
-      {/* ── ACADEMIC DATA SUBMISSION PANEL (Week 9 Golden Demo Primary Action) ─ */}
-      <div style={{ background: "#fff", border: "1px solid #e2e8f0", borderRadius: "14px", padding: "1.5rem", marginBottom: "2rem", boxShadow: "0 1px 3px rgba(0,0,0,0.05)" }}>
+      {/* Academic Data Submission Panel */}
+      <div style={{ background: "#FFFFFF", border: "1px solid #D9DFDD", borderRadius: "8px", padding: "1.5rem", marginBottom: "2rem" }}>
         <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1rem", flexWrap: "wrap", gap: "0.75rem" }}>
           <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-            <div style={{ background: "#eff6ff", color: "#3b82f6", padding: "0.6rem", borderRadius: "10px" }}>
-              <UploadCloud size={22} />
+            <div style={{ background: "#F2F4F3", color: "#2D5BA3", padding: "0.5rem", borderRadius: "4px" }}>
+              <UploadCloud size={20} />
             </div>
             <div>
-              <h2 style={{ margin: 0, fontSize: "1.125rem", fontWeight: 700, color: "#0f172a" }}>Academic Data Submission Panel</h2>
-              <p style={{ margin: "0.15rem 0 0", color: "#64748b", fontSize: "0.8125rem" }}>Submit attendance or assessment marks to trigger automated scoring & alert generation.</p>
+              <h2 style={{ margin: 0, fontSize: "1.125rem", fontWeight: 600, color: "#1B2A33" }}>Academic data submission</h2>
+              <p style={{ margin: "0.15rem 0 0", color: "#5B6B75", fontSize: "0.8125rem" }}>Submit attendance or assessment marks to update risk scoring and alerts.</p>
             </div>
           </div>
 
-          <div style={{ display: "flex", gap: "0.5rem" }}>
-            <button
-              type="button"
-              onClick={handleDownloadTemplate}
-              style={{ background: "#f8fafc", border: "1px solid #cbd5e1", color: "#475569", padding: "0.45rem 0.85rem", borderRadius: "8px", fontSize: "0.8125rem", fontWeight: 500, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "0.4rem" }}
-            >
-              <Download size={14} /> Sample CSV Template
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={handleDownloadTemplate}
+            style={{ background: "#FFFFFF", border: "1px solid #D9DFDD", color: "#5B6B75", padding: "0.45rem 0.85rem", borderRadius: "4px", fontSize: "0.8125rem", fontWeight: 500, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "0.4rem" }}
+          >
+            <Download size={14} /> Sample CSV template
+          </button>
         </div>
 
         {/* Live Feedback Banner */}
         {feedback && (
           <div
             style={{
-              background: feedback.status === "success" ? "#f0fdf4" : "#fef2f2",
-              border: `1px solid ${feedback.status === "success" ? "#bbf7d0" : "#fecaca"}`,
-              color: feedback.status === "success" ? "#166534" : "#991b1b",
+              background: "#FFFFFF",
+              border: `1px solid ${feedback.status === "success" ? "#2E8B7A" : "#8A4A7B"}`,
+              color: feedback.status === "success" ? "#2E8B7A" : "#8A4A7B",
               padding: "0.875rem 1.25rem",
-              borderRadius: "10px",
+              borderRadius: "4px",
               marginBottom: "1.25rem",
               fontSize: "0.875rem",
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontWeight: 600, marginBottom: feedback.insertedCount !== undefined ? "0.4rem" : 0 }}>
-              {feedback.status === "success" ? <CheckCircle2 size={18} color="#16a34a" /> : <AlertTriangle size={18} color="#dc2626" />}
+              {feedback.status === "success" ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
               {feedback.message}
             </div>
             {feedback.insertedCount !== undefined && (
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", fontSize: "0.8125rem", marginTop: "0.25rem" }}>
-                <span>Valid Rows Imported: <strong>{feedback.insertedCount}</strong></span>
-                <span>Quarantined Rows: <strong style={{ color: feedback.quarantinedCount ? "#dc2626" : "inherit" }}>{feedback.quarantinedCount}</strong></span>
-                <span>Students Affected: <strong>{feedback.affectedStudents}</strong></span>
-                <span>Scoring Trigger: <span style={{ background: "#dcfce7", color: "#15803d", padding: "0.15rem 0.5rem", borderRadius: "6px", fontWeight: 600 }}>BullMQ Enqueued</span></span>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", fontSize: "0.8125rem", marginTop: "0.25rem", color: "#5B6B75" }}>
+                <span>Valid rows: <strong style={{ color: "#1B2A33" }}>{feedback.insertedCount}</strong></span>
+                <span>Quarantined rows: <strong style={{ color: feedback.quarantinedCount ? "#8A4A7B" : "#1B2A33" }}>{feedback.quarantinedCount}</strong></span>
+                <span>Students affected: <strong style={{ color: "#1B2A33" }}>{feedback.affectedStudents}</strong></span>
               </div>
             )}
           </div>
         )}
 
         <form onSubmit={handleSubmitData}>
-          {/* Source Selector & File Upload Row */}
           <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "1rem", marginBottom: "1rem" }}>
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <span style={{ fontSize: "0.8125rem", fontWeight: 600, color: "#475569" }}>Data Source:</span>
-              <div style={{ display: "inline-flex", background: "#f1f5f9", padding: "0.2rem", borderRadius: "8px" }}>
+              <span style={{ fontSize: "0.8125rem", fontWeight: 600, color: "#1B2A33" }}>Data source:</span>
+              <div style={{ display: "inline-flex", background: "#F2F4F3", padding: "0.2rem", borderRadius: "4px", border: "1px solid #D9DFDD" }}>
                 <button
                   type="button"
                   onClick={() => handleSourceChange("attendance")}
                   style={{
-                    background: importSource === "attendance" ? "#fff" : "transparent",
-                    color: importSource === "attendance" ? "#0f172a" : "#64748b",
-                    boxShadow: importSource === "attendance" ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
-                    border: "none",
-                    borderRadius: "6px",
+                    background: importSource === "attendance" ? "#FFFFFF" : "transparent",
+                    color: importSource === "attendance" ? "#1B2A33" : "#5B6B75",
+                    border: importSource === "attendance" ? "1px solid #D9DFDD" : "1px solid transparent",
+                    borderRadius: "4px",
                     padding: "0.35rem 0.85rem",
                     fontSize: "0.8125rem",
                     fontWeight: 600,
@@ -301,11 +287,10 @@ export default function InstructorSectionsPage() {
                   type="button"
                   onClick={() => handleSourceChange("assessment")}
                   style={{
-                    background: importSource === "assessment" ? "#fff" : "transparent",
-                    color: importSource === "assessment" ? "#0f172a" : "#64748b",
-                    boxShadow: importSource === "assessment" ? "0 1px 3px rgba(0,0,0,0.1)" : "none",
-                    border: "none",
-                    borderRadius: "6px",
+                    background: importSource === "assessment" ? "#FFFFFF" : "transparent",
+                    color: importSource === "assessment" ? "#1B2A33" : "#5B6B75",
+                    border: importSource === "assessment" ? "1px solid #D9DFDD" : "1px solid transparent",
+                    borderRadius: "4px",
                     padding: "0.35rem 0.85rem",
                     fontSize: "0.8125rem",
                     fontWeight: 600,
@@ -318,20 +303,19 @@ export default function InstructorSectionsPage() {
             </div>
 
             <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginLeft: "auto" }}>
-              <span style={{ fontSize: "0.8125rem", color: "#64748b" }}>Or upload file:</span>
+              <span style={{ fontSize: "0.8125rem", color: "#5B6B75" }}>Or upload file</span>
               <input
                 type="file"
                 accept=".csv"
                 onChange={handleFileUpload}
-                style={{ fontSize: "0.8125rem", color: "#475569" }}
+                style={{ fontSize: "0.8125rem", color: "#5B6B75" }}
               />
             </div>
           </div>
 
-          {/* Raw CSV Textarea */}
           <div style={{ marginBottom: "1rem" }}>
-            <label style={{ display: "block", fontSize: "0.75rem", fontWeight: 600, color: "#64748b", marginBottom: "0.35rem", textTransform: "uppercase" }}>
-              CSV Content Preview / Direct Input:
+            <label style={{ display: "block", fontSize: "0.8125rem", fontWeight: 600, color: "#1B2A33", marginBottom: "0.35rem" }}>
+              CSV content preview or direct entry
             </label>
             <textarea
               rows={4}
@@ -343,42 +327,40 @@ export default function InstructorSectionsPage() {
                 fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
                 fontSize: "0.8125rem",
                 padding: "0.75rem",
-                border: "1px solid #cbd5e1",
-                borderRadius: "8px",
-                background: "#f8fafc",
-                color: "#0f172a",
+                border: "1px solid #D9DFDD",
+                borderRadius: "4px",
+                background: "#F2F4F3",
+                color: "#1B2A33",
                 boxSizing: "border-box",
               }}
             />
           </div>
 
-          {/* Submit Action */}
           <div style={{ display: "flex", justifyContent: "flex-end" }}>
             <button
               type="submit"
               disabled={uploading}
               style={{
-                background: "linear-gradient(135deg, #2563eb, #4f46e5)",
-                color: "#fff",
+                background: "#2D5BA3",
+                color: "#FFFFFF",
                 border: "none",
-                borderRadius: "8px",
+                borderRadius: "4px",
                 padding: "0.6rem 1.4rem",
                 fontSize: "0.875rem",
                 fontWeight: 600,
-                cursor: "pointer",
+                cursor: uploading ? "not-allowed" : "pointer",
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "0.5rem",
-                boxShadow: "0 2px 6px rgba(37,99,235,0.25)",
               }}
             >
               {uploading ? (
                 <>
-                  <RefreshCw size={16} className="animate-spin" /> Ingesting & Recalculating...
+                  <RefreshCw size={16} /> Saving data...
                 </>
               ) : (
                 <>
-                  <UploadCloud size={16} /> Submit & Recalculate Risk
+                  <UploadCloud size={16} /> Submit and recalculate risk
                 </>
               )}
             </button>
@@ -386,41 +368,41 @@ export default function InstructorSectionsPage() {
         </form>
       </div>
 
-      {/* ── KPI METRICS CARDS ────────────────────────────────────────────── */}
+      {/* KPI metrics cards */}
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1.25rem", marginBottom: "2rem" }}>
-        <div style={{ background: "#fff", padding: "1.25rem", borderRadius: "12px", border: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: "1rem" }}>
-          <div style={{ background: "#eff6ff", padding: "0.85rem", borderRadius: "50%", color: "#3b82f6" }}>
-            <Users size={24} />
+        <div style={{ background: "#FFFFFF", padding: "1.25rem", borderRadius: "8px", border: "1px solid #D9DFDD", display: "flex", alignItems: "center", gap: "1rem" }}>
+          <div style={{ background: "#F2F4F3", padding: "0.75rem", borderRadius: "4px", color: "#2D5BA3" }}>
+            <Users size={20} />
           </div>
           <div>
-            <p style={{ margin: 0, color: "#64748b", fontSize: "0.8125rem", fontWeight: 500 }}>Total Section Students</p>
-            <h3 style={{ margin: "0.15rem 0 0", fontSize: "1.6rem", fontWeight: 700, color: "#0f172a" }}>{data?.totalStudents ?? 0}</h3>
+            <p style={{ margin: 0, color: "#5B6B75", fontSize: "0.8125rem", fontWeight: 500 }}>Total section students</p>
+            <h3 style={{ margin: "0.15rem 0 0", fontSize: "1.5rem", fontWeight: 700, color: "#1B2A33", fontVariantNumeric: "tabular-nums" }}>{data?.totalStudents ?? 0}</h3>
           </div>
         </div>
 
-        <div style={{ background: "#fff", padding: "1.25rem", borderRadius: "12px", border: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: "1rem" }}>
-          <div style={{ background: "#fef2f2", padding: "0.85rem", borderRadius: "50%", color: "#dc2626" }}>
-            <AlertTriangle size={24} />
+        <div style={{ background: "#FFFFFF", padding: "1.25rem", borderRadius: "8px", border: "1px solid #D9DFDD", display: "flex", alignItems: "center", gap: "1rem" }}>
+          <div style={{ background: "#F2F4F3", padding: "0.75rem", borderRadius: "4px", color: "#8A4A7B" }}>
+            <AlertTriangle size={20} />
           </div>
           <div>
-            <p style={{ margin: 0, color: "#64748b", fontSize: "0.8125rem", fontWeight: 500 }}>Students At Risk (High / Critical)</p>
-            <h3 style={{ margin: "0.15rem 0 0", fontSize: "1.6rem", fontWeight: 700, color: "#dc2626" }}>{totalAtRisk}</h3>
+            <p style={{ margin: 0, color: "#5B6B75", fontSize: "0.8125rem", fontWeight: 500 }}>Students needing support</p>
+            <h3 style={{ margin: "0.15rem 0 0", fontSize: "1.5rem", fontWeight: 700, color: "#8A4A7B", fontVariantNumeric: "tabular-nums" }}>{totalAtRisk}</h3>
           </div>
         </div>
       </div>
 
-      {/* ── CHARTS ROW ───────────────────────────────────────────────────── */}
+      {/* Charts row */}
       {loading ? (
-        <div style={{ padding: "4rem", textAlign: "center", color: "#64748b" }}>Loading analytics...</div>
+        <div style={{ padding: "4rem", textAlign: "center", color: "#5B6B75" }}>Loading analytics...</div>
       ) : error ? (
-        <div style={{ background: "#fef2f2", color: "#b91c1c", padding: "1rem", borderRadius: "8px", border: "1px solid #fecaca" }}>
+        <div style={{ background: "#FFFFFF", color: "#8A4A7B", padding: "1rem", borderRadius: "8px", border: "1px solid #8A4A7B" }}>
           {error}
         </div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(420px, 1fr))", gap: "1.5rem" }}>
           {/* Risk Breakdown Pie Chart */}
-          <div style={{ background: "#fff", padding: "1.5rem", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
-            <h3 style={{ margin: "0 0 1rem", fontSize: "1rem", fontWeight: 600, color: "#0f172a" }}>Section Risk Breakdown</h3>
+          <div style={{ background: "#FFFFFF", padding: "1.5rem", borderRadius: "8px", border: "1px solid #D9DFDD" }}>
+            <h3 style={{ margin: "0 0 1rem", fontSize: "1rem", fontWeight: 600, color: "#1B2A33" }}>Section risk breakdown</h3>
             <div style={{ height: "280px" }}>
               {pieData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
@@ -435,7 +417,7 @@ export default function InstructorSectionsPage() {
                   </PieChart>
                 </ResponsiveContainer>
               ) : (
-                <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%", color: "#94a3b8" }}>
+                <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%", color: "#5B6B75" }}>
                   No student risk data available
                 </div>
               )}
@@ -443,21 +425,21 @@ export default function InstructorSectionsPage() {
           </div>
 
           {/* Attendance Deficit Distribution Bar Chart */}
-          <div style={{ background: "#fff", padding: "1.5rem", borderRadius: "12px", border: "1px solid #e2e8f0" }}>
-            <h3 style={{ margin: "0 0 1rem", fontSize: "1rem", fontWeight: 600, color: "#0f172a" }}>Attendance Deficit Distribution</h3>
+          <div style={{ background: "#FFFFFF", padding: "1.5rem", borderRadius: "8px", border: "1px solid #D9DFDD" }}>
+            <h3 style={{ margin: "0 0 1rem", fontSize: "1rem", fontWeight: 600, color: "#1B2A33" }}>Attendance deficit distribution</h3>
             <div style={{ height: "280px" }}>
               {barData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={barData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e2e8f0" />
-                    <XAxis dataKey="bucket" stroke="#64748b" fontSize={12} />
-                    <YAxis stroke="#64748b" fontSize={12} allowDecimals={false} />
-                    <Tooltip cursor={{ fill: "#f8fafc" }} />
-                    <Bar dataKey="count" fill="#3b82f6" radius={[4, 4, 0, 0]} name="Students" />
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#D9DFDD" />
+                    <XAxis dataKey="bucket" stroke="#5B6B75" fontSize={12} />
+                    <YAxis stroke="#5B6B75" fontSize={12} allowDecimals={false} />
+                    <Tooltip cursor={{ fill: "#F2F4F3" }} />
+                    <Bar dataKey="count" fill="#2D5BA3" radius={[4, 4, 0, 0]} name="Students" />
                   </BarChart>
                 </ResponsiveContainer>
               ) : (
-                <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%", color: "#94a3b8" }}>
+                <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%", color: "#5B6B75" }}>
                   No attendance records found
                 </div>
               )}

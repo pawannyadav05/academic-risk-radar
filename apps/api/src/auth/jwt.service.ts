@@ -14,8 +14,16 @@ export interface SafeUserClaims {
   identityId?: string;
 }
 
-const JWT_SECRET =
-  process.env.JWT_SECRET || "academic-risk-radar-dev-jwt-secret-change-in-production";
+export function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("FATAL: JWT_SECRET environment variable is mandatory in production mode.");
+    }
+    return "academic-risk-radar-dev-jwt-secret-change-in-production";
+  }
+  return secret;
+}
 
 const TOKEN_EXPIRY = "12h";
 
@@ -33,7 +41,7 @@ export function signToken(claims: SafeUserClaims): string {
       sectionIds: claims.sectionIds || [],
       identityId: claims.identityId || null,
     },
-    JWT_SECRET,
+    getJwtSecret(),
     { expiresIn: TOKEN_EXPIRY }
   );
 }
@@ -44,7 +52,7 @@ export function signToken(claims: SafeUserClaims): string {
  */
 export function verifyToken(token: string): SafeUserClaims | null {
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as SafeUserClaims & { iat?: number; exp?: number };
+    const decoded = jwt.verify(token, getJwtSecret()) as SafeUserClaims & { iat?: number; exp?: number };
     if (!decoded || !decoded.id || !decoded.role) {
       return null;
     }
