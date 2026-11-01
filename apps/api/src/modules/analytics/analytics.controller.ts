@@ -1,3 +1,20 @@
+/**
+ * Module M7: Aggregated Analytics & Reporting Controller
+ * Owned by Team Member 4 (Piyush Kumar Singh)
+ *
+ * Computes multi-level risk aggregation and trend analytics using single-pass
+ * MongoDB aggregation pipelines across Section, Department, and Institution scopes.
+ *
+ * Capabilities:
+ * - getSectionAnalytics: Computes section-level risk distribution, metric averages, and attendance deficits for instructors.
+ * - getDepartmentAnalytics: Computes department-wide risk distribution and historical trends for HoD view.
+ * - getInstitutionAnalytics: Computes campus-wide department breakdown and critical student summaries for Dean view.
+ *
+ * Security & Data Integrity:
+ * - Strict RBAC: Restricts section access to instructors/admin, department to HoD/Dean/admin, and institution to Dean/admin.
+ * - NoSQL Injection Guard: Validates and sanitizes all route parameters and query filters with explicit `$eq` operators.
+ */
+
 import { Request, Response } from "express";
 import mongoose from "mongoose";
 import { RiskSnapshotModel, StudentModel, AlertModel, InterventionModel } from "../../db/schemas.js";

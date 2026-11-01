@@ -1,3 +1,19 @@
+/**
+ * Module M7 / Ingestion: Instructor Section Academic Data Submission Controller
+ * Owned by Team Member 4 (Piyush Kumar Singh)
+ *
+ * Provides protected ingestion endpoints for instructors to submit attendance,
+ * assessment, assignment, and LMS activity CSV data for their assigned sections.
+ *
+ * Capabilities:
+ * - importSectionAcademicData: Validates section ownership, parses CSV input,
+ *   performs idempotent batch upserts, and enqueues BullMQ batch scoring recalculation jobs.
+ *
+ * Security & Data Integrity:
+ * - Negative-access RBAC: Enforces that instructors can only upload data to their assigned section.
+ * - Rate Limiting & Input Validation: Guards against malformed payloads and DoS.
+ */
+
 import { Request, Response } from "express";
 import crypto from "crypto";
 import {
