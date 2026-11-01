@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import http from "node:http";
 import express from "express";
+import rateLimit from "express-rate-limit";
 import { authenticateUser } from "../src/auth/rbac.middleware.js";
 import { signToken } from "../src/auth/jwt.service.js";
 import analyticsRouter from "../src/modules/analytics/index.js";
@@ -17,7 +18,12 @@ import analyticsRouter from "../src/modules/analytics/index.js";
 
 function createTestApp(departmentId?: string) {
   const app = express();
+  const limiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 1000,
+  });
   app.use(express.json());
+  app.use(limiter);
   app.use((req, _res, next) => {
     if (!req.headers.authorization && (req.headers["x-user-id"] || req.headers["x-user-role"])) {
       const userId = (req.headers["x-user-id"] as string) || "user-test";

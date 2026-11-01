@@ -5,6 +5,7 @@ import { getStudentTrends, sanitizeStudentId } from "./trends.service.js";
 
 export * from "./rolling-baseline.js";
 export * from "./seed-generator.js";
+export * from "./seed-demo.js";
 export * from "./trends.service.js";
 
 /**

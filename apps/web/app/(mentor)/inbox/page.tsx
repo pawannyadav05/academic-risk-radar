@@ -11,51 +11,95 @@ import {
   Search,
   RefreshCw,
   ExternalLink,
-  Bell,
-  ArrowRight,
 } from "lucide-react";
 
-/**
- * Module M5: Alert Routing & Mentor Inbox (Team Member 2 — Vani Bhardwaj)
- * Stage 2 & 3: Mentor Alert Inbox with real-time status tabs, SLA countdown badges,
- * one-click acknowledgement, and seamless intervention logging handover.
- */
+const API_BASE = "/api/v1";
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000/api/v1";
+// Design tokens
+const T = {
+  page: "#F2F4F3",
+  surface: "#FFFFFF",
+  text: "#1B2A33",
+  muted: "#5B6B75",
+  border: "#D9DFDD",
+  accent: "#2D5BA3",
+  steady: "#2E8B7A",
+  watch: "#D49A1F",
+  needsSupport: "#8A4A7B",
+} as const;
 
 const STATUS_CONFIG: Record<
   AlertStatus,
-  { label: string; color: string; bg: string; border: string; icon: React.ReactNode }
+  { label: string; textColor: string; icon: React.ReactNode }
 > = {
   open: {
-    label: "Open / Pending",
-    color: "#f59e0b",
-    bg: "rgba(245, 158, 11, 0.12)",
-    border: "rgba(245, 158, 11, 0.3)",
-    icon: <Clock size={14} />,
+    label: "Open",
+    textColor: T.watch,
+    icon: <Clock size={14} aria-hidden />,
   },
   acknowledged: {
     label: "Acknowledged",
-    color: "#10b981",
-    bg: "rgba(16, 185, 129, 0.12)",
-    border: "rgba(16, 185, 129, 0.3)",
-    icon: <CheckCircle size={14} />,
+    textColor: T.steady,
+    icon: <CheckCircle size={14} aria-hidden />,
   },
   escalated: {
-    label: "Escalated to HoD",
-    color: "#ef4444",
-    bg: "rgba(239, 68, 68, 0.15)",
-    border: "rgba(239, 68, 68, 0.35)",
-    icon: <ShieldAlert size={14} />,
+    label: "Sent to HoD",
+    textColor: T.needsSupport,
+    icon: <ShieldAlert size={14} aria-hidden />,
   },
   closed: {
-    label: "Resolved / Closed",
-    color: "#94a3b8",
-    bg: "rgba(148, 163, 184, 0.12)",
-    border: "rgba(148, 163, 184, 0.25)",
-    icon: <CheckCircle size={14} />,
+    label: "Closed",
+    textColor: T.muted,
+    icon: <CheckCircle size={14} aria-hidden />,
   },
 };
+
+function getSlaBadge(deadlineStr: string, status: AlertStatus) {
+  if (status === "acknowledged" || status === "closed") {
+    return (
+      <span style={{ color: T.steady, display: "inline-flex", alignItems: "center", gap: 4, fontSize: "0.8125rem" }}>
+        <CheckCircle size={13} aria-hidden /> Met
+      </span>
+    );
+  }
+
+  const diffMs = new Date(deadlineStr).getTime() - Date.now();
+  const isBreached = diffMs <= 0;
+
+  if (isBreached || status === "escalated") {
+    return (
+      <span
+        style={{
+          color: T.needsSupport,
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 4,
+          fontSize: "0.8125rem",
+          fontWeight: 600,
+        }}
+      >
+        <AlertTriangle size={13} aria-hidden />
+        Overdue
+      </span>
+    );
+  }
+
+  const hours = Math.floor(diffMs / (1000 * 60 * 60));
+  return (
+    <span
+      style={{
+        color: hours < 12 ? T.needsSupport : T.muted,
+        display: "inline-flex",
+        alignItems: "center",
+        gap: 4,
+        fontSize: "0.8125rem",
+      }}
+    >
+      <Clock size={13} aria-hidden />
+      {hours}h left
+    </span>
+  );
+}
 
 export default function MentorInboxPage() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
@@ -64,32 +108,35 @@ export default function MentorInboxPage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [acknowledgingId, setAcknowledgingId] = useState<string | null>(null);
-  const [successToast, setSuccessToast] = useState<string | null>(null);
+  const [lastAcknowledged, setLastAcknowledged] = useState<string | null>(null);
 
   const fetchAlerts = useCallback(async () => {
     setLoading(true);
     setError(null);
     try {
-      const url = new URL(`${API_BASE}/alerts`);
+      const queryParams = new URLSearchParams();
       if (statusFilter !== "all") {
-        url.searchParams.set("status", statusFilter);
+        queryParams.set("status", statusFilter);
       }
+      const queryString = queryParams.toString() ? `?${queryParams.toString()}` : "";
 
-      const res = await fetch(url.toString(), {
-        headers: {
-          "x-user-id": "MTR-001",
-          "x-user-role": "mentor",
-        },
+      const res = await fetch(`${API_BASE}/alerts${queryString}`, {
+        credentials: "include",
       });
 
+      if (res.status === 401) {
+        throw new Error("Sign in with your mentor account to view your assigned alerts.");
+      }
+
       if (!res.ok) {
-        throw new Error(`Failed to load alerts: HTTP ${res.status}`);
+        throw new Error(`Could not load alerts (HTTP ${res.status}). Try again.`);
       }
 
       const data = await res.json();
       setAlerts(data.alerts || []);
-    } catch (err: any) {
-      setError(err.message || "Failed to load mentor alerts");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Could not load alerts.";
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -101,18 +148,16 @@ export default function MentorInboxPage() {
 
   const handleAcknowledge = async (alertId: string) => {
     setAcknowledgingId(alertId);
+    setLastAcknowledged(null);
     try {
-      const res = await fetch(`${API_BASE}/alerts/${alertId}/acknowledge`, {
+      const res = await fetch(`${API_BASE}/alerts/${encodeURIComponent(alertId)}/acknowledge`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "x-user-id": "MTR-001",
-          "x-user-role": "mentor",
-        },
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
       });
 
       if (!res.ok) {
-        const errorData = await res.json();
+        const errorData = await res.json().catch(() => ({}));
         throw new Error(errorData.error || `HTTP ${res.status}`);
       }
 
@@ -122,78 +167,13 @@ export default function MentorInboxPage() {
       setAlerts((prev) =>
         prev.map((a) => (a._id === alertId ? { ...a, ...updatedAlert } : a))
       );
-
-      setSuccessToast(`Alert for ${updatedAlert.studentId || alertId} acknowledged.`);
-      setTimeout(() => setSuccessToast(null), 4000);
-    } catch (err: any) {
-      alert(`Could not acknowledge alert: ${err.message}`);
+      setLastAcknowledged(updatedAlert.studentId || alertId);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Could not acknowledge this alert.";
+      setError(message);
     } finally {
       setAcknowledgingId(null);
     }
-  };
-
-  const getSlaBadge = (deadlineStr: string, status: AlertStatus) => {
-    if (status === "acknowledged" || status === "closed") {
-      return (
-        <span
-          style={{
-            fontSize: "0.75rem",
-            padding: "2px 8px",
-            borderRadius: "6px",
-            background: "rgba(16, 185, 129, 0.1)",
-            color: "#10b981",
-          }}
-        >
-          SLA Met
-        </span>
-      );
-    }
-
-    const diffMs = new Date(deadlineStr).getTime() - Date.now();
-    const isBreached = diffMs <= 0;
-
-    if (isBreached || status === "escalated") {
-      return (
-        <span
-          style={{
-            fontSize: "0.75rem",
-            fontWeight: 600,
-            padding: "2px 8px",
-            borderRadius: "6px",
-            background: "rgba(239, 68, 68, 0.18)",
-            color: "#f87171",
-            border: "1px solid rgba(239, 68, 68, 0.3)",
-            display: "inline-flex",
-            alignItems: "center",
-            gap: "4px",
-          }}
-        >
-          <AlertTriangle size={12} />
-          SLA Breached
-        </span>
-      );
-    }
-
-    const hours = Math.floor(diffMs / (1000 * 60 * 60));
-    return (
-      <span
-        style={{
-          fontSize: "0.75rem",
-          fontWeight: 500,
-          padding: "2px 8px",
-          borderRadius: "6px",
-          background: hours < 12 ? "rgba(245, 158, 11, 0.15)" : "rgba(59, 130, 246, 0.12)",
-          color: hours < 12 ? "#fbbf24" : "#60a5fa",
-          border: `1px solid ${hours < 12 ? "rgba(245, 158, 11, 0.3)" : "rgba(59, 130, 246, 0.25)"}`,
-          display: "inline-flex",
-          alignItems: "center",
-          gap: "4px",
-        }}
-      >
-        <Clock size={12} />
-        {hours}h remaining
-      </span>
-    );
   };
 
   const filteredAlerts = alerts.filter((a) => {
@@ -206,72 +186,21 @@ export default function MentorInboxPage() {
     );
   });
 
-  const counts = {
-    all: alerts.length,
-    open: alerts.filter((a) => a.status === "open").length,
-    escalated: alerts.filter((a) => a.status === "escalated").length,
-    acknowledged: alerts.filter((a) => a.status === "acknowledged").length,
-  };
+  const openCount = alerts.filter((a) => a.status === "open").length;
 
   return (
-    <div style={{ maxWidth: "1280px", margin: "0 auto", padding: "2rem 1.5rem" }}>
-      {/* Toast Notification */}
-      {successToast && (
-        <div
-          style={{
-            position: "fixed",
-            top: "20px",
-            right: "20px",
-            zIndex: 9999,
-            background: "#065f46",
-            color: "#d1fae5",
-            padding: "0.75rem 1.25rem",
-            borderRadius: "8px",
-            boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.4)",
-            display: "flex",
-            alignItems: "center",
-            gap: "0.5rem",
-            fontSize: "0.875rem",
-          }}
-        >
-          <CheckCircle size={16} />
-          {successToast}
-        </div>
-      )}
+    <div style={{ maxWidth: "1280px", margin: "0 auto", padding: "2rem 1.5rem", fontFamily: "var(--font-atkinson, system-ui, sans-serif)", color: T.text }}>
 
-      {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "flex-start",
-          marginBottom: "2rem",
-          flexWrap: "wrap",
-          gap: "1rem",
-        }}
-      >
+      {/* Page header */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1.75rem", flexWrap: "wrap", gap: "1rem" }}>
         <div>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "0.25rem" }}>
-            <div
-              style={{
-                width: "36px",
-                height: "36px",
-                borderRadius: "10px",
-                background: "rgba(245, 158, 11, 0.15)",
-                color: "#f59e0b",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-              }}
-            >
-              <Bell size={20} />
-            </div>
-            <h1 style={{ margin: 0, fontSize: "1.75rem", fontWeight: 700, color: "#f8fafc" }}>
-              Mentor Alert Inbox
-            </h1>
-          </div>
-          <p style={{ margin: 0, color: "#94a3b8", fontSize: "0.925rem" }}>
-            Module M5: Real-time risk alert routing, SLA breach tracking, and rapid intervention dispatch.
+          <h1 style={{ margin: "0 0 0.25rem", fontSize: "1.5rem", fontWeight: 700, color: T.text }}>
+            Your mentee alerts
+          </h1>
+          <p style={{ margin: 0, color: T.muted, fontSize: "0.9375rem" }}>
+            {openCount > 0
+              ? `${openCount} open ${openCount === 1 ? "alert requires" : "alerts require"} acknowledgement.`
+              : "All alerts are acknowledged or closed."}
           </p>
         </div>
 
@@ -279,201 +208,74 @@ export default function MentorInboxPage() {
           onClick={fetchAlerts}
           disabled={loading}
           style={{
-            display: "flex",
+            display: "inline-flex",
             alignItems: "center",
-            gap: "0.5rem",
-            background: "#1e293b",
-            color: "#cbd5e1",
-            border: "1px solid #334155",
-            borderRadius: "8px",
-            padding: "0.6rem 1rem",
+            gap: "0.4rem",
+            background: T.surface,
+            color: T.text,
+            border: `1px solid ${T.border}`,
+            borderRadius: "4px",
+            padding: "0.5rem 0.875rem",
             fontSize: "0.875rem",
-            cursor: "pointer",
-            transition: "all 0.15s ease",
+            cursor: loading ? "not-allowed" : "pointer",
+            opacity: loading ? 0.6 : 1,
           }}
         >
-          <RefreshCw size={15} style={{ animation: loading ? "spin 1s linear infinite" : "none" }} />
-          Refresh Inbox
+          <RefreshCw size={14} aria-hidden />
+          Refresh
         </button>
       </div>
 
-      {/* KPI Stats Cards */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-          gap: "1rem",
-          marginBottom: "1.75rem",
-        }}
-      >
+      {/* Inline acknowledgement confirmation */}
+      {lastAcknowledged && (
         <div
+          role="status"
           style={{
-            background: "#0f172a",
-            padding: "1.25rem",
-            borderRadius: "12px",
-            border: "1px solid #1e293b",
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem",
+            padding: "0.625rem 0.875rem",
+            marginBottom: "1rem",
+            background: T.surface,
+            border: `1px solid ${T.steady}`,
+            borderRadius: "4px",
+            color: T.steady,
+            fontSize: "0.875rem",
           }}
         >
-          <div style={{ display: "flex", justifyContent: "space-between", color: "#94a3b8", fontSize: "0.85rem" }}>
-            <span>Total Mentees with Alerts</span>
-            <Bell size={16} />
-          </div>
-          <div style={{ fontSize: "1.875rem", fontWeight: 700, color: "#f8fafc", marginTop: "0.5rem" }}>
-            {counts.all}
-          </div>
+          <CheckCircle size={15} aria-hidden />
+          Alert for {lastAcknowledged} marked as acknowledged.
         </div>
-
-        <div
-          style={{
-            background: "#0f172a",
-            padding: "1.25rem",
-            borderRadius: "12px",
-            border: "1px solid rgba(245, 158, 11, 0.2)",
-          }}
-        >
-          <div style={{ display: "flex", justifyContent: "space-between", color: "#f59e0b", fontSize: "0.85rem" }}>
-            <span>Open & Actionable</span>
-            <Clock size={16} />
-          </div>
-          <div style={{ fontSize: "1.875rem", fontWeight: 700, color: "#fbbf24", marginTop: "0.5rem" }}>
-            {counts.open}
-          </div>
-        </div>
-
-        <div
-          style={{
-            background: "#0f172a",
-            padding: "1.25rem",
-            borderRadius: "12px",
-            border: "1px solid rgba(239, 68, 68, 0.2)",
-          }}
-        >
-          <div style={{ display: "flex", justifyContent: "space-between", color: "#ef4444", fontSize: "0.85rem" }}>
-            <span>Escalated to HoD</span>
-            <ShieldAlert size={16} />
-          </div>
-          <div style={{ fontSize: "1.875rem", fontWeight: 700, color: "#f87171", marginTop: "0.5rem" }}>
-            {counts.escalated}
-          </div>
-        </div>
-
-        <div
-          style={{
-            background: "#0f172a",
-            padding: "1.25rem",
-            borderRadius: "12px",
-            border: "1px solid rgba(16, 185, 129, 0.2)",
-          }}
-        >
-          <div style={{ display: "flex", justifyContent: "space-between", color: "#10b981", fontSize: "0.85rem" }}>
-            <span>Acknowledged</span>
-            <CheckCircle size={16} />
-          </div>
-          <div style={{ fontSize: "1.875rem", fontWeight: 700, color: "#34d399", marginTop: "0.5rem" }}>
-            {counts.acknowledged}
-          </div>
-        </div>
-      </div>
-
-      {/* Filter Tabs & Search */}
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: "1.5rem",
-          flexWrap: "wrap",
-          gap: "1rem",
-        }}
-      >
-        <div style={{ display: "flex", gap: "0.5rem", background: "#0f172a", padding: "4px", borderRadius: "8px", border: "1px solid #1e293b" }}>
-          {[
-            { key: "all", label: "All Alerts", count: counts.all },
-            { key: "open", label: "Open", count: counts.open },
-            { key: "escalated", label: "Escalated", count: counts.escalated },
-            { key: "acknowledged", label: "Acknowledged", count: counts.acknowledged },
-          ].map((tab) => (
-            <button
-              key={tab.key}
-              onClick={() => setStatusFilter(tab.key)}
-              style={{
-                background: statusFilter === tab.key ? "#1e293b" : "transparent",
-                color: statusFilter === tab.key ? "#f8fafc" : "#94a3b8",
-                border: "none",
-                borderRadius: "6px",
-                padding: "0.45rem 0.85rem",
-                fontSize: "0.85rem",
-                cursor: "pointer",
-                fontWeight: statusFilter === tab.key ? 600 : 400,
-                display: "flex",
-                alignItems: "center",
-                gap: "6px",
-              }}
-            >
-              {tab.label}
-              <span
-                style={{
-                  fontSize: "0.75rem",
-                  background: statusFilter === tab.key ? "#334155" : "#1e293b",
-                  padding: "1px 6px",
-                  borderRadius: "10px",
-                }}
-              >
-                {tab.count}
-              </span>
-            </button>
-          ))}
-        </div>
-
-        <div style={{ position: "relative", minWidth: "260px" }}>
-          <Search
-            size={16}
-            style={{ position: "absolute", left: "12px", top: "50%", transform: "translateY(-50%)", color: "#64748b" }}
-          />
-          <input
-            type="text"
-            placeholder="Search student or alert ID..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            style={{
-              width: "100%",
-              background: "#0f172a",
-              border: "1px solid #1e293b",
-              borderRadius: "8px",
-              padding: "0.5rem 1rem 0.5rem 2.25rem",
-              color: "#f8fafc",
-              fontSize: "0.875rem",
-              outline: "none",
-            }}
-          />
-        </div>
-      </div>
+      )}
 
       {/* Error state */}
       {error && (
         <div
+          role="alert"
           style={{
-            background: "rgba(239, 68, 68, 0.12)",
-            border: "1px solid rgba(239, 68, 68, 0.3)",
-            color: "#f87171",
-            padding: "1rem",
-            borderRadius: "8px",
-            marginBottom: "1.5rem",
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
+            gap: "1rem",
+            padding: "0.75rem 1rem",
+            marginBottom: "1.25rem",
+            background: T.surface,
+            border: `1px solid ${T.needsSupport}`,
+            borderRadius: "4px",
+            color: T.needsSupport,
+            fontSize: "0.875rem",
           }}
         >
           <span>{error}</span>
           <button
             onClick={fetchAlerts}
             style={{
-              background: "#ef4444",
-              color: "#ffffff",
-              border: "none",
-              padding: "0.35rem 0.75rem",
-              borderRadius: "6px",
-              fontSize: "0.8rem",
+              background: "transparent",
+              border: `1px solid ${T.needsSupport}`,
+              color: T.needsSupport,
+              padding: "0.25rem 0.625rem",
+              borderRadius: "4px",
+              fontSize: "0.8125rem",
               cursor: "pointer",
             }}
           >
@@ -482,11 +284,73 @@ export default function MentorInboxPage() {
         </div>
       )}
 
+      {/* Filter tabs and search */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "1rem",
+          flexWrap: "wrap",
+          gap: "0.75rem",
+        }}
+      >
+        <div style={{ display: "flex", gap: "0.25rem" }}>
+          {[
+            { key: "all", label: "All" },
+            { key: "open", label: "Open" },
+            { key: "escalated", label: "Sent to HoD" },
+            { key: "acknowledged", label: "Acknowledged" },
+          ].map((tab) => (
+            <button
+              key={tab.key}
+              onClick={() => setStatusFilter(tab.key)}
+              style={{
+                background: statusFilter === tab.key ? T.accent : "transparent",
+                color: statusFilter === tab.key ? "#fff" : T.muted,
+                border: `1px solid ${statusFilter === tab.key ? T.accent : T.border}`,
+                borderRadius: "4px",
+                padding: "0.375rem 0.75rem",
+                fontSize: "0.8125rem",
+                fontWeight: statusFilter === tab.key ? 600 : 400,
+                cursor: "pointer",
+              }}
+            >
+              {tab.label}
+            </button>
+          ))}
+        </div>
+
+        <div style={{ position: "relative" }}>
+          <Search
+            size={14}
+            style={{ position: "absolute", left: "0.625rem", top: "50%", transform: "translateY(-50%)", color: T.muted, pointerEvents: "none" }}
+            aria-hidden
+          />
+          <input
+            type="search"
+            placeholder="Search by student ID or alert ID"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            style={{
+              background: T.surface,
+              border: `1px solid ${T.border}`,
+              borderRadius: "4px",
+              padding: "0.375rem 0.75rem 0.375rem 2rem",
+              color: T.text,
+              fontSize: "0.875rem",
+              width: "260px",
+              outline: "none",
+            }}
+          />
+        </div>
+      </div>
+
       {/* Loading state */}
       {loading && (
-        <div style={{ padding: "4rem 0", textAlign: "center", color: "#94a3b8" }}>
-          <RefreshCw size={24} style={{ animation: "spin 1s linear infinite", margin: "0 auto 1rem" }} />
-          <p style={{ margin: 0 }}>Fetching assigned mentee alerts from radar...</p>
+        <div style={{ padding: "3rem", textAlign: "center", color: T.muted, fontSize: "0.9375rem" }}>
+          <RefreshCw size={18} style={{ display: "block", margin: "0 auto 0.5rem" }} aria-hidden />
+          Loading your alerts…
         </div>
       )}
 
@@ -494,175 +358,193 @@ export default function MentorInboxPage() {
       {!loading && !error && filteredAlerts.length === 0 && (
         <div
           style={{
-            background: "#0f172a",
-            border: "1px dashed #334155",
-            borderRadius: "12px",
-            padding: "4rem 2rem",
+            padding: "3rem 2rem",
             textAlign: "center",
+            background: T.surface,
+            border: `1px solid ${T.border}`,
+            borderRadius: "8px",
+            color: T.muted,
           }}
         >
-          <CheckCircle size={40} style={{ color: "#10b981", margin: "0 auto 1rem" }} />
-          <h3 style={{ margin: "0 0 0.5rem", color: "#f8fafc" }}>No Alerts In Queue</h3>
-          <p style={{ margin: 0, color: "#94a3b8", fontSize: "0.875rem", maxWidth: "450px", marginLeft: "auto", marginRight: "auto" }}>
+          <CheckCircle size={36} style={{ display: "block", margin: "0 auto 1rem", color: T.steady }} aria-hidden />
+          <p style={{ margin: "0 0 0.25rem", fontWeight: 600, color: T.text, fontSize: "1rem" }}>
+            No alerts match this filter.
+          </p>
+          <p style={{ margin: 0, fontSize: "0.875rem" }}>
             {statusFilter !== "all"
-              ? `There are currently no alerts matching status '${statusFilter}'.`
-              : "All student academic risk alerts are currently cleared or in normal standing."}
+              ? "Try switching to a different status tab, or clear the search."
+              : "All mentee alerts are acknowledged or closed."}
           </p>
         </div>
       )}
 
-      {/* Alert Card List */}
+      {/* Alert table — "Lists are tables" */}
       {!loading && !error && filteredAlerts.length > 0 && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-          {filteredAlerts.map((alert) => {
-            const conf = STATUS_CONFIG[alert.status] || STATUS_CONFIG.open;
-            const isAcknowledging = acknowledgingId === alert._id;
-            const isOpenOrEscalated = alert.status === "open" || alert.status === "escalated";
-
-            return (
-              <div
-                key={alert._id}
+        <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: "8px", overflowX: "auto" }}>
+          <table
+            style={{
+              width: "100%",
+              borderCollapse: "collapse",
+              fontSize: "0.875rem",
+              color: T.text,
+            }}
+          >
+            <thead>
+              <tr
                 style={{
-                  background: "#0f172a",
-                  border: `1px solid ${alert.status === "escalated" ? "rgba(239, 68, 68, 0.4)" : "#1e293b"}`,
-                  borderRadius: "12px",
-                  padding: "1.25rem 1.5rem",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "1rem",
-                  transition: "border-color 0.2s ease",
+                  borderBottom: `1px solid ${T.border}`,
+                  background: T.page,
                 }}
               >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "0.75rem" }}>
-                  <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-                    <div
-                      style={{
-                        padding: "6px 10px",
-                        borderRadius: "8px",
-                        background: conf.bg,
-                        color: conf.color,
-                        border: `1px solid ${conf.border}`,
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        fontSize: "0.8rem",
-                        fontWeight: 600,
-                      }}
-                    >
-                      {conf.icon}
-                      {conf.label}
-                    </div>
+                <th style={{ padding: "0.75rem 1rem", fontWeight: 600, textAlign: "left", color: T.muted, fontSize: "0.8125rem", whiteSpace: "nowrap" }}>
+                  Student ID
+                </th>
+                <th style={{ padding: "0.75rem 1rem", fontWeight: 600, textAlign: "left", color: T.muted, fontSize: "0.8125rem", whiteSpace: "nowrap" }}>
+                  Status
+                </th>
+                <th style={{ padding: "0.75rem 1rem", fontWeight: 600, textAlign: "left", color: T.muted, fontSize: "0.8125rem", whiteSpace: "nowrap" }}>
+                  SLA deadline
+                </th>
+                <th style={{ padding: "0.75rem 1rem", fontWeight: 600, textAlign: "left", color: T.muted, fontSize: "0.8125rem", whiteSpace: "nowrap" }}>
+                  SLA status
+                </th>
+                <th style={{ padding: "0.75rem 1rem", fontWeight: 600, textAlign: "left", color: T.muted, fontSize: "0.8125rem", whiteSpace: "nowrap" }}>
+                  Raised
+                </th>
+                <th style={{ padding: "0.75rem 1rem", fontWeight: 600, textAlign: "right", color: T.muted, fontSize: "0.8125rem", whiteSpace: "nowrap" }}>
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredAlerts.map((alert, idx) => {
+                const conf = STATUS_CONFIG[alert.status] || STATUS_CONFIG.open;
+                const isAcknowledging = acknowledgingId === alert._id;
+                const isOpenOrEscalated = alert.status === "open" || alert.status === "escalated";
+                const isLast = idx === filteredAlerts.length - 1;
 
-                    <h3 style={{ margin: 0, fontSize: "1.1rem", color: "#f8fafc" }}>
-                      Student ID: <span style={{ color: "#38bdf8" }}>{alert.studentId}</span>
-                    </h3>
-
-                    {getSlaBadge(alert.slaDeadline, alert.status)}
-                  </div>
-
-                  <div style={{ color: "#64748b", fontSize: "0.8rem" }}>
-                    Alert ID: <code style={{ color: "#94a3b8" }}>{alert._id}</code>
-                  </div>
-                </div>
-
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-                    gap: "0.75rem",
-                    background: "#0b1120",
-                    padding: "0.875rem 1rem",
-                    borderRadius: "8px",
-                    fontSize: "0.85rem",
-                    color: "#94a3b8",
-                  }}
-                >
-                  <div>
-                    <span style={{ color: "#64748b", display: "block", fontSize: "0.75rem" }}>Trigger Snapshot</span>
-                    <Link
-                      href={`/risk?studentId=${alert.studentId}`}
-                      style={{ color: "#38bdf8", textDecoration: "none", display: "inline-flex", alignItems: "center", gap: "4px" }}
-                    >
-                      {alert.riskSnapshotId}
-                      <ExternalLink size={12} />
-                    </Link>
-                  </div>
-
-                  <div>
-                    <span style={{ color: "#64748b", display: "block", fontSize: "0.75rem" }}>Created On</span>
-                    <span style={{ color: "#cbd5e1" }}>{new Date(alert.createdAt).toLocaleString()}</span>
-                  </div>
-
-                  <div>
-                    <span style={{ color: "#64748b", display: "block", fontSize: "0.75rem" }}>SLA Deadline</span>
-                    <span style={{ color: "#cbd5e1" }}>{new Date(alert.slaDeadline).toLocaleString()}</span>
-                  </div>
-
-                  {alert.acknowledgedAt && (
-                    <div>
-                      <span style={{ color: "#64748b", display: "block", fontSize: "0.75rem" }}>Acknowledged At</span>
-                      <span style={{ color: "#10b981" }}>{new Date(alert.acknowledgedAt).toLocaleString()}</span>
-                    </div>
-                  )}
-
-                  {alert.escalatedAt && (
-                    <div>
-                      <span style={{ color: "#64748b", display: "block", fontSize: "0.75rem" }}>Escalated At</span>
-                      <span style={{ color: "#ef4444" }}>{new Date(alert.escalatedAt).toLocaleString()}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Actions Row */}
-                <div style={{ display: "flex", justifyContent: "flex-end", alignItems: "center", gap: "0.75rem", paddingTop: "0.5rem" }}>
-                  {isOpenOrEscalated && (
-                    <button
-                      onClick={() => handleAcknowledge(alert._id)}
-                      disabled={isAcknowledging}
-                      style={{
-                        background: "rgba(16, 185, 129, 0.15)",
-                        color: "#34d399",
-                        border: "1px solid rgba(16, 185, 129, 0.35)",
-                        padding: "0.5rem 1rem",
-                        borderRadius: "8px",
-                        fontSize: "0.85rem",
-                        fontWeight: 600,
-                        cursor: isAcknowledging ? "not-allowed" : "pointer",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "6px",
-                      }}
-                    >
-                      <CheckCircle size={15} />
-                      {isAcknowledging ? "Acknowledging..." : "Acknowledge Alert"}
-                    </button>
-                  )}
-
-                  <Link
-                    href={`/interventions?alertId=${alert._id}`}
+                return (
+                  <tr
+                    key={alert._id}
                     style={{
-                      background: "#3b82f6",
-                      color: "#ffffff",
-                      textDecoration: "none",
-                      padding: "0.5rem 1rem",
-                      borderRadius: "8px",
-                      fontSize: "0.85rem",
-                      fontWeight: 600,
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "6px",
-                      transition: "background 0.15s ease",
+                      borderBottom: isLast ? "none" : `1px solid ${T.border}`,
+                      verticalAlign: "middle",
                     }}
                   >
-                    Log Mentoring Action
-                    <ArrowRight size={15} />
-                  </Link>
-                </div>
-              </div>
-            );
-          })}
+                    {/* Student ID */}
+                    <td style={{ padding: "0.875rem 1rem", whiteSpace: "nowrap" }}>
+                      <span style={{ fontWeight: 600, color: T.text, fontVariantNumeric: "tabular-nums" }}>
+                        {alert.studentId}
+                      </span>
+                      <span
+                        style={{
+                          display: "block",
+                          fontSize: "0.75rem",
+                          color: T.muted,
+                          marginTop: "0.125rem",
+                          fontVariantNumeric: "tabular-nums",
+                        }}
+                      >
+                        {alert._id}
+                      </span>
+                    </td>
+
+                    {/* Status */}
+                    <td style={{ padding: "0.875rem 1rem", whiteSpace: "nowrap" }}>
+                      <span
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "0.3rem",
+                          color: conf.textColor,
+                          fontWeight: 600,
+                          fontSize: "0.8125rem",
+                        }}
+                      >
+                        {conf.icon}
+                        {conf.label}
+                      </span>
+                    </td>
+
+                    {/* SLA deadline */}
+                    <td style={{ padding: "0.875rem 1rem", whiteSpace: "nowrap", color: T.muted, fontVariantNumeric: "tabular-nums" }}>
+                      {new Date(alert.slaDeadline).toLocaleDateString("en-IN", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </td>
+
+                    {/* SLA status badge */}
+                    <td style={{ padding: "0.875rem 1rem", whiteSpace: "nowrap" }}>
+                      {getSlaBadge(alert.slaDeadline, alert.status)}
+                    </td>
+
+                    {/* Raised */}
+                    <td style={{ padding: "0.875rem 1rem", whiteSpace: "nowrap", color: T.muted, fontVariantNumeric: "tabular-nums" }}>
+                      {new Date(alert.createdAt).toLocaleDateString("en-IN", {
+                        day: "2-digit",
+                        month: "short",
+                        year: "numeric",
+                      })}
+                    </td>
+
+                    {/* Actions */}
+                    <td style={{ padding: "0.875rem 1rem", whiteSpace: "nowrap", textAlign: "right" }}>
+                      <div style={{ display: "inline-flex", alignItems: "center", gap: "0.5rem" }}>
+                        {isOpenOrEscalated && (
+                          <button
+                            onClick={() => handleAcknowledge(alert._id)}
+                            disabled={isAcknowledging}
+                            style={{
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "0.3rem",
+                              background: "transparent",
+                              color: T.steady,
+                              border: `1px solid ${T.steady}`,
+                              padding: "0.375rem 0.75rem",
+                              borderRadius: "4px",
+                              fontSize: "0.8125rem",
+                              fontWeight: 600,
+                              cursor: isAcknowledging ? "not-allowed" : "pointer",
+                              opacity: isAcknowledging ? 0.6 : 1,
+                            }}
+                          >
+                            <CheckCircle size={13} aria-hidden />
+                            {isAcknowledging ? "Saving…" : "Acknowledge"}
+                          </button>
+                        )}
+
+                        <Link
+                          href={`/interventions?alertId=${alert._id}`}
+                          style={{
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "0.3rem",
+                            background: T.accent,
+                            color: "#fff",
+                            textDecoration: "none",
+                            padding: "0.375rem 0.75rem",
+                            borderRadius: "4px",
+                            fontSize: "0.8125rem",
+                            fontWeight: 600,
+                          }}
+                        >
+                          <ExternalLink size={13} aria-hidden />
+                          Log mentoring action
+                        </Link>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
+
+      {/* Snapshot detail link row — rendered below the table as supplementary context */}
     </div>
   );
 }

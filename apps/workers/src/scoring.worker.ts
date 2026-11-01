@@ -60,14 +60,33 @@ export async function gatherStudentMetrics(
       LmsActivityModel,
     } = models;
 
-    // Attendance calculation
+    // Attendance calculation: support both subject percentage average & session status
     let attendanceRate = 0.85;
     if (AttendanceRecordModel) {
       const attendance = await AttendanceRecordModel.find({ studentId }).lean();
       if (attendance.length > 0) {
-        const presentCount = attendance.filter((a: any) => a.status === "present").length;
-        const lateCount = attendance.filter((a: any) => a.status === "late").length;
-        attendanceRate = (presentCount + lateCount * 0.5) / attendance.length;
+        const subjectPercentages = new Map<string, number>();
+        const sorted = [...attendance].sort(
+          (a: any, b: any) => new Date(a.date).getTime() - new Date(b.date).getTime()
+        );
+        for (const att of sorted) {
+          if (att.courseId && typeof att.percentage === "number") {
+            const rawPct = att.percentage;
+            const norm = rawPct <= 1.0 && rawPct > 0 ? rawPct * 100 : rawPct;
+            subjectPercentages.set(att.courseId, norm);
+          }
+        }
+        if (subjectPercentages.size > 0) {
+          let sum = 0;
+          subjectPercentages.forEach((pct) => {
+            sum += pct;
+          });
+          attendanceRate = (sum / subjectPercentages.size) / 100;
+        } else {
+          const presentCount = attendance.filter((a: any) => a.status === "present").length;
+          const lateCount = attendance.filter((a: any) => a.status === "late").length;
+          attendanceRate = (presentCount + lateCount * 0.5) / attendance.length;
+        }
       }
     }
 

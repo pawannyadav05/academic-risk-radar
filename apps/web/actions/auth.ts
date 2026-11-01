@@ -10,7 +10,7 @@ import {
 } from "../lib/auth";
 
 const LoginSchema = z.object({
-  email: z.string().email("Enter a valid academic email address"),
+  email: z.string().min(1, "Enter a valid institutional email or student ID"),
   password: z.string().min(1, "Password is required"),
   returnUrl: z.string().optional(),
 });
@@ -26,7 +26,8 @@ export interface LoginResult {
 export type LoginState = LoginResult | null;
 
 const API_INTERNAL_URL =
-  process.env.API_INTERNAL_URL || process.env.NEXT_PUBLIC_API_URL || "http://localhost:4000";
+  process.env.API_INTERNAL_URL ||
+  (process.env.NODE_ENV === "production" ? "http://api:4000" : "http://localhost:4000");
 
 /**
  * Server action to authenticate credentials against Express /api/v1/auth/login
@@ -105,6 +106,5 @@ export async function loginAction(
 export async function logoutAction() {
   const cookieStore = cookies();
   cookieStore.delete(SESSION_COOKIE_NAME);
-  cookieStore.delete("arr_session");
   redirect("/login");
 }

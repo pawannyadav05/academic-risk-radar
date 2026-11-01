@@ -11,6 +11,10 @@ RUN npm ci --workspace=@academic-risk-radar/shared-types \
            --workspace=@academic-risk-radar/scoring-engine \
            --workspace=@academic-risk-radar/web
 
+ARG API_INTERNAL_URL=http://api:4000
+ENV API_INTERNAL_URL=${API_INTERNAL_URL}
+ENV NODE_ENV=production
+
 RUN npm run build --workspace=@academic-risk-radar/shared-types
 RUN npm run build --workspace=@academic-risk-radar/scoring-engine
 RUN npm run build --workspace=@academic-risk-radar/web

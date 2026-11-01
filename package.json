@@ -13,7 +13,8 @@
     "dev:all": "npm run dev --workspace=@academic-risk-radar/web & npm run dev --workspace=@academic-risk-radar/api",
     "lint": "npm run lint --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
-    "test": "npm run test --workspaces --if-present"
+    "test": "npm run test --workspaces --if-present",
+    "seed:demo": "npm run seed:demo --workspace=@academic-risk-radar/api"
   },
   "devDependencies": {
     "typescript": "^5.3.3"

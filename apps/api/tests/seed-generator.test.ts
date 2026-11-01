@@ -25,7 +25,7 @@ describe("M4: Synthetic Seed Data Generator — Stage 1 Part 2", () => {
     // Check attendance records schema
     assert.ok(seedData.attendanceRecords.length > 0);
     const firstAtt = seedData.attendanceRecords[0];
-    assert.ok(["present", "absent", "late"].includes(firstAtt.status));
+    assert.ok(firstAtt.status && ["present", "absent", "late"].includes(firstAtt.status));
     assert.ok(firstAtt.sourceRef.startsWith("ERP-ATT-"));
 
     // Check assessment records schema

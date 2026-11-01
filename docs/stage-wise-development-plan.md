@@ -15,6 +15,46 @@
 
 ---
 
+## 1.1 Live Team Implementation Status & Execution Sequence (Week 9 Remediation)
+
+### 📊 Live Teammate Status Board
+
+| Team Member | Module Scope | Status | Stage 2 % | Critical Pending Items |
+| :--- | :--- | :---: | :---: | :--- |
+| **Team Member 1 (Pawan)** | **M3 & M8** + Core Auth, RBAC, Docker | **COMPLETED** | **100%** | None (Merged into `main` via PR #20) |
+| **Team Member 2 (Vani)** | **M4 & M5** + Seeding & Mentor Inbox | **COMPLETED** | **100%** | None (Completed Stage 2 Seeding & Auth) |
+| **Team Member 3 (Nilesh)** | **M1 & M2** + Ingestion API & Student UI | **COMPLETED** | **100%** | None (Completed Stage 2 & Stage 3 deliverables) |
+| **Team Member 4 (Piyush)** | **M6 & M7** + Interventions & Instructor UI | **COMPLETED** | **100%** | None (Completed Stage 2 Interventions via PR #28) |
+
+---
+
+### 🚦 Teammate Development Sequence & Dependencies
+
+```
+[COMPLETED] Pawan (Member 1)
+  └─ Real JWT Auth, Zero-Trust RBAC, User Schema, Docker Stack
+        │
+        ├─────────────────────────────┐
+        ▼                             ▼
+[PHASE 1A] Vani (Member 2)       [PHASE 1B] Nilesh (Member 3)
+  ├─ npm run seed:demo script      ├─ POST /sections/:id/imports/:source
+  └─ Mentor Inbox UI auth fix      └─ Wire /risk page to live API
+        │                             │
+        └──────────────┬──────────────┘
+                       ▼
+        [PHASE 2] Piyush (Member 4)
+          ├─ CSV upload panel on /sections (calls Nilesh's API)
+          ├─ DELETE /interventions/:id (Soft-Delete)
+          └─ Modularize /interventions UI (<150 line subcomponents)
+```
+
+#### ⚠️ Mandatory Teammate Guidelines for Zero-Trust RBAC:
+1. **Never pass caller-controlled `x-user-id` or `x-user-role` headers**: Express strictly ignores these headers and returns `401 Unauthorized` without a valid token.
+2. **In Automated Tests**: Generate signed JWT tokens using `signToken()` from `apps/api/src/auth/jwt.service.js` and pass `Authorization: Bearer <token>`.
+3. **In Next.js Frontend**: Make requests to relative same-origin paths (`/api/v1/...`). They automatically proxy to Express backend via `apps/web/next.config.mjs` and preserve the HTTP-only signed session cookie.
+
+---
+
 ## 2. Team Member 1 (Pawan): Detailed Blueprint (Modules M3 & M8 + Core Auth & Container Infra)
 
 ### 📌 Module Ownership
@@ -106,16 +146,16 @@
 6. **Integration Tests (`auth.test.ts`, `rbac.test.ts`)**:
    - Assert login success, failed login with bad password, missing token rejection (401), cross-student query denial (403), and admin raw marks access denial (403).
 
-#### ✅ STAGE 2 CHECKLIST (WHAT TO BUILD NOW):
+#### ✅ STAGE 2 CHECKLIST (WHAT WAS BUILT):
 - [x] Student Risk API (`GET /students/:id/risk`) and batch queue trigger.
 - [x] BullMQ scoring worker recalculating snapshots upon queue dispatch.
 - [x] Model version preview and impact simulation API (`/admin/model-versions`).
 - [x] Immutable audit logging service (`audit.service.ts`).
-- [ ] Real JWT login endpoint (`POST /auth/login`) with bcrypt password verification.
-- [ ] Zero-trust RBAC middleware: remove `x-user-*` header trust and admin fallback; enforce cookie/bearer token.
-- [ ] Next.js route protection middleware, same-origin API rewrites, and real `/login` UI.
-- [ ] Complete Docker Compose stack with Dockerfiles, health checks, and `.env.example`.
-- [ ] Automated Auth & RBAC integration tests passing.
+- [x] Real JWT login endpoint (`POST /auth/login`) with bcrypt password verification (PR #20).
+- [x] Zero-trust RBAC middleware: removed `x-user-*` header trust and admin fallback; enforced Bearer token & session cookies (PR #20).
+- [x] Next.js route protection middleware, same-origin API rewrites, and institutional `/login` UI (PR #20).
+- [x] Complete Docker Compose stack with Dockerfiles, health checks, and `.env.example` (PR #20).
+- [x] Automated Auth & RBAC integration tests passing (`test:auth`, `test:rbac` 17/17) (PR #20).
 
 #### ❌ STAGE 2 BOUNDARY (WHAT NOT TO BUILD YET):
 - Do NOT build full Admin Model Version Editor UI or Audit Log viewer UI (defer to Stage 3).
@@ -219,9 +259,9 @@
 - [x] Trend signals engine (`trends.service.ts`) producing `trendDeteriorationSignal`.
 - [x] Alert deduplication logic and mentor inbox API endpoints.
 - [x] BullMQ SLA escalation worker (`escalation.worker.ts`).
-- [ ] Deterministic demo seeding script (`npm run seed:demo`) creating matching users, bcrypt passwords, sections, high-risk student, and alert.
-- [ ] Connect Mentor Inbox UI to real authenticated mentor session (remove hardcoded headers).
-- [ ] Cross-mentor alert denial integration tests.
+- [x] Deterministic demo seeding script (`npm run seed:demo`) creating matching users, bcrypt passwords, sections, high-risk student, and alert.
+- [x] Connect Mentor Inbox UI to real authenticated mentor session (remove hardcoded headers).
+- [x] Cross-mentor alert denial integration tests.
 
 #### ❌ STAGE 2 BOUNDARY (WHAT NOT TO BUILD YET):
 - Do NOT build advanced multi-channel SMS/Email notification integrations (defer to Stage 3).
@@ -302,10 +342,10 @@
 #### ✅ STAGE 2 CHECKLIST (WHAT TO BUILD NOW):
 - [x] CSV ingestion pipeline with quarantine error logging.
 - [x] Ingestion BullMQ worker and profile aggregator.
-- [ ] Protected instructor data-submission endpoint (`POST /sections/:sectionId/imports/:source`) verifying instructor section ownership.
-- [ ] Auto-trigger scoring worker upon data submission.
-- [ ] Wire `/risk` page to live student session API (remove inline hardcoded Rahul Sharma mock data).
-- [ ] Ingestion integration tests for cross-section denial (403) and idempotent re-imports.
+- [x] Protected instructor data-submission endpoint (`POST /sections/:sectionId/imports/:source`) verifying instructor section ownership.
+- [x] Auto-trigger scoring worker upon data submission.
+- [x] Wire `/risk` page to live student session API (remove inline hardcoded Rahul Sharma mock data).
+- [x] Ingestion integration tests for cross-section denial (403) and idempotent re-imports.
 
 #### ❌ STAGE 2 BOUNDARY (WHAT NOT TO BUILD YET):
 - Do NOT build full Connector Management Admin UI (`/admin/connectors`) (defer to Stage 3).

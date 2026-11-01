@@ -3,9 +3,11 @@ process.env.NODE_ENV = "test";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import http from "node:http";
+import mongoose from "mongoose";
 import app from "../src/server.js";
 import { simulateAlertDeduplication, sanitizeId } from "../src/modules/alerts/alerts.service.js";
 import { Alert, RiskSnapshot } from "@academic-risk-radar/shared-types";
+import { AlertModel } from "../src/db/schemas.js";
 import { signToken } from "../src/auth/jwt.service.js";
 
 function makeRequest(
@@ -242,6 +244,94 @@ describe("M5: Alert Routing, Deduplication & Mentor Inbox (Stage 2)", () => {
         "x-user-role": "student",
       });
       assert.equal(res.statusCode, 403);
+    });
+
+    it("Cross-Mentor Denial: Mentor A CANNOT view an alert assigned to Mentor B (returns 403 Forbidden)", async () => {
+      const origReadyState = mongoose.connection.readyState;
+      Object.defineProperty(mongoose.connection, "readyState", { value: 1, configurable: true });
+
+      const origFindById = AlertModel.findById;
+      (AlertModel as any).findById = (id: string) => ({
+        lean: () => Promise.resolve({
+          _id: id,
+          studentId: "STU-001",
+          mentorId: "MTR-002", // Assigned to Mentor B
+          riskSnapshotId: "SNAP-001",
+          status: "open",
+          createdAt: new Date().toISOString(),
+          slaDeadline: new Date().toISOString(),
+        }),
+      });
+
+      try {
+        const res = await makeRequest("/api/v1/alerts/ALT-B-001", "GET", {
+          "x-user-id": "MTR-001", // Mentor A
+          "x-user-role": "mentor",
+        });
+        assert.equal(res.statusCode, 403);
+        assert.match(res.data.error, /Forbidden: Mentors can only view their own assigned alerts/i);
+      } finally {
+        Object.defineProperty(mongoose.connection, "readyState", { value: origReadyState, configurable: true });
+        AlertModel.findById = origFindById;
+      }
+    });
+
+    it("Cross-Mentor Denial: Mentor A CANNOT acknowledge an alert assigned to Mentor B (returns 403 Forbidden)", async () => {
+      const origReadyState = mongoose.connection.readyState;
+      Object.defineProperty(mongoose.connection, "readyState", { value: 1, configurable: true });
+
+      const origFindById = AlertModel.findById;
+      (AlertModel as any).findById = (id: string) => Promise.resolve({
+        _id: id,
+        studentId: "STU-001",
+        mentorId: "MTR-002", // Assigned to Mentor B
+        status: "open",
+        save: async () => {},
+      });
+
+      try {
+        const res = await makeRequest("/api/v1/alerts/ALT-B-001/acknowledge", "POST", {
+          "x-user-id": "MTR-001", // Mentor A
+          "x-user-role": "mentor",
+        });
+        assert.equal(res.statusCode, 403);
+        assert.match(res.data.error, /Forbidden: Only the assigned mentor can acknowledge this alert/i);
+      } finally {
+        Object.defineProperty(mongoose.connection, "readyState", { value: origReadyState, configurable: true });
+        AlertModel.findById = origFindById;
+      }
+    });
+
+    it("Assigned Mentor CAN acknowledge their own alert (returns 200 OK)", async () => {
+      const origReadyState = mongoose.connection.readyState;
+      Object.defineProperty(mongoose.connection, "readyState", { value: 1, configurable: true });
+
+      let saved = false;
+      const mockAlertDoc: any = {
+        _id: "ALT-A-001",
+        studentId: "STU-001",
+        mentorId: "MTR-001", // Assigned to Mentor A
+        status: "open",
+        toObject: () => mockAlertDoc,
+        save: async () => { saved = true; },
+      };
+
+      const origFindById = AlertModel.findById;
+      (AlertModel as any).findById = () => Promise.resolve(mockAlertDoc);
+
+      try {
+        const res = await makeRequest("/api/v1/alerts/ALT-A-001/acknowledge", "POST", {
+          "x-user-id": "MTR-001", // Mentor A
+          "x-user-role": "mentor",
+        });
+        assert.equal(res.statusCode, 200);
+        assert.equal(res.data.alert.status, "acknowledged");
+        assert.ok(res.data.alert.acknowledgedAt);
+        assert.equal(saved, true);
+      } finally {
+        Object.defineProperty(mongoose.connection, "readyState", { value: origReadyState, configurable: true });
+        AlertModel.findById = origFindById;
+      }
     });
   });
 });

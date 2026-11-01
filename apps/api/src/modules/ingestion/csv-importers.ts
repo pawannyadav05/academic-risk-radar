@@ -55,7 +55,9 @@ function isValidDateString(dateStr: string): boolean {
 // ----------------------------------------------------------------------
 // 1. ATTENDANCE CSV IMPORTER
 // ----------------------------------------------------------------------
-// Expected Header: studentId,sectionId,date,status,sourceRef
+// Expected Header:
+//   - Percentage format: studentId,courseId,percentage (or attendancePercentage)
+//   - Legacy format:     studentId,sectionId,date,status,sourceRef
 export function parseAttendanceCsv(
   csvContent: string,
   ingestedAt: string = new Date().toISOString()
@@ -70,16 +72,27 @@ export function parseAttendanceCsv(
 
   const [header, ...dataRows] = rows;
   const headerMap = new Map<string, number>();
-  header.forEach((col, idx) => headerMap.set(col.toLowerCase(), idx));
+  header.forEach((col, idx) => headerMap.set(col.toLowerCase().replace(/[^a-z0-9]/g, ""), idx));
 
-  const requiredCols = ["studentid", "sectionid", "date", "status", "sourceref"];
-  const missingCols = requiredCols.filter((col) => !headerMap.has(col));
+  // Determine format: is it percentage-based or status-based?
+  const hasPercentageCol = headerMap.has("percentage") || headerMap.has("attendancepercentage") || headerMap.has("attendance");
+  const hasStatusCol = headerMap.has("status");
 
-  if (missingCols.length > 0) {
+  if (!headerMap.has("studentid")) {
     quarantined.push({
       originalCollection: "attendanceRecords",
       rawRecord: header,
-      reason: `Missing required header column(s): ${missingCols.join(", ")}`,
+      reason: "Missing required header column: studentId",
+      ingestedAt,
+    });
+    return { valid, quarantined, totalRows: rows.length };
+  }
+
+  if (!hasPercentageCol && !hasStatusCol) {
+    quarantined.push({
+      originalCollection: "attendanceRecords",
+      rawRecord: header,
+      reason: "Missing attendance column: requires either 'percentage' or 'status'",
       ingestedAt,
     });
     return { valid, quarantined, totalRows: rows.length };
@@ -87,62 +100,104 @@ export function parseAttendanceCsv(
 
   for (let i = 0; i < dataRows.length; i++) {
     const row = dataRows[i];
-    const rawObj: Record<string, string> = {
-      studentId: row[headerMap.get("studentid")!] || "",
-      sectionId: row[headerMap.get("sectionid")!] || "",
-      date: row[headerMap.get("date")!] || "",
-      status: row[headerMap.get("status")!] || "",
-      sourceRef: row[headerMap.get("sourceref")!] || "",
-    };
+    const studentId = row[headerMap.get("studentid")!] || "";
 
-    if (!rawObj.studentId) {
+    if (!studentId) {
       quarantined.push({
         originalCollection: "attendanceRecords",
-        rawRecord: rawObj,
+        rawRecord: row,
         reason: "studentId is required and cannot be empty",
         ingestedAt,
       });
       continue;
     }
 
-    if (!rawObj.sectionId) {
-      quarantined.push({
-        originalCollection: "attendanceRecords",
-        rawRecord: rawObj,
-        reason: "sectionId is required and cannot be empty",
-        ingestedAt,
-      });
-      continue;
-    }
+    if (hasPercentageCol) {
+      const pctIdx = headerMap.has("percentage")
+        ? headerMap.get("percentage")!
+        : headerMap.has("attendancepercentage")
+        ? headerMap.get("attendancepercentage")!
+        : headerMap.get("attendance")!;
+      const rawPctStr = row[pctIdx] || "";
+      const parsedPct = parseFloat(rawPctStr.replace(/%/g, ""));
 
-    if (!isValidDateString(rawObj.date)) {
-      quarantined.push({
-        originalCollection: "attendanceRecords",
-        rawRecord: rawObj,
-        reason: `Invalid ISO date format: '${rawObj.date}'`,
-        ingestedAt,
-      });
-      continue;
-    }
+      if (Number.isNaN(parsedPct) || parsedPct < 0 || parsedPct > 100) {
+        quarantined.push({
+          originalCollection: "attendanceRecords",
+          rawRecord: row,
+          reason: `Invalid attendance percentage '${rawPctStr}'. Must be a number between 0 and 100.`,
+          ingestedAt,
+        });
+        continue;
+      }
 
-    const validStatuses = ["present", "absent", "late"] as const;
-    if (!validStatuses.includes(rawObj.status as (typeof validStatuses)[number])) {
-      quarantined.push({
-        originalCollection: "attendanceRecords",
-        rawRecord: rawObj,
-        reason: `Invalid status '${rawObj.status}'. Must be one of: present, absent, late`,
-        ingestedAt,
-      });
-      continue;
-    }
+      const courseId =
+        (headerMap.has("courseid") ? row[headerMap.get("courseid")!] : null) ||
+        (headerMap.has("course") ? row[headerMap.get("course")!] : null) ||
+        "CS101";
 
-    valid.push({
-      studentId: rawObj.studentId,
-      sectionId: rawObj.sectionId,
-      date: new Date(rawObj.date).toISOString(),
-      status: rawObj.status as "present" | "absent" | "late",
-      sourceRef: rawObj.sourceRef || "csv-import",
-    });
+      const sectionId =
+        (headerMap.has("sectionid") ? row[headerMap.get("sectionid")!] : null) ||
+        "SEC-CSE-101";
+
+      const dateStr = headerMap.has("date") ? row[headerMap.get("date")!] : null;
+      const date = dateStr && isValidDateString(dateStr) ? new Date(dateStr).toISOString() : new Date().toISOString();
+
+      valid.push({
+        studentId,
+        sectionId,
+        courseId,
+        date,
+        percentage: parsedPct,
+        status: parsedPct < 75 ? "absent" : "present",
+        sourceRef: (headerMap.has("sourceref") ? row[headerMap.get("sourceref")!] : null) || "instructor-upload",
+      });
+    } else {
+      // Legacy status format
+      const sectionId = (headerMap.has("sectionid") ? row[headerMap.get("sectionid")!] : null) || "";
+      const dateStr = (headerMap.has("date") ? row[headerMap.get("date")!] : null) || "";
+      const status = (headerMap.has("status") ? row[headerMap.get("status")!] : null) || "";
+      const sourceRef = (headerMap.has("sourceref") ? row[headerMap.get("sourceref")!] : null) || "csv-import";
+
+      if (!sectionId) {
+        quarantined.push({
+          originalCollection: "attendanceRecords",
+          rawRecord: row,
+          reason: "sectionId is required for session-based attendance",
+          ingestedAt,
+        });
+        continue;
+      }
+
+      if (!isValidDateString(dateStr)) {
+        quarantined.push({
+          originalCollection: "attendanceRecords",
+          rawRecord: row,
+          reason: `Invalid ISO date format: '${dateStr}'`,
+          ingestedAt,
+        });
+        continue;
+      }
+
+      const validStatuses = ["present", "absent", "late"] as const;
+      if (!validStatuses.includes(status as any)) {
+        quarantined.push({
+          originalCollection: "attendanceRecords",
+          rawRecord: row,
+          reason: `Invalid status '${status}'. Must be one of: present, absent, late`,
+          ingestedAt,
+        });
+        continue;
+      }
+
+      valid.push({
+        studentId,
+        sectionId,
+        date: new Date(dateStr).toISOString(),
+        status: status as "present" | "absent" | "late",
+        sourceRef,
+      });
+    }
   }
 
   return { valid, quarantined, totalRows: dataRows.length };
@@ -151,7 +206,7 @@ export function parseAttendanceCsv(
 // ----------------------------------------------------------------------
 // 2. ASSESSMENT CSV IMPORTER
 // ----------------------------------------------------------------------
-// Expected Header: studentId,courseId,type,score,maxScore,date,sourceRef
+// Expected Header: studentId,courseId,type,score,maxScore[,date][,sourceRef]
 export function parseAssessmentCsv(
   csvContent: string,
   ingestedAt: string = new Date().toISOString()
@@ -166,9 +221,9 @@ export function parseAssessmentCsv(
 
   const [header, ...dataRows] = rows;
   const headerMap = new Map<string, number>();
-  header.forEach((col, idx) => headerMap.set(col.toLowerCase(), idx));
+  header.forEach((col, idx) => headerMap.set(col.toLowerCase().replace(/[^a-z0-9]/g, ""), idx));
 
-  const requiredCols = ["studentid", "courseid", "type", "score", "maxscore", "date", "sourceref"];
+  const requiredCols = ["studentid", "courseid", "type", "score", "maxscore"];
   const missingCols = requiredCols.filter((col) => !headerMap.has(col));
 
   if (missingCols.length > 0) {
@@ -189,8 +244,8 @@ export function parseAssessmentCsv(
       type: row[headerMap.get("type")!] || "",
       scoreStr: row[headerMap.get("score")!] || "",
       maxScoreStr: row[headerMap.get("maxscore")!] || "",
-      date: row[headerMap.get("date")!] || "",
-      sourceRef: row[headerMap.get("sourceref")!] || "",
+      date: (headerMap.has("date") ? row[headerMap.get("date")!] : "") || "",
+      sourceRef: (headerMap.has("sourceref") ? row[headerMap.get("sourceref")!] : "") || "",
     };
 
     if (!rawObj.studentId) {
@@ -213,14 +268,18 @@ export function parseAssessmentCsv(
       continue;
     }
 
-    if (!isValidDateString(rawObj.date)) {
-      quarantined.push({
-        originalCollection: "assessmentRecords",
-        rawRecord: rawObj,
-        reason: `Invalid ISO date format: '${rawObj.date}'`,
-        ingestedAt,
-      });
-      continue;
+    let finalDate = new Date().toISOString();
+    if (rawObj.date) {
+      if (!isValidDateString(rawObj.date)) {
+        quarantined.push({
+          originalCollection: "assessmentRecords",
+          rawRecord: rawObj,
+          reason: `Invalid ISO date format: '${rawObj.date}'`,
+          ingestedAt,
+        });
+        continue;
+      }
+      finalDate = new Date(rawObj.date).toISOString();
     }
 
     const score = Number(rawObj.scoreStr);
@@ -262,8 +321,8 @@ export function parseAssessmentCsv(
       type: rawObj.type || "quiz",
       score,
       maxScore,
-      date: new Date(rawObj.date).toISOString(),
-      sourceRef: rawObj.sourceRef || "csv-import",
+      date: finalDate,
+      sourceRef: rawObj.sourceRef || "instructor-upload",
     });
   }
 
@@ -478,13 +537,25 @@ export async function importAttendanceFromCsv(csvContent: string): Promise<Persi
   }
 
   if (result.valid.length > 0) {
-    const ops = result.valid.map((record) => ({
-      updateOne: {
-        filter: { studentId: record.studentId, sectionId: record.sectionId, date: record.date },
-        update: { $set: record },
-        upsert: true,
-      },
-    }));
+    const ops = result.valid.map((record) => {
+      // If courseId and percentage are present, upsert for that student & course
+      if (record.courseId && typeof record.percentage === "number") {
+        return {
+          updateOne: {
+            filter: { studentId: record.studentId, courseId: record.courseId },
+            update: { $set: record },
+            upsert: true,
+          },
+        };
+      }
+      return {
+        updateOne: {
+          filter: { studentId: record.studentId, sectionId: record.sectionId, date: record.date },
+          update: { $set: record },
+          upsert: true,
+        },
+      };
+    });
     await AttendanceRecordModel.bulkWrite(ops);
   }
 

@@ -18,10 +18,10 @@ function SubmitButton() {
         alignItems: "center",
         justifyContent: "center",
         gap: "0.5rem",
-        background: pending ? "#6F665E" : "#3F5E5A",
+        background: pending ? "#5B6B75" : "#2D5BA3",
         color: "#FFFDF9",
         padding: "0.75rem 1.25rem",
-        borderRadius: "6px",
+        borderRadius: "4px",
         fontSize: "0.9375rem",
         fontWeight: 500,
         border: "none",
@@ -52,11 +52,11 @@ export function LoginForm({ returnUrl }: { returnUrl?: string }) {
             display: "flex",
             alignItems: "flex-start",
             gap: "0.625rem",
-            background: "#FBF2EE",
-            border: "1px solid #E4C8BD",
-            borderRadius: "6px",
+            background: "#FFFFFF",
+            border: "1px solid #8A4A7B",
+            borderRadius: "4px",
             padding: "0.75rem 0.875rem",
-            color: "#B5654A",
+            color: "#8A4A7B",
             fontSize: "0.875rem",
             lineHeight: 1.45,
           }}
@@ -73,33 +73,33 @@ export function LoginForm({ returnUrl }: { returnUrl?: string }) {
             display: "block",
             fontSize: "0.8125rem",
             fontWeight: 600,
-            color: "#2B2623",
+            color: "#1B2A33",
             marginBottom: "0.375rem",
           }}
         >
-          Institutional Email
+          Institutional Email or Student ID
         </label>
         <input
           id="email"
           name="email"
-          type="email"
+          type="text"
           required
-          autoComplete="email"
-          placeholder="e.g. instructor@radar.edu, mentor@radar.edu, student@radar.edu"
+          autoComplete="username"
+          placeholder="e.g. 12409922, student@radar.edu, instructor1@radar.edu"
           style={{
             width: "100%",
             boxSizing: "border-box",
             padding: "0.625rem 0.75rem",
-            borderRadius: "6px",
-            border: state?.fieldErrors?.email ? "1px solid #B5654A" : "1px solid #D8C7B5",
-            background: "#FFFDF9",
-            color: "#2B2623",
+            borderRadius: "4px",
+            border: state?.fieldErrors?.email ? "1px solid #8A4A7B" : "1px solid #D9DFDD",
+            background: "#FFFFFF",
+            color: "#1B2A33",
             fontSize: "0.9375rem",
             outline: "none",
           }}
         />
         {state?.fieldErrors?.email && (
-          <span style={{ display: "block", fontSize: "0.75rem", color: "#B5654A", marginTop: "0.25rem" }}>
+          <span style={{ display: "block", fontSize: "0.75rem", color: "#8A4A7B", marginTop: "0.25rem" }}>
             {state.fieldErrors.email[0]}
           </span>
         )}
@@ -112,7 +112,7 @@ export function LoginForm({ returnUrl }: { returnUrl?: string }) {
             display: "block",
             fontSize: "0.8125rem",
             fontWeight: 600,
-            color: "#2B2623",
+            color: "#1B2A33",
             marginBottom: "0.375rem",
           }}
         >
@@ -129,16 +129,16 @@ export function LoginForm({ returnUrl }: { returnUrl?: string }) {
             width: "100%",
             boxSizing: "border-box",
             padding: "0.625rem 0.75rem",
-            borderRadius: "6px",
-            border: state?.fieldErrors?.password ? "1px solid #B5654A" : "1px solid #D8C7B5",
-            background: "#FFFDF9",
-            color: "#2B2623",
+            borderRadius: "4px",
+            border: state?.fieldErrors?.password ? "1px solid #8A4A7B" : "1px solid #D9DFDD",
+            background: "#FFFFFF",
+            color: "#1B2A33",
             fontSize: "0.9375rem",
             outline: "none",
           }}
         />
         {state?.fieldErrors?.password && (
-          <span style={{ display: "block", fontSize: "0.75rem", color: "#B5654A", marginTop: "0.25rem" }}>
+          <span style={{ display: "block", fontSize: "0.75rem", color: "#8A4A7B", marginTop: "0.25rem" }}>
             {state.fieldErrors.password[0]}
           </span>
         )}

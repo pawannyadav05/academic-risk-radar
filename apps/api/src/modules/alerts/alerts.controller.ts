@@ -27,12 +27,13 @@ export async function listAlerts(req: Request, res: Response) {
     // RBAC: Mentor can only query their own assigned alerts
     let effectiveMentorId = rawMentorId;
     if (user.role === "mentor") {
-      if (rawMentorId && rawMentorId !== user.id) {
+      const mentorIdentifier = user.identityId || user.id;
+      if (rawMentorId && rawMentorId !== mentorIdentifier && rawMentorId !== user.id) {
         return res.status(403).json({
           error: "Forbidden: Mentors can only access alerts assigned to them",
         });
       }
-      effectiveMentorId = user.id;
+      effectiveMentorId = mentorIdentifier;
     }
 
     const page = Math.max(1, parseInt(req.query.page as string, 10) || 1);
@@ -106,7 +107,11 @@ export async function getAlertById(req: Request, res: Response) {
     }
 
     // RBAC: Mentor can only view their own assigned alerts
-    if (user.role === "mentor" && alert.mentorId !== user.id) {
+    if (
+      user.role === "mentor" &&
+      alert.mentorId !== user.id &&
+      alert.mentorId !== user.identityId
+    ) {
       return res.status(403).json({
         error: "Forbidden: Mentors can only view their own assigned alerts",
       });
@@ -149,7 +154,11 @@ export async function acknowledgeAlert(req: Request, res: Response) {
     }
 
     // RBAC: Only assigned mentor (or HoD/Admin) can acknowledge
-    if (user.role === "mentor" && alert.mentorId !== user.id) {
+    if (
+      user.role === "mentor" &&
+      alert.mentorId !== user.id &&
+      alert.mentorId !== user.identityId
+    ) {
       return res.status(403).json({
         error: "Forbidden: Only the assigned mentor can acknowledge this alert",
       });

@@ -26,11 +26,55 @@ This document tracks the prompts, technical decisions, and code changes made dur
   - *"Implement mentor inbox API with strict RBAC ensuring mentors can only query their own alerts, and add rate limiting."*
   - *"Build BullMQ SLA escalation worker checking for overdue open alerts and escalating to HoD with immutable audit logs."*
   - *"Build responsive dark-themed Mentor Alert Inbox UI with real API connection, SLA badges, and one-click acknowledgement."*
+  - *"Implement deterministic database demo seeding script `seed-demo.ts` (`npm run seed:demo`) creating 6 institutional bcrypt-hashed accounts (`Password123!`), section `SEC-CSE-101`, high-risk student Rahul Sharma (`STU-001`), historical attendance deficit (65%), assessment average (52%), and an open alert with 48h SLA deadline."*
+  - *"Update Mentor Inbox UI (`/inbox`) to use authenticated session via same-origin `/api/v1/alerts` and `credentials: include`, removing hardcoded spoofed headers and adding student risk band badge and skeleton loading state."*
+  - *"Add cross-mentor alert access denial integration tests in `alerts.test.ts` verifying 403 Forbidden for cross-mentor viewing and acknowledging."*
 - **Technical Decisions:**
   - **Deduplication Rule:** Enforced a strict database query checking for existing open alerts before creating a new alert. When a student already has an active open alert, the newest `riskSnapshotId` is linked in place, preventing alert fatigue and inbox flooding.
   - **NoSQL Injection Defense:** Applied strict `sanitizeId` and `sanitizeStudentId` regex allowlists across all route parameters and query arguments in M4 and M5 routers.
   - **SLA Breach Escalation:** Automated background SLA tracking via BullMQ `alert-escalation-queue`. Overdue alerts transition to `status: "escalated"` and generate an append-only `AuditEntry` record alongside real-time console notifications for the Head of Department (HoD).
-  - **Frontend Integration:** Crafted a modern, accessible Next.js Mentor Inbox (`/inbox`) matching the dark navy aesthetic, featuring live countdown badges, search filtering, and one-click acknowledgement.
+  - **Frontend Integration & Zero-Trust Session:** Transitioned the `/inbox` client component from hardcoded spoofed headers to relative same-origin `/api/v1/alerts` requests with cookie credentials, integrating with the Next.js API proxy and HTTP-only JWT session cookies. Added student risk band badge, active alert stats, and clean loading skeletons.
+  - **Deterministic Seeding Engine:** Created `apps/api/src/modules/trends/seed-demo.ts` runnable via `npm run seed:demo`. Pre-calculates exact attendance ratios (65%) and assessment scores (52%) for Rahul Sharma (`STU-001`) in `SEC-CSE-101`, seeds 6 bcrypt-hashed user accounts matching all platform roles, and creates the initial open alert for the golden demo workflow.
+  - **Cross-Mentor RBAC Hardening:** Added dual verification (`user.id` or `user.identityId`) in `alerts.controller.ts` and automated negative test coverage in `alerts.test.ts` asserting HTTP 403 Forbidden when a mentor attempts to inspect or acknowledge another mentor's alert.
+
+---
+
+# Team Member 3 (Nilesh — Module M1 & M2)
+
+## Stage 1: Foundation (Week 5)
+
+**Goal:** Establish schemas, CSV ingestion parsers with quarantine routing, and pure academic profile aggregator.
+- **Prompts Used:**
+  - *"Implement the Quarantine schema in schemas.ts and create CSV parser utilities in csv-importers.ts for attendance, assessments, assignments, and LMS activity."*
+  - *"Build validation routines that gracefully isolate malformed rows into the quarantine collection with explicit reasons without aborting the batch."*
+  - *"Implement pure profile aggregator logic in profile-aggregator.ts and GET /api/v1/students/:id/profile with enforceStudentAccessControl."*
+- **Technical Decisions:**
+  - **Zero Data Loss Isolation (Quarantine):** Created an append-only `QuarantineRecord` schema capturing raw malformed rows alongside detailed failure diagnostics (`reason`, `originalCollection`, `ingestedAt`), preventing bad rows from failing the entire batch while preserving data for audit and manual review.
+  - **Pure Aggregator Architecture:** Designed `aggregateStudentProfile` as a pure function accepting in-memory arrays of records, enabling deterministic calculation of attendance rates, grade deficits, and assignment completion ratios without direct database coupling.
+
+## Stage 2: Functional System (Week 9)
+
+**Goal:** BullMQ asynchronous ingestion worker, idempotent multi-source upserts, protected instructor import API, and live student risk dashboard.
+- **Prompts Used:**
+  - *"Implement BullMQ ingestion worker ingestion.worker.ts with Redis queue for asynchronous background CSV ingestion and scoring engine trigger."*
+  - *"Build protected instructor CSV import endpoint POST /api/v1/sections/:sectionId/imports/:source enforcing section ownership (403 on mismatch) and auto-enqueuing scoring recalculation."*
+  - *"Wire /student/risk page to live session and profile APIs, removing hardcoded mock data ('Rahul Sharma', inline computeRiskSnapshot), adding loading skeleton, empty state, and error banner with retry, and modularizing components under 150 lines."*
+- **Technical Decisions:**
+  - **Idempotency Guarantee:** Formulated compound upsert keys `(studentId, sectionId, date)` for attendance and `(studentId, courseId, type, date)` for assessments, guaranteeing that re-uploading identical batch files does not duplicate records or distort scoring weights.
+  - **Real-Time Recalculation Trigger:** Integrated the ingestion pipeline with BullMQ `risk-scoring-queue`, automatically dispatching jobs containing affected unique `studentIds` upon successful import so student snapshots update instantly without manual intervention.
+  - **Zero-Trust Student Risk Dashboard:** Replaced monolithic 559-line static client mock with a modular architecture (`StudentProfileCard`, `PersonalInfoCard`, `MetricsSummaryCards`, `FactorBreakdownList`, `StudentRiskSkeleton`, `StudentRiskEmpty`, `StudentRiskError`) fetching live authenticated session from `/api/v1/auth/me`, profile summary from `/api/v1/students/:id/profile`, and risk calculation from `/api/v1/students/:id/risk`.
+
+## Stage 3: Product Readiness (Week 13)
+
+**Goal:** Admin Connectors dashboard, Quarantine explorer UI, and high-performance compound indexing.
+- **Prompts Used:**
+  - *"Build Admin Connectors Management dashboard (/admin/connectors) with live source sync health, manual file upload trigger, and quarantine record viewer with pagination and filtering."*
+  - *"Add MongoDB compound indexes on (studentId, date) and (studentId, sectionId, date) for sub-millisecond profile aggregations."*
+  - *"Sanitize quarantine query parameters against an allowlist to eliminate CodeQL NoSQL query injection alerts."*
+- **Technical Decisions:**
+  - **Quarantine Explorer & Sync Fallback:** Engineered `/admin/connectors` with live statistics across all 4 data streams and a synchronous fallback in `POST /connectors/:name/sync` if Redis is offline, ensuring reliable pipeline operations across diverse execution environments.
+  - **NoSQL Injection Defense:** Sanitized `rawCollection` queries against a static allowlist (`ALLOWED_QUARANTINE_COLLECTIONS`) to prevent parameter tampering and eliminate CodeQL security vulnerabilities.
+  - **Query Optimization:** Applied compound indexes on `(studentId, date)` and `(studentId, sectionId, date)` in `schemas.ts`, ensuring high-throughput profile aggregations even with multi-year historical logs.
 
 ---
 

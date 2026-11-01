@@ -240,6 +240,56 @@ git push origin feat/m3-scoring
 
 ---
 
+## 🎬 Week 9 Functional System Demonstration
+
+### 1. Quickstart Commands
+```bash
+# 1. Start full container stack (MongoDB, Redis, API, Workers, Web)
+docker compose -f infra/docker-compose.yml up -d --build
+
+# 2. Seed deterministic demonstration dataset
+npm run seed:demo
+```
+
+### 2. Service Endpoints
+* **Web Application**: [http://localhost:3000](http://localhost:3000)
+* **Backend API**: [http://localhost:4000/api/v1](http://localhost:4000/api/v1)
+* **API Health Check**: [http://localhost:4000/health](http://localhost:4000/health)
+
+### 3. Six Demo Institutional Accounts (Password: `Password123!`)
+| Role | Email | Password | Primary Route | Scope / Context |
+| :--- | :--- | :--- | :--- | :--- |
+| **Instructor** | `instructor@radar.edu` | `Password123!` | `/sections` | Section `SEC-CSE-101` data import & analytics |
+| **Mentor** | `mentor@radar.edu` | `Password123!` | `/inbox` | Assigned student `STU-001` (Dr. Sunita Rao) |
+| **Student** | `student@radar.edu` | `Password123!` | `/risk` | Rahul Sharma (`STU-001`), High Risk Standing |
+| **HoD** | `hod@radar.edu` | `Password123!` | `/hod-dashboard` | Department `CSE` SLA escalations |
+| **Dean** | `dean@radar.edu` | `Password123!` | `/dean-dashboard` | Cross-department academic retention |
+| **Admin** | `admin@radar.edu` | `Password123!` | `/model-versions` | Risk model weights, connectors, audit trail |
+
+### 4. Golden Demonstration Workflow (Step-by-Step)
+1. **Instructor Ingestion (`instructor@radar.edu`)**:
+   - Navigate to `/sections`.
+   - In the **Academic Data Submission Panel**, select `attendance` or `assessment`.
+   - Download the template or paste CSV records, then click **Submit & Sync Data**.
+   - Review live import feedback (inserted rows, quarantined rows, scoring recalculation triggered).
+   - Observe immediate update of section distribution statistics.
+2. **Mentor Triage & Intervention (`mentor@radar.edu`)**:
+   - Navigate to `/inbox` to view the high-risk alert for student `STU-001` (Rahul Sharma) with 48h SLA countdown.
+   - Click **Acknowledge Alert** to claim responsibility (status transitions to `acknowledged`).
+   - Navigate to `/interventions` and click **New Intervention** linked to the alert.
+   - Log an action (e.g. *"1-on-1 Academic Counseling & Study Plan"*).
+   - Click **Record Outcome** (e.g. `improved`) or **Withdraw** to test soft-delete (`status: "withdrawn"`).
+3. **Student Perspective (`student@radar.edu`)**:
+   - Navigate to `/risk` to inspect supportive, calm risk gauge (Score: 0.584, High Risk).
+   - Examine ranked contributing factors (65% attendance deficit, 52% assessment score, missing assignments).
+4. **Zero-Trust RBAC & Negative Access Check**:
+   - While logged in as student, attempting to access `/sections`, `/interventions`, or `/admin/connectors` is immediately blocked (`403 Forbidden` / redirect to `/forbidden`).
+   - Attempting to pass forged `x-user-id` or tampered JWT tokens returns HTTP `401 Unauthorized`.
+5. **Persistence Verification**:
+   - Reload each page (`F5`) or inspect MongoDB to confirm that all imported attendance rows, acknowledged alerts, and recorded interventions remain persisted across browser refreshes and container restarts.
+
+---
+
 ## 📚 Documentation
 
 Full project documentation is in the [`docs/`](docs/) folder:
