@@ -139,12 +139,28 @@ export function computeStudentTrendsFromRecords(
       return t >= weekStart && (w === totalWeeks - 1 ? t <= weekEnd : t < weekEnd);
     });
 
-    // 1. Attendance Rate for week
+    // 1. Attendance Rate for week: support both subject percentage & session status
     let attendanceRate = 1.0;
     if (weekAtt.length > 0) {
-      const present = weekAtt.filter((a) => a.status === "present").length;
-      const late = weekAtt.filter((a) => a.status === "late").length;
-      attendanceRate = (present + late * 0.5) / weekAtt.length;
+      const subjectPercentages = new Map<string, number>();
+      for (const a of weekAtt) {
+        if (a.courseId && typeof a.percentage === "number") {
+          const rawPct = a.percentage;
+          const norm = rawPct <= 1.0 && rawPct > 0 ? rawPct * 100 : rawPct;
+          subjectPercentages.set(a.courseId, norm);
+        }
+      }
+      if (subjectPercentages.size > 0) {
+        let sum = 0;
+        subjectPercentages.forEach((pct) => {
+          sum += pct;
+        });
+        attendanceRate = (sum / subjectPercentages.size) / 100;
+      } else {
+        const present = weekAtt.filter((a) => a.status === "present").length;
+        const late = weekAtt.filter((a) => a.status === "late").length;
+        attendanceRate = (present + late * 0.5) / weekAtt.length;
+      }
     }
 
     // 2. Assessment Average for week

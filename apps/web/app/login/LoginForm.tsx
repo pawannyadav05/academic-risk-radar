@@ -77,15 +77,15 @@ export function LoginForm({ returnUrl }: { returnUrl?: string }) {
             marginBottom: "0.375rem",
           }}
         >
-          Institutional Email
+          Institutional Email or Student ID
         </label>
         <input
           id="email"
           name="email"
-          type="email"
+          type="text"
           required
-          autoComplete="email"
-          placeholder="e.g. instructor@radar.edu, mentor@radar.edu, student@radar.edu"
+          autoComplete="username"
+          placeholder="e.g. 12409922, student@radar.edu, instructor1@radar.edu"
           style={{
             width: "100%",
             boxSizing: "border-box",

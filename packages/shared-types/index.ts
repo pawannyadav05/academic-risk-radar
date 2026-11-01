@@ -9,8 +9,10 @@ export interface Student {
 export interface AttendanceRecord {
   studentId: string;
   sectionId: string;
+  courseId?: string;
   date: string;       // ISO date
-  status: "present" | "absent" | "late";
+  status?: "present" | "absent" | "late";
+  percentage?: number;
   sourceRef: string;
 }
 

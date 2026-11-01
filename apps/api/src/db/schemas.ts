@@ -91,11 +91,14 @@ export const UserModel = mongoose.model<User>("User", UserSchema);
 const AttendanceRecordSchema = new Schema<AttendanceRecord>({
   studentId: { type: String, required: true, index: true },
   sectionId: { type: String, required: true },
+  courseId: { type: String, default: null, index: true },
   date: { type: String, required: true, index: true },
-  status: { type: String, enum: ["present", "absent", "late"], required: true },
+  status: { type: String, enum: ["present", "absent", "late"], default: "present" },
+  percentage: { type: Number, default: null },
   sourceRef: { type: String, required: true },
 });
-AttendanceRecordSchema.index({ studentId: 1, sectionId: 1, date: 1 }, { unique: true });
+AttendanceRecordSchema.index({ studentId: 1, sectionId: 1, date: 1 });
+AttendanceRecordSchema.index({ studentId: 1, courseId: 1 });
 AttendanceRecordSchema.index({ studentId: 1, date: -1 });
 export const AttendanceRecordModel = mongoose.model<AttendanceRecord>("AttendanceRecord", AttendanceRecordSchema);
 
