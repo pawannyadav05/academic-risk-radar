@@ -11,6 +11,8 @@ import {
   Search,
   RefreshCw,
   ExternalLink,
+  BookOpen,
+  UserCheck,
 } from "lucide-react";
 
 const API_BASE = "/api/v1";
@@ -190,6 +192,17 @@ export default function MentorInboxPage() {
 
   return (
     <div style={{ maxWidth: "1280px", margin: "0 auto", padding: "2rem 1.5rem", fontFamily: "var(--font-atkinson, system-ui, sans-serif)", color: T.text }}>
+      {/* Faculty Dual-Role Navigation */}
+      <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1.5rem", borderBottom: `1px solid ${T.border}`, paddingBottom: "0.5rem" }}>
+        <Link href="/sections" style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", padding: "0.4rem 0.75rem", borderRadius: "4px", fontSize: "0.8125rem", fontWeight: 500, color: T.muted, textDecoration: "none" }}>
+          <BookOpen size={14} />
+          Teaching section (Instructor)
+        </Link>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", padding: "0.4rem 0.75rem", borderRadius: "4px", fontSize: "0.8125rem", fontWeight: 600, background: T.surface, color: T.accent, border: `1px solid ${T.border}`, borderBottom: `2px solid ${T.accent}` }}>
+          <UserCheck size={14} />
+          Mentee alerts &amp; interventions (Mentor)
+        </span>
+      </div>
 
       {/* Page header */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1.75rem", flexWrap: "wrap", gap: "1rem" }}>

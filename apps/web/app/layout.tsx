@@ -4,6 +4,7 @@ import { LogOut, UserCircle } from "lucide-react";
 import { getSession, ROLE_HOME_ROUTES } from "@/lib/auth";
 import { logoutAction } from "@/actions/auth";
 import { ThemeToggle } from "./components/ThemeToggle";
+import { FacultyRoleSwitcher } from "./components/FacultyRoleSwitcher";
 
 export const metadata = {
   title: "Academic Risk Radar",
@@ -148,6 +149,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
                     {session.role}
                   </span>
                 </div>
+
+                <FacultyRoleSwitcher role={session.role} />
 
                 <ThemeToggle />
 

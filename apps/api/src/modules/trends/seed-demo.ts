@@ -129,7 +129,7 @@ export async function seedDemoDatabase(customMongoUri?: string): Promise<SeedDem
       sectionIds: ["SEC-CSE-101"],
       identityId: "MTR-001",
     },
-    // HoD
+    // HoD (Dr. Amit Verma - also teaches SEC-CSE-101 and mentors 12409923)
     {
       _id: "HOD-001",
       name: "Dr. Amit Verma",
@@ -137,6 +137,7 @@ export async function seedDemoDatabase(customMongoUri?: string): Promise<SeedDem
       role: "hod",
       passwordHash,
       departmentId: "DEP-CSE",
+      sectionIds: ["SEC-CSE-101"],
       identityId: "HOD-001",
     },
     // Dean
@@ -264,13 +265,27 @@ export async function seedDemoDatabase(customMongoUri?: string): Promise<SeedDem
     },
   ];
 
-  // 4. Mentor Assignments (All 5 assigned to MTR-001 Dr. Sunita Rao)
-  const demoMentorAssignments: MentorAssignment[] = demoStudents.map((s) => ({
-    studentId: s._id,
-    mentorId: "MTR-001",
-    assignedFrom: "2026-08-01T00:00:00.000Z",
-    assignedTo: null,
-  }));
+  // 4. Mentor Assignments (Assigned to MTR-001 and dual-role faculty INS-001)
+  const demoMentorAssignments: MentorAssignment[] = [
+    ...demoStudents.map((s) => ({
+      studentId: s._id,
+      mentorId: "MTR-001",
+      assignedFrom: "2026-08-01T00:00:00.000Z",
+      assignedTo: null,
+    })),
+    {
+      studentId: "12409922",
+      mentorId: "INS-001",
+      assignedFrom: "2026-08-01T00:00:00.000Z",
+      assignedTo: null,
+    },
+    {
+      studentId: "12409923",
+      mentorId: "HOD-001",
+      assignedFrom: "2026-08-01T00:00:00.000Z",
+      assignedTo: null,
+    },
+  ];
 
   // 5. Subject Attendance Records
   // Overall attendance is the average across both instructors (CS101 + CS102)
@@ -599,17 +614,41 @@ export async function seedDemoDatabase(customMongoUri?: string): Promise<SeedDem
   const alertCreatedAt = new Date(Date.now() - 30 * 60 * 1000).toISOString();
   const alertSlaDeadline = new Date(Date.now() + 47.5 * 60 * 60 * 1000).toISOString();
 
-  const demoAlert: Alert = {
-    _id: "ALT-12409922-OPEN",
-    studentId: "12409922",
-    mentorId: "MTR-001",
-    riskSnapshotId: demoRiskSnapshots[0]._id,
-    status: "open",
-    createdAt: alertCreatedAt,
-    acknowledgedAt: null,
-    escalatedAt: null,
-    slaDeadline: alertSlaDeadline,
-  };
+  const demoAlerts: Alert[] = [
+    {
+      _id: "ALT-12409922-OPEN",
+      studentId: "12409922",
+      mentorId: "MTR-001",
+      riskSnapshotId: demoRiskSnapshots[0]._id,
+      status: "open",
+      createdAt: alertCreatedAt,
+      acknowledgedAt: null,
+      escalatedAt: null,
+      slaDeadline: alertSlaDeadline,
+    },
+    {
+      _id: "ALT-12409922-INS-OPEN",
+      studentId: "12409922",
+      mentorId: "INS-001",
+      riskSnapshotId: demoRiskSnapshots[0]._id,
+      status: "open",
+      createdAt: alertCreatedAt,
+      acknowledgedAt: null,
+      escalatedAt: null,
+      slaDeadline: alertSlaDeadline,
+    },
+    {
+      _id: "ALT-12409923-HOD-OPEN",
+      studentId: "12409923",
+      mentorId: "HOD-001",
+      riskSnapshotId: demoRiskSnapshots[2]._id,
+      status: "open",
+      createdAt: alertCreatedAt,
+      acknowledgedAt: null,
+      escalatedAt: null,
+      slaDeadline: alertSlaDeadline,
+    },
+  ];
 
   // 12. Idempotent Data Persistence
   await Promise.all([
@@ -633,7 +672,7 @@ export async function seedDemoDatabase(customMongoUri?: string): Promise<SeedDem
   await AssignmentSubmissionModel.insertMany(assignmentSubmissions);
   await LmsActivityModel.insertMany(lmsActivities);
   await RiskSnapshotModel.insertMany(demoRiskSnapshots);
-  await AlertModel.insertMany([demoAlert]);
+  await AlertModel.insertMany(demoAlerts);
   await RiskModelVersionModel.insertMany([demoModelVersion]);
 
   // Record Audit Log Entry for Seeding Event
@@ -648,7 +687,7 @@ export async function seedDemoDatabase(customMongoUri?: string): Promise<SeedDem
       studentsCount: demoStudents.length,
       highRiskStudent: "12409922",
       section: "SEC-CSE-101",
-      openAlertId: demoAlert._id,
+      openAlertId: demoAlerts[0]._id,
     },
     timestamp: new Date().toISOString(),
   };
@@ -668,7 +707,7 @@ export async function seedDemoDatabase(customMongoUri?: string): Promise<SeedDem
     assignmentSubmissionsCount: assignmentSubmissions.length,
     lmsActivitiesCount: lmsActivities.length,
     riskSnapshotsCount: demoRiskSnapshots.length,
-    alertsCount: 1,
+    alertsCount: demoAlerts.length,
     modelVersionsCount: 1,
   };
 }

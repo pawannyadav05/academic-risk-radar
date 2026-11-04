@@ -28,6 +28,12 @@ jobs:
       - name: Build shared workspace packages
         run: npm run build --workspace=packages/shared-types && npm run build --workspace=packages/scoring-engine
 
+      - name: Build API backend
+        run: npm run build --workspace=apps/api
+
+      - name: Build Next.js web application
+        run: npm run build --workspace=apps/web
+
       - name: Typecheck TypeScript across all workspaces
         run: npm run typecheck
 

@@ -11,10 +11,10 @@ const ROUTE_PERMISSIONS: Array<{ prefix: string; allowed: UserRole[] }> = [
   { prefix: "/audit", allowed: ["admin"] },
   { prefix: "/dean-dashboard", allowed: ["dean", "admin"] },
   { prefix: "/hod-dashboard", allowed: ["hod", "dean", "admin"] },
-  { prefix: "/sections", allowed: ["instructor", "admin"] },
-  { prefix: "/inbox", allowed: ["mentor", "admin"] },
-  { prefix: "/interventions", allowed: ["mentor", "admin"] },
-  { prefix: "/risk", allowed: ["student", "mentor", "admin"] },
+  { prefix: "/sections", allowed: ["instructor", "mentor", "hod", "admin"] },
+  { prefix: "/inbox", allowed: ["mentor", "instructor", "hod", "admin"] },
+  { prefix: "/interventions", allowed: ["mentor", "instructor", "hod", "admin"] },
+  { prefix: "/risk", allowed: ["student", "mentor", "instructor", "hod", "admin"] },
 ];
 
 export async function middleware(request: NextRequest) {

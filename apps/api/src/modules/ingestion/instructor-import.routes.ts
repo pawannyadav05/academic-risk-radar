@@ -20,7 +20,7 @@ router.use(importLimiter);
  */
 router.post(
   "/sections/:sectionId/imports/:source",
-  requireRole("instructor", "admin"),
+  requireRole("instructor", "mentor", "hod", "admin"),
   importSectionAcademicData
 );
 

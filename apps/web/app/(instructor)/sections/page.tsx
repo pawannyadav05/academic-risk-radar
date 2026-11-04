@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import {
   PieChart,
   Pie,
@@ -14,7 +15,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { Users, AlertTriangle, UploadCloud, CheckCircle2, Download, RefreshCw } from "lucide-react";
+import { Users, AlertTriangle, UploadCloud, CheckCircle2, Download, RefreshCw, BookOpen, UserCheck } from "lucide-react";
 
 const API_BASE = "/api/v1";
 
@@ -206,6 +207,18 @@ export default function InstructorSectionsPage() {
 
   return (
     <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "1.5rem", color: "#1B2A33" }}>
+      {/* Faculty Dual-Role Navigation */}
+      <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1.5rem", borderBottom: "1px solid #D9DFDD", paddingBottom: "0.5rem" }}>
+        <span style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", padding: "0.4rem 0.75rem", borderRadius: "4px", fontSize: "0.8125rem", fontWeight: 600, background: "#FFFFFF", color: "#2D5BA3", border: "1px solid #D9DFDD", borderBottom: "2px solid #2D5BA3" }}>
+          <BookOpen size={14} />
+          Teaching section (Instructor)
+        </span>
+        <Link href="/inbox" style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", padding: "0.4rem 0.75rem", borderRadius: "4px", fontSize: "0.8125rem", fontWeight: 500, color: "#5B6B75", textDecoration: "none" }}>
+          <UserCheck size={14} />
+          Mentee alerts &amp; interventions (Mentor)
+        </Link>
+      </div>
+
       {/* Header and section selector */}
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem", flexWrap: "wrap", gap: "1rem" }}>
         <div>

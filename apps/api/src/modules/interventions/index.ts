@@ -41,48 +41,48 @@ router.use(apiLimiter);
  */
 router.get(
   "/interventions",
-  requireRole("mentor", "hod", "dean", "admin"),
+  requireRole("mentor", "instructor", "hod", "dean", "admin"),
   listInterventions
 );
 
 /**
  * POST /interventions
  * Record a mentor's intervention action in response to an alert.
- * RBAC: Only mentors can create interventions.
+ * RBAC: Faculty mentors and instructors can create interventions.
  *
  * Request body: { alertId: string, action: string, notes: string, followUpDate?: string }
  * Response: 201 — { intervention: Intervention }
  */
 router.post(
   "/interventions",
-  requireRole("mentor"),
+  requireRole("mentor", "instructor", "admin"),
   createIntervention
 );
 
 /**
  * PATCH /interventions/:id/outcome
  * Update the outcome of an existing intervention.
- * RBAC: Only mentors can update outcomes (enforced to the original mentor in controller).
+ * RBAC: Faculty mentors and instructors can update outcomes.
  *
  * Request body: { outcome: "improved" | "no_change" | "deteriorated" | "inconclusive" }
  * Response: 200 — { intervention: Intervention }
  */
 router.patch(
   "/interventions/:id/outcome",
-  requireRole("mentor"),
+  requireRole("mentor", "instructor", "admin"),
   updateInterventionOutcome
 );
 
 /**
  * DELETE /interventions/:id
  * Soft delete / withdraw an intervention.
- * RBAC: Only mentors can withdraw interventions (enforced to assigned mentor in controller).
+ * RBAC: Faculty mentors and instructors can withdraw interventions.
  *
  * Response: 200 — { message: string, intervention: Intervention }
  */
 router.delete(
   "/interventions/:id",
-  requireRole("mentor"),
+  requireRole("mentor", "instructor", "admin"),
   withdrawIntervention
 );
 
