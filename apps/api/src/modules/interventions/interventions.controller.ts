@@ -264,10 +264,10 @@ export async function listInterventions(req: Request, res: Response) {
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
     const skip = (page - 1) * limit;
 
-    // RBAC: Mentors can only list their own interventions
-    if (user.role === "mentor" && mentorId !== user.id && mentorId !== effectiveUserMentorId) {
+    // RBAC: Faculty (mentors/instructors) can only list their own interventions
+    if ((user.role === "mentor" || user.role === "instructor") && mentorId !== user.id && mentorId !== effectiveUserMentorId) {
       return res.status(403).json({
-        error: "Forbidden: Mentors can only view their own interventions",
+        error: "Forbidden: Faculty can only view their own interventions",
       });
     }
 

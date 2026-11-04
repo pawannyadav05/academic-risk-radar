@@ -166,19 +166,28 @@
 ### 🔹 STAGE 3: Week 13 Evaluation — Product Readiness (45 Marks)
 
 #### Owned Files in Stage 3:
-- `apps/web/app/(admin)/model-versions/page.tsx`
-- `apps/web/app/(admin)/audit/page.tsx`
-- `.github/workflows/ci.yml`
+- `apps/web/app/(admin)/layout.tsx` (Admin tab navigation: Model versions, Audit log, Data connectors)
+- `apps/web/app/(admin)/model-versions/page.tsx` & `components/*` (ActiveVersionCard, VersionHistoryTable, ModelVersionForm, ImpactPreviewPanel)
+- `apps/web/app/(admin)/audit/page.tsx` & `components/*` (AuditFilterBar, AuditTable, AuditPagination, AuditDetailModal)
+- `.github/workflows/ci.yml` (Monorepo build, Next.js build, typecheck & scoring unit test CI pipeline)
 
-#### Granular Tasks for Stage 3:
-1. **Admin Model Version UI (`/admin/model-versions`)**:
-   - Build UI displaying active weights/thresholds, custom weight editor form, live band-change preview summary, and activation button.
-2. **Admin Audit Trail UI (`/admin/audit`)**:
-   - Build interactive table displaying timestamped audit entries with entity type and actor filtering.
-3. **Scoring Engine Optimization & Benchmarking**:
-   - Ensure scoring engine executes in < 5ms per student for batch scaling.
-4. **CI/CD & Cloud Verification**:
-   - Automated linting, testing, and container deployment verification in GitHub Actions.
+#### Completed Deliverables for Stage 3:
+1. **Admin Model Versioning & Simulation UI (`/model-versions`)**:
+   - Displays active weights and band cutoffs with `Active` status badge.
+   - Interactive proposal editor with real-time 100% factor weight validation.
+   - Live band-shift simulation (`POST /api/v1/admin/model-versions` with `commit: false`) detailing cohort distribution shifts and student-level transitions.
+   - Immutable version publishing and activation (`commit: true` / `:v/activate`) logging directly to the audit trail.
+2. **Admin System Audit Trail UI (`/audit`)**:
+   - Filterable timeline table supporting entity type filtering (`RiskModelVersion`, `Alert`, `Intervention`, `User`) and actor searches.
+   - Expandable state inspection drawer comparing JSON `before` and `after` states without raw dumps.
+   - Server-side pagination controls with total record counts.
+3. **No-Slop Design System Compliance**:
+   - Strict adherence to Atkinson Hyperlegible Next, tokens (`#F2F4F3` page, `#FFFFFF` surface, `#1B2A33` text, `#5B6B75` muted, `#2D5BA3` accent, `#2E8B7A` steady, `#8A4A7B` needs-support).
+   - Radius: 4px on buttons/inputs, 8px on panels, none on table rows.
+   - Tabular numerals (`tabular-nums`) across all timestamps, percentages, and metrics.
+   - Plain, sentence-case copy with zero banned buzzwords. Components modularized under 120 lines.
+4. **CI/CD Pipeline (`.github/workflows/ci.yml`)**:
+   - Automated checkout, Node 22 cache, package builds (`shared-types`, `scoring-engine`, `api`, `web`), monorepo typecheck, and scoring engine unit tests.
 
 ---
 

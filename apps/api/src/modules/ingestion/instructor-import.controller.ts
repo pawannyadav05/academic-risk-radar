@@ -84,12 +84,12 @@ export async function importSectionAcademicData(req: Request, res: Response) {
       });
     }
 
-    // RBAC: Verify Instructor ownership of section (admins exempt)
-    if (user.role === "instructor") {
+    // RBAC: Verify Faculty ownership of section (admins exempt)
+    if (user.role === "instructor" || user.role === "mentor" || user.role === "hod") {
       const assigned = user.sectionIds || [];
       if (!assigned.includes(sectionId)) {
         return res.status(403).json({
-          error: `Forbidden: Instructor '${user.email}' is not assigned to section '${sectionId}'`,
+          error: `Forbidden: Faculty '${user.email}' is not assigned to section '${sectionId}'`,
         });
       }
     } else if (user.role !== "admin") {

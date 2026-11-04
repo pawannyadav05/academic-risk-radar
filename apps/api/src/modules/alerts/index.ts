@@ -75,7 +75,7 @@ router.get(
 // POST /api/v1/alerts/:id/acknowledge
 router.post(
   "/alerts/:id/acknowledge",
-  requireRole("mentor", "hod", "dean", "admin"),
+  requireRole("mentor", "instructor", "hod", "dean", "admin"),
   acknowledgeAlertLimiter,
   acknowledgeAlert
 );
