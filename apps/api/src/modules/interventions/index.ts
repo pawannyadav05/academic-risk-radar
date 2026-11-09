@@ -37,7 +37,8 @@ router.use(apiLimiter);
 /**
  * GET /interventions
  * List interventions for the authenticated mentor, with optional filtering and pagination.
- * RBAC: mentor, hod, dean, admin can access (mentors restricted to own interventions).
+ * RBAC: mentor, instructor, and HoD may view their own mentoring work; dean and admin
+ * retain their existing oversight access.
  */
 router.get(
   "/interventions",
@@ -48,41 +49,41 @@ router.get(
 /**
  * POST /interventions
  * Record a mentor's intervention action in response to an alert.
- * RBAC: Faculty mentors and instructors can create interventions.
+ * RBAC: Faculty who are assigned as the student's mentor can create interventions.
  *
  * Request body: { alertId: string, action: string, notes: string, followUpDate?: string }
  * Response: 201 — { intervention: Intervention }
  */
 router.post(
   "/interventions",
-  requireRole("mentor", "instructor", "admin"),
+  requireRole("mentor", "instructor", "hod", "admin"),
   createIntervention
 );
 
 /**
  * PATCH /interventions/:id/outcome
  * Update the outcome of an existing intervention.
- * RBAC: Faculty mentors and instructors can update outcomes.
+ * RBAC: Faculty who are assigned as the student's mentor can update outcomes.
  *
  * Request body: { outcome: "improved" | "no_change" | "deteriorated" | "inconclusive" }
  * Response: 200 — { intervention: Intervention }
  */
 router.patch(
   "/interventions/:id/outcome",
-  requireRole("mentor", "instructor", "admin"),
+  requireRole("mentor", "instructor", "hod", "admin"),
   updateInterventionOutcome
 );
 
 /**
  * DELETE /interventions/:id
  * Soft delete / withdraw an intervention.
- * RBAC: Faculty mentors and instructors can withdraw interventions.
+ * RBAC: Faculty who are assigned as the student's mentor can withdraw interventions.
  *
  * Response: 200 — { message: string, intervention: Intervention }
  */
 router.delete(
   "/interventions/:id",
-  requireRole("mentor", "instructor", "admin"),
+  requireRole("mentor", "instructor", "hod", "admin"),
   withdrawIntervention
 );
 

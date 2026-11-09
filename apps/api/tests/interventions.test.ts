@@ -86,7 +86,7 @@ describe("M6: Intervention & Outcome Tracking — RBAC Tests", () => {
     }
   });
 
-  it("POST /interventions should return 403 for instructor role", async () => {
+  it("POST /interventions allows an instructor acting as a mentor to reach the ownership check", async () => {
     const app = createTestApp();
     const { port, close } = await startServer(app);
     try {
@@ -103,13 +103,15 @@ describe("M6: Intervention & Outcome Tracking — RBAC Tests", () => {
           notes: "Discussed attendance",
         }),
       });
-      assert.equal(res.status, 403, "Instructor should not be able to create interventions");
+      // No database is connected in this route test, so an authorised faculty mentor
+      // reaches the controller and receives the expected missing-alert response.
+      assert.equal(res.status, 404, "Instructor mentor should reach intervention handling");
     } finally {
       close();
     }
   });
 
-  it("POST /interventions should return 403 for hod role", async () => {
+  it("POST /interventions allows an HoD acting as a mentor to reach the ownership check", async () => {
     const app = createTestApp();
     const { port, close } = await startServer(app);
     try {
@@ -126,7 +128,7 @@ describe("M6: Intervention & Outcome Tracking — RBAC Tests", () => {
           notes: "Discussed attendance",
         }),
       });
-      assert.equal(res.status, 403, "HoD should not be able to create interventions");
+      assert.equal(res.status, 404, "HoD mentor should reach intervention handling");
     } finally {
       close();
     }
@@ -167,7 +169,7 @@ describe("M6: Intervention & Outcome Tracking — RBAC Tests", () => {
     }
   });
 
-  it("GET /interventions should return 403 for instructor role", async () => {
+  it("GET /interventions allows an instructor to list only their mentoring work", async () => {
     const app = createTestApp();
     const { port, close } = await startServer(app);
     try {
@@ -177,7 +179,7 @@ describe("M6: Intervention & Outcome Tracking — RBAC Tests", () => {
           "x-user-role": "instructor",
         },
       });
-      assert.equal(res.status, 403, "Instructor should not be able to list interventions");
+      assert.equal(res.status, 200, "Instructor mentor should be able to list their own interventions");
     } finally {
       close();
     }
@@ -213,7 +215,7 @@ describe("M6: Intervention & Outcome Tracking — RBAC Tests", () => {
     }
   });
 
-  it("DELETE /interventions/:id should return 403 for instructor role", async () => {
+  it("DELETE /interventions/:id allows an instructor acting as a mentor to reach ownership handling", async () => {
     const app = createTestApp();
     const { port, close } = await startServer(app);
     try {
@@ -224,13 +226,13 @@ describe("M6: Intervention & Outcome Tracking — RBAC Tests", () => {
           "x-user-role": "instructor",
         },
       });
-      assert.equal(res.status, 403, "Instructor should not be able to withdraw interventions");
+      assert.equal(res.status, 404, "Instructor mentor should reach intervention handling");
     } finally {
       close();
     }
   });
 
-  it("DELETE /interventions/:id should return 403 for hod role", async () => {
+  it("DELETE /interventions/:id allows an HoD acting as a mentor to reach ownership handling", async () => {
     const app = createTestApp();
     const { port, close } = await startServer(app);
     try {
@@ -241,7 +243,7 @@ describe("M6: Intervention & Outcome Tracking — RBAC Tests", () => {
           "x-user-role": "hod",
         },
       });
-      assert.equal(res.status, 403, "HoD should not be able to withdraw interventions");
+      assert.equal(res.status, 404, "HoD mentor should reach intervention handling");
     } finally {
       close();
     }
