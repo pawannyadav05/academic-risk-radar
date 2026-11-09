@@ -169,9 +169,13 @@
 - `apps/web/app/(admin)/layout.tsx` (Admin tab navigation: Model versions, Audit log, Data connectors)
 - `apps/web/app/(admin)/model-versions/page.tsx` & `components/*` (ActiveVersionCard, VersionHistoryTable, ModelVersionForm, ImpactPreviewPanel)
 - `apps/web/app/(admin)/audit/page.tsx` & `components/*` (AuditFilterBar, AuditTable, AuditPagination, AuditDetailModal)
-- `.github/workflows/ci.yml` (Monorepo build, Next.js build, typecheck & scoring unit test CI pipeline)
+- `apps/workers/src/scheduler.ts` (BullMQ repeatable jobs for nightly scoring and SLA escalation)
+- `apps/api/src/server.ts` (`GET /ready` probe for MongoDB and Redis reachability)
+- `.github/workflows/ci.yml` (Monorepo build, Next.js build, typecheck & full API test suite CI pipeline)
+- `docs/openapi.yaml` (OpenAPI 3.1 specification for existing endpoints)
+- `README.md` (DPDP privacy compliance note, CSV-only data scope boundary)
 
-#### Completed Deliverables for Stage 3:
+#### Completed & Active Deliverables for Stage 3:
 1. **Admin Model Versioning & Simulation UI (`/model-versions`)**:
    - Displays active weights and band cutoffs with `Active` status badge.
    - Interactive proposal editor with real-time 100% factor weight validation.
@@ -181,13 +185,20 @@
    - Filterable timeline table supporting entity type filtering (`RiskModelVersion`, `Alert`, `Intervention`, `User`) and actor searches.
    - Expandable state inspection drawer comparing JSON `before` and `after` states without raw dumps.
    - Server-side pagination controls with total record counts.
-3. **No-Slop Design System Compliance**:
-   - Strict adherence to Atkinson Hyperlegible Next, tokens (`#F2F4F3` page, `#FFFFFF` surface, `#1B2A33` text, `#5B6B75` muted, `#2D5BA3` accent, `#2E8B7A` steady, `#8A4A7B` needs-support).
-   - Radius: 4px on buttons/inputs, 8px on panels, none on table rows.
-   - Tabular numerals (`tabular-nums`) across all timestamps, percentages, and metrics.
-   - Plain, sentence-case copy with zero banned buzzwords. Components modularized under 120 lines.
-4. **CI/CD Pipeline (`.github/workflows/ci.yml`)**:
-   - Automated checkout, Node 22 cache, package builds (`shared-types`, `scoring-engine`, `api`, `web`), monorepo typecheck, and scoring engine unit tests.
+3. **Fix 5: Durable BullMQ Repeatable Job Schedulers**:
+   - Register idempotent BullMQ repeatable schedules:
+     - Nightly batch scoring job (`0 2 * * *` / 2:00 AM UTC).
+     - Frequent SLA escalation check job (`every: 15 * 60 * 1000` / every 15 min).
+   - Guarantee single-schedule idempotency across container restarts.
+4. **Operational Readiness Probe (`GET /ready`)**:
+   - Keep `/health` for basic process status.
+   - Add `GET /ready` verifying that MongoDB and Redis connections are live and operational before serving traffic.
+5. **CI/CD Hardening (`.github/workflows/ci.yml`)**:
+   - Expand GitHub Actions to run the full API test suite (`npm --prefix apps/api test`) alongside scoring engine tests, enforcing 100% test pass before merging.
+6. **OpenAPI 3.1 & DPDP Documentation**:
+   - Assemble `docs/openapi.yaml` covering all existing authenticated endpoints.
+   - Add DPDP compliance note in `README.md` (academic-use only, retention policy, zero credential/mark logging in audit services).
+   - Add note stating that live university SIS/LMS integrations are deliberately deferred due to academic synthetic assignment scope.
 
 ---
 
@@ -281,12 +292,20 @@
 ### 🔹 STAGE 3: Week 13 Evaluation — Product Readiness (45 Marks)
 
 #### Owned Files in Stage 3:
-- `apps/web/app/(mentor)/inbox/components/*`
-- Advanced SLA escalation tuning and email/webhook alert dispatchers.
+- `apps/api/src/modules/alerts/alerts.controller.ts` & `alerts.test.ts` (Alert denial-message contract)
+- `apps/workers/src/escalation.worker.ts` (BullMQ repeatable SLA-check job execution)
+- `apps/web/app/(mentor)/inbox/components/*` (Alert triage filters and bulk operations)
 
 #### Granular Tasks for Stage 3:
-1. **Interactive Alert Triage Filters**: Status tabs (`open`, `acknowledged`, `escalated`, `closed`) with multi-column sorting and bulk acknowledge.
-2. **Trend Anomaly Tuning**: Refine week-over-week sudden drop sensitivity parameters based on multi-semester historical datasets.
+1. **Fix 2: Resolve Alert Denial-Message Contract**:
+   - Align `apps/api/src/modules/alerts/alerts.controller.ts` and `alerts.test.ts` to use a stable, role-neutral error message: `Forbidden: You can only view alerts assigned to you`.
+   - Avoid exact full-message assertions in tests where role-specific variations could cause contract mismatch.
+2. **Interactive Alert Triage Filters (`/inbox`)**:
+   - Status tabs (`open`, `acknowledged`, `escalated`, `closed`) with multi-column sorting and bulk acknowledge.
+3. **SLA Escalation Worker Integration**:
+   - Integrate with the BullMQ repeatable scheduler to trigger automatic 48h SLA escalation checks without manual HTTP intervention.
+4. **OpenAPI 3.1 Documentation (Alerts & Trends)**:
+   - Provide OpenAPI definitions for `/api/v1/alerts`, `/api/v1/alerts/:id/acknowledge`, and `/api/v1/students/:id/trends`.
 
 ---
 
@@ -365,11 +384,22 @@
 ### 🔹 STAGE 3: Week 13 Evaluation — Product Readiness (45 Marks)
 
 #### Owned Files in Stage 3:
-- `apps/web/app/(admin)/connectors/page.tsx`
+- `apps/api/src/modules/ingestion/csv-importers.ts` & `ingestion.integration.test.ts` (CSV Header validation)
+- `apps/api/src/modules/profile/profile-aggregator.ts` & `profile.test.ts` (Assessment history ordering)
+- `apps/web/app/(admin)/connectors/page.tsx` (Connector status & quarantine UI)
 
 #### Granular Tasks for Stage 3:
-1. **Connector Status & Quarantine UI (`/admin/connectors`)**: Admin page showing import sync history, success counts, and table of quarantined records with failure reasons.
-2. **Query Performance Optimization**: Add MongoDB compound indexes on `(studentId, date)` and `(courseId, studentId)` for instant profile aggregations.
+1. **Fix 3: Validate Required Headers Before Processing Attendance Rows**:
+   - In `apps/api/src/modules/ingestion/csv-importers.ts`, inspect session-based attendance CSV headers before iterating rows.
+   - Required headers: `studentId`, `sectionId`, `date`, `status`, `sourceRef`.
+   - If `sectionId` or any required header is missing, quarantine the entire file with diagnostic reason (*"Missing required header: sectionId"*) instead of reporting per-row errors.
+2. **Fix 4: Resolve Assessment-History Ordering Contract**:
+   - In `apps/api/src/modules/profile/profile-aggregator.ts`, ensure assessment history ordering contract is explicit and verified: newest-first (descending date: e.g. 90 then 80).
+   - Align the test assertion to expect the newest-first order matching the student profile radar display.
+3. **Connector Status & Quarantine UI (`/admin/connectors`)**:
+   - Completed in PR #31: Admin dashboard displaying sync history, counts, and table of quarantined records with failure reasons.
+4. **OpenAPI 3.1 Documentation (Ingestion & Profile)**:
+   - Provide OpenAPI definitions for `/api/v1/sections/:id/imports/:source` and `/api/v1/students/:id/profile`.
 
 ---
 
@@ -458,16 +488,27 @@
 ### 🔹 STAGE 3: Week 13 Evaluation — Product Readiness (45 Marks)
 
 #### Owned Files in Stage 3:
-- `apps/web/app/(instructor)/sections/page.tsx` (Advanced charts)
-- `apps/web/app/(hod)/dashboard/page.tsx`
-- `apps/web/app/(dean)/dashboard/page.tsx`
+- `apps/api/src/modules/interventions/interventions.controller.ts` & `interventions.test.ts` (Mentor assignment access enforcement)
+- `apps/web/app/(instructor)/sections/page.tsx` (Advanced Recharts analytics)
+- `apps/web/app/(hod)/hod-dashboard/page.tsx` (Departmental analytics & SLA escalation charts)
+- `apps/web/app/(dean)/dean-dashboard/page.tsx` (Cross-department comparison charts)
 
 #### Granular Tasks for Stage 3:
-1. **Full Role Dashboards (2-4 Charts per Role)**:
-   - **Instructor**: Section risk breakdown & attendance deficit distribution charts.
-   - **HoD**: Department-wide risk band pie chart & SLA escalation trend chart.
-   - **Dean**: Cross-department comparison & intervention success rate charts.
-2. **Closed-Loop Outcome Analytics**: Pre-intervention vs post-intervention student risk band transitions.
+1. **Fix 1: Enforce Intervention Access Through Mentor Assignment**:
+   - In `apps/api/src/modules/interventions/interventions.controller.ts`, verify intervention action access against `MentorAssignmentModel` / alert ownership, not role title alone.
+   - An Instructor or HoD who is the assigned mentor can act for their mentee.
+   - Any faculty member who is NOT the assigned mentor receives HTTP 403 Forbidden.
+2. **Database-Backed Mentor Assignment Tests (`interventions.test.ts`)**:
+   - Add DB-backed positive test proving an Instructor/HoD as assigned mentor can create an intervention.
+   - Add DB-backed negative test proving non-assigned faculty receives HTTP 403 Forbidden.
+3. **Full Role Dashboards (2-4 Visual Recharts per Role)**:
+   - **Instructor (`/sections`)**: Section risk breakdown pie chart & attendance deficit distribution histogram.
+   - **HoD (`/hod-dashboard`)**: Department-wide risk band distribution & mentor SLA escalation trend over time.
+   - **Dean (`/dean-dashboard`)**: Cross-department risk comparison & intervention outcome success rates.
+4. **Closed-Loop Outcome Analytics**:
+   - Visual indicator of pre-intervention vs post-intervention student risk band transitions.
+5. **OpenAPI 3.1 Documentation (Interventions & Analytics)**:
+   - Provide OpenAPI definitions for `/api/v1/interventions` and `/api/v1/analytics/*`.
 
 ---
 
@@ -577,3 +618,82 @@ sequenceDiagram
    - Response: **HTTP 403 Forbidden**.
 6. **Step 6: State Persistence & Re-verification**:
    - Refresh browser on any screen; verify that all state is loaded from MongoDB without session corruption or data loss.
+
+---
+
+## 8. Stage 3 Integrated Execution Sequence & Recheck Verification Blueprint (Week 13)
+
+This section maps the November 2026 Recheck Report findings directly into the Stage 3 product readiness timeline. To prevent blockers across modules, the team must execute in this exact 5-phase chronological sequence:
+
+```
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ PHASE 1: Data Contracts & Ingestion (Nilesh - Member 3)                     │
+│ • Fix 3: Validate attendance headers (studentId, sectionId, date, status,  │
+│          sourceRef); quarantine file on missing sectionId.                  │
+│ • Fix 4: Align profile aggregator assessment history order (newest-first).  │
+└──────────────────────────────────────┬──────────────────────────────────────┘
+                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ PHASE 2: Authorization & Alert Alignment (Vani - M2 & Piyush - M4)          │
+│ • Fix 2: Unify alert denial 403 message contract (Vani).                    │
+│ • Fix 1: Enforce intervention access strictly via MentorAssignment (Piyush).│
+│ • Add DB-backed positive/negative tests for Instructor/HoD as mentor(Piyush)│
+└──────────────────────────────────────┬──────────────────────────────────────┘
+                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ PHASE 3: Durable Background Jobs & Readiness (Pawan - Member 1)             │
+│ • Fix 5: Register BullMQ repeatable jobs (nightly scoring + SLA checks).    │
+│ • Add GET /ready probe for MongoDB + Redis connectivity.                    │
+│ • Validate zero credential/mark logging in audit services.                  │
+└──────────────────────────────────────┬──────────────────────────────────────┘
+                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ PHASE 4: Visual Dashboards & Analytics (Piyush - Member 4)                  │
+│ • Instructor Recharts on /sections (risk breakdown & deficit distribution). │
+│ • HoD Recharts on /hod-dashboard (department breakdown & SLA trend).        │
+│ • Dean Recharts on /dean-dashboard (cross-department & outcome success).    │
+│ • Closed-loop pre/post intervention transition indicator.                   │
+└──────────────────────────────────────┬──────────────────────────────────────┘
+                                       ▼
+┌─────────────────────────────────────────────────────────────────────────────┐
+│ PHASE 5: Hardening, OpenAPI 3.1 & Assignment Gate (All Members)             │
+│ • Run full API test suite: assert 128/128 tests pass (125 passed + 3 fixed).│
+│ • Update .github/workflows/ci.yml to enforce full test pass in CI.          │
+│ • Compile minimal openapi.yaml (OpenAPI 3.1) for existing endpoints.        │
+│ • Update README with DPDP privacy note and CSV-only integration boundary.   │
+└─────────────────────────────────────────────────────────────────────────────┘
+```
+
+### Stage 3 Master Task Alignment Table
+
+| Phase | Task Description | Owning Member | Target Files | Depends On | Gate Status |
+| :---: | :--- | :--- | :--- | :--- | :---: |
+| **P1.1** | Attendance CSV header validation | **Nilesh (M1)** | `csv-importers.ts` | None | ⏳ Phase 1 |
+| **P1.2** | Assessment history order alignment | **Nilesh (M2)** | `profile-aggregator.ts`, `profile.test.ts` | None | ⏳ Phase 1 |
+| **P2.1** | Alert denial message contract | **Vani (M5)** | `alerts.controller.ts`, `alerts.test.ts` | None | ⏳ Phase 2 |
+| **P2.2** | Intervention access via mentor assignment | **Piyush (M6)** | `interventions.controller.ts` | P1.2 | ⏳ Phase 2 |
+| **P2.3** | DB-backed mentor assignment tests | **Piyush (M6)** | `interventions.test.ts` | P2.2 | ⏳ Phase 2 |
+| **P3.1** | BullMQ repeatable job schedules | **Pawan (M3/M8)**| `scheduler.ts`, `scoring.worker.ts` | P2.1 | ⏳ Phase 3 |
+| **P3.2** | `/ready` probe (Mongo + Redis) | **Pawan (M8)** | `server.ts` | None | ⏳ Phase 3 |
+| **P4.1** | Role Dashboards (Instructor Recharts) | **Piyush (M7)** | `apps/web/app/(instructor)/sections/` | P1.2 | ⏳ Phase 4 |
+| **P4.2** | Role Dashboards (HoD & Dean Recharts) | **Piyush (M7)** | `(hod)/hod-dashboard/`, `(dean)/` | P4.1 | ⏳ Phase 4 |
+| **P4.3** | Closed-loop outcome indicator | **Piyush (M6/M7)**| `(mentor)/interventions/` | P2.2 | ⏳ Phase 4 |
+| **P5.1** | Full CI test suite enforcement | **Pawan (M8)** | `.github/workflows/ci.yml` | P1–P4 | ⏳ Phase 5 |
+| **P5.2** | Minimal `openapi.yaml` (OpenAPI 3.1) | **All (Pawan Lead)**| `docs/openapi.yaml` | P1–P4 | ⏳ Phase 5 |
+| **P5.3** | DPDP note & CSV scope in README | **Pawan (M8)** | `README.md` | P5.2 | ⏳ Phase 5 |
+
+### Explicitly Deferred Scope (Do NOT Build for this Assignment)
+- Live ERP/SIS, LMS, email-provider, and university SSO/LDAP integrations.
+- OAuth/OIDC SSO, refresh-token rotation, and TOTP MFA.
+- External Sentry accounts and external uptime monitoring.
+- Full 30,000-student load testing, enterprise OWASP ZAP drills.
+- Multi-tenant `institutionId` infrastructure and SMS delivery pipelines.
+
+### Preserved Working Foundations (Do NOT Rewrite)
+- Track J Next.js + Express + MongoDB + Redis/BullMQ monorepo structure.
+- Deterministic weighted scoring engine and ranked factor attribution.
+- Append-only risk snapshots and source-record indexes.
+- Four-source ingestion with quarantine isolation.
+- Mentor alert deduplication and 48-hour SLA calculation logic.
+- Student cross-record zero-trust isolation and admin raw-marks denial.
+

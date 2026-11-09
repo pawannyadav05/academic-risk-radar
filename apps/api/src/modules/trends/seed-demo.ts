@@ -660,7 +660,7 @@ export async function seedDemoDatabase(customMongoUri?: string): Promise<SeedDem
     AssignmentSubmissionModel.deleteMany({ studentId: { $in: demoStudents.map((s) => s._id) } }),
     LmsActivityModel.deleteMany({ studentId: { $in: demoStudents.map((s) => s._id) } }),
     RiskSnapshotModel.deleteMany({ studentId: { $in: demoStudents.map((s) => s._id) } }),
-    AlertModel.deleteMany({ studentId: "12409922" }),
+    AlertModel.deleteMany({ _id: { $in: demoAlerts.map((a) => a._id) } }),
     RiskModelVersionModel.deleteMany({ version: demoModelVersion.version }),
   ]);
 
