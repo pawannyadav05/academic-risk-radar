@@ -88,24 +88,20 @@ export function parseAttendanceCsv(
     return { valid, quarantined, totalRows: rows.length };
   }
 
-  if (!hasPercentageCol && !headerMap.has("sectionid")) {
-    quarantined.push({
-      originalCollection: "attendanceRecords",
-      rawRecord: header,
-      reason: "Missing required header column: sectionId",
-      ingestedAt,
-    });
-    return { valid, quarantined, totalRows: rows.length };
-  }
+  if (!hasPercentageCol) {
+    const hasSectionId = headerMap.has("sectionid") || headerMap.has("section");
+    const hasDate = headerMap.has("date");
+    const hasStatus = headerMap.has("status");
 
-  if (!hasPercentageCol && !hasStatusCol) {
-    quarantined.push({
-      originalCollection: "attendanceRecords",
-      rawRecord: header,
-      reason: "Missing attendance column: requires either 'percentage' or 'status'",
-      ingestedAt,
-    });
-    return { valid, quarantined, totalRows: rows.length };
+    if (!hasSectionId || !hasDate || !hasStatus) {
+      quarantined.push({
+        originalCollection: "attendanceRecords",
+        rawRecord: header,
+        reason: "Missing required header columns for session attendance: studentId, sectionId, date, status, sourceRef",
+        ingestedAt,
+      });
+      return { valid, quarantined, totalRows: rows.length };
+    }
   }
 
   for (let i = 0; i < dataRows.length; i++) {
