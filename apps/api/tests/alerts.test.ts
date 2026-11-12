@@ -269,7 +269,7 @@ describe("M5: Alert Routing, Deduplication & Mentor Inbox (Stage 2)", () => {
           "x-user-role": "mentor",
         });
         assert.equal(res.statusCode, 403);
-        assert.match(res.data.error, /Forbidden: Mentors can only view their own assigned alerts/i);
+        assert.match(res.data.error, /Forbidden: You can only view alerts assigned to you/i);
       } finally {
         Object.defineProperty(mongoose.connection, "readyState", { value: origReadyState, configurable: true });
         AlertModel.findById = origFindById;
@@ -295,7 +295,7 @@ describe("M5: Alert Routing, Deduplication & Mentor Inbox (Stage 2)", () => {
           "x-user-role": "mentor",
         });
         assert.equal(res.statusCode, 403);
-        assert.match(res.data.error, /Forbidden: Only the assigned mentor can acknowledge this alert/i);
+        assert.match(res.data.error, /Forbidden: You can only acknowledge alerts assigned to you/i);
       } finally {
         Object.defineProperty(mongoose.connection, "readyState", { value: origReadyState, configurable: true });
         AlertModel.findById = origFindById;

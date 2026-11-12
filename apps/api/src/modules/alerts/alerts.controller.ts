@@ -113,7 +113,7 @@ export async function getAlertById(req: Request, res: Response) {
       alert.mentorId !== user.identityId
     ) {
       return res.status(403).json({
-        error: "Forbidden: Faculty can only view their own assigned alerts",
+        error: "Forbidden: You can only view alerts assigned to you",
       });
     }
 
@@ -160,7 +160,7 @@ export async function acknowledgeAlert(req: Request, res: Response) {
       alert.mentorId !== user.identityId
     ) {
       return res.status(403).json({
-        error: "Forbidden: Only the assigned mentor can acknowledge this alert",
+        error: "Forbidden: You can only acknowledge alerts assigned to you",
       });
     }
 
