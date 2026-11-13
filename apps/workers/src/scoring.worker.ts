@@ -6,6 +6,8 @@ import {
   StudentScoringMetrics,
 } from "@academic-risk-radar/scoring-engine";
 import { RiskModelVersion, RiskSnapshot } from "@academic-risk-radar/shared-types";
+import { registerRepeatableSchedules } from "./scheduler.js";
+import "./escalation.worker.js";
 
 let resolvedRedisHost = process.env.REDIS_HOST || "127.0.0.1";
 let resolvedRedisPort = parseInt(process.env.REDIS_PORT || "6379", 10);
@@ -316,14 +318,15 @@ scoringWorker.on("failed", (job: Job | undefined, err: Error) => {
   }
 });
 
-// Connect to MongoDB when the worker starts (non-test environment)
+// Connect to MongoDB & register durable repeatable schedules when worker starts
 if (process.env.NODE_ENV !== "test") {
   mongoose
     .connect(MONGO_URI)
     .then(() => {
       console.log(`[Scoring Worker] Connected to MongoDB at ${MONGO_URI}`);
+      return registerRepeatableSchedules({ host: REDIS_HOST, port: REDIS_PORT });
     })
     .catch((err) => {
-      console.error("[Scoring Worker] MongoDB Connection Error:", err.message);
+      console.error("[Scoring Worker] Startup initialization error:", err.message);
     });
 }

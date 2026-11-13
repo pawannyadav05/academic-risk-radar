@@ -668,19 +668,19 @@ This section maps the November 2026 Recheck Report findings directly into the St
 
 | Phase | Task Description | Owning Member | Target Files | Depends On | Gate Status |
 | :---: | :--- | :--- | :--- | :--- | :---: |
-| **P1.1** | Attendance CSV header validation | **Nilesh (M1)** | `csv-importers.ts` | None | ⏳ Phase 1 |
-| **P1.2** | Assessment history order alignment | **Nilesh (M2)** | `profile-aggregator.ts`, `profile.test.ts` | None | ⏳ Phase 1 |
-| **P2.1** | Alert denial message contract | **Vani (M5)** | `alerts.controller.ts`, `alerts.test.ts` | None | ⏳ Phase 2 |
-| **P2.2** | Intervention access via mentor assignment | **Piyush (M6)** | `interventions.controller.ts` | P1.2 | ⏳ Phase 2 |
-| **P2.3** | DB-backed mentor assignment tests | **Piyush (M6)** | `interventions.test.ts` | P2.2 | ⏳ Phase 2 |
-| **P3.1** | BullMQ repeatable job schedules | **Pawan (M3/M8)**| `scheduler.ts`, `scoring.worker.ts` | P2.1 | ⏳ Phase 3 |
-| **P3.2** | `/ready` probe (Mongo + Redis) | **Pawan (M8)** | `server.ts` | None | ⏳ Phase 3 |
-| **P4.1** | Role Dashboards (Instructor Recharts) | **Piyush (M7)** | `apps/web/app/(instructor)/sections/` | P1.2 | ⏳ Phase 4 |
-| **P4.2** | Role Dashboards (HoD & Dean Recharts) | **Piyush (M7)** | `(hod)/hod-dashboard/`, `(dean)/` | P4.1 | ⏳ Phase 4 |
-| **P4.3** | Closed-loop outcome indicator | **Piyush (M6/M7)**| `(mentor)/interventions/` | P2.2 | ⏳ Phase 4 |
-| **P5.1** | Full CI test suite enforcement | **Pawan (M8)** | `.github/workflows/ci.yml` | P1–P4 | ⏳ Phase 5 |
-| **P5.2** | Minimal `openapi.yaml` (OpenAPI 3.1) | **All (Pawan Lead)**| `docs/openapi.yaml` | P1–P4 | ⏳ Phase 5 |
-| **P5.3** | DPDP note & CSV scope in README | **Pawan (M8)** | `README.md` | P5.2 | ⏳ Phase 5 |
+| **P1.1** | Attendance CSV header validation | **Nilesh (M1)** | `csv-importers.ts` | None | ✅ COMPLETED (PR #38) |
+| **P1.2** | Assessment history order alignment | **Nilesh (M2)** | `profile-aggregator.ts`, `profile.test.ts` | None | ✅ COMPLETED (PR #38) |
+| **P2.1** | Alert denial message contract | **Vani (M5)** | `alerts.controller.ts`, `alerts.test.ts` | None | ✅ COMPLETED (PR #39) |
+| **P2.2** | Intervention access via mentor assignment | **Piyush (M6)** | `interventions.controller.ts` | P1.2 | ✅ COMPLETED (PR #40) |
+| **P2.3** | DB-backed mentor assignment tests | **Piyush (M6)** | `interventions.test.ts` | P2.2 | ✅ COMPLETED (PR #40) |
+| **P3.1** | BullMQ repeatable job schedules | **Pawan (M3/M8)**| `scheduler.ts`, `scoring.worker.ts` | P2.1 | ✅ COMPLETED |
+| **P3.2** | `/ready` probe (Mongo + Redis) | **Pawan (M8)** | `server.ts` | None | ✅ COMPLETED |
+| **P4.1** | Role Dashboards (Instructor Recharts) | **Piyush (M7)** | `apps/web/app/(instructor)/sections/` | P1.2 | ✅ COMPLETED (PR #40) |
+| **P4.2** | Role Dashboards (HoD & Dean Recharts) | **Piyush (M7)** | `(hod)/hod-dashboard/`, `(dean)/` | P4.1 | ✅ COMPLETED (PR #40) |
+| **P4.3** | Closed-loop outcome indicator | **Piyush (M6/M7)**| `(mentor)/interventions/` | P2.2 | ✅ COMPLETED (PR #40) |
+| **P5.1** | Full CI test suite enforcement | **Pawan (M8)** | `.github/workflows/ci.yml` | P1–P4 | ✅ COMPLETED |
+| **P5.2** | Minimal `openapi.yaml` (OpenAPI 3.1) | **All (Pawan Lead)**| `docs/openapi.yaml` | P1–P4 | ✅ COMPLETED |
+| **P5.3** | DPDP note & CSV scope in README | **Pawan (M8)** | `README.md` | P5.2 | ✅ COMPLETED |
 
 ### Explicitly Deferred Scope (Do NOT Build for this Assignment)
 - Live ERP/SIS, LMS, email-provider, and university SSO/LDAP integrations.

@@ -65,9 +65,59 @@ app.use("/api/v1", interventionsRouter);
 app.use("/api/v1", analyticsRouter);
 app.use("/api/v1/admin", adminRouter);
 
-// Health check endpoint
+// Health check endpoint (basic liveness probe)
 app.get("/health", (_req, res) => {
   res.json({ status: "healthy", timestamp: new Date().toISOString() });
+});
+
+// Readiness check endpoint (verifies MongoDB & Redis infrastructure connectivity)
+app.get("/ready", async (_req, res) => {
+  const mongoReady = mongoose.connection.readyState === 1;
+  let redisReady = false;
+
+  let resolvedRedisHost = process.env.REDIS_HOST || "127.0.0.1";
+  let resolvedRedisPort = parseInt(process.env.REDIS_PORT || "6379", 10);
+  if (process.env.REDIS_URL) {
+    try {
+      const parsed = new URL(process.env.REDIS_URL);
+      resolvedRedisHost = parsed.hostname || resolvedRedisHost;
+      resolvedRedisPort = parseInt(parsed.port || "6379", 10);
+    } catch {}
+  }
+
+  let redisClient: any = null;
+  try {
+    const ioredisModule = await import("ioredis");
+    const RedisConstructor = (ioredisModule as any).default || (ioredisModule as any).Redis || ioredisModule;
+    redisClient = new RedisConstructor({
+      host: resolvedRedisHost,
+      port: resolvedRedisPort,
+      connectTimeout: 2000,
+      lazyConnect: true,
+      maxRetriesPerRequest: 1,
+    });
+    await redisClient.connect();
+    const pong = await redisClient.ping();
+    redisReady = pong === "PONG";
+  } catch (err: any) {
+    redisReady = false;
+  } finally {
+    if (redisClient) {
+      try {
+        await redisClient.quit();
+      } catch {}
+    }
+  }
+
+  const isReady = mongoReady && redisReady;
+  return res.status(isReady ? 200 : 503).json({
+    status: isReady ? "ready" : "not_ready",
+    checks: {
+      mongodb: mongoReady ? "connected" : "disconnected",
+      redis: redisReady ? "connected" : "disconnected",
+    },
+    timestamp: new Date().toISOString(),
+  });
 });
 
 if (process.env.NODE_ENV !== "test") {
