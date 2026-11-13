@@ -1,0 +1,327 @@
+openapi: 3.1.0
+info:
+  title: Academic Risk Radar API
+  version: 1.0.0
+  description: |
+    Early academic warning and risk intelligence API for higher-education institutions.
+    Provides deterministic weighted risk scoring, four-source ingestion, zero-trust RBAC,
+    mentor SLA alert routing, and closed-loop intervention tracking.
+servers:
+  - url: http://localhost:4000
+    description: Local Express API Gateway
+
+paths:
+  /health:
+    get:
+      summary: Liveness probe
+      description: Basic server liveness check returning healthy status.
+      responses:
+        '200':
+          description: Server is online and responsive
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string, example: "healthy" }
+                  timestamp: { type: string, format: date-time }
+
+  /ready:
+    get:
+      summary: Readiness probe
+      description: Verifies connectivity to MongoDB and Redis infrastructure.
+      responses:
+        '200':
+          description: Both MongoDB and Redis are connected
+        '503':
+          description: One or more infrastructure dependencies are disconnected
+
+  /api/v1/auth/login:
+    post:
+      summary: Authenticate user session
+      description: Verifies email and password, returning an HTTP-only session cookie and JWT.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email, example: "mentor@radar.edu" }
+                password: { type: string, example: "Password123!" }
+      responses:
+        '200':
+          description: Login successful; session cookie set
+        '400':
+          description: Missing email or password
+        '401':
+          description: Invalid credentials
+
+  /api/v1/auth/logout:
+    post:
+      summary: Terminate session
+      description: Clears HTTP-only session token cookie.
+      responses:
+        '200':
+          description: Logged out successfully
+
+  /api/v1/students/{id}/risk:
+    get:
+      summary: Retrieve student risk score and ranked factors
+      description: Returns latest computed RiskSnapshot. Students may only access their own record.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string, example: "12409922" }
+      responses:
+        '200':
+          description: Student risk snapshot found
+        '401':
+          description: Missing authentication
+        '403':
+          description: Forbidden (cross-student access blocked)
+        '404':
+          description: No risk snapshot found for student
+
+  /api/v1/students/{id}/profile:
+    get:
+      summary: Consolidated student profile
+      description: Aggregated attendance, assessment, assignment, and LMS metrics.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Consolidated academic standing
+        '403':
+          description: Unauthorized role or student ID mismatch
+
+  /api/v1/alerts:
+    get:
+      summary: List mentor inbox alerts
+      description: Paginated alerts with SLA deadlines. Mentors only see assigned alerts.
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string, enum: [open, acknowledged, escalated, closed] }
+        - name: mentorId
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: Filtered list of alerts
+        '403':
+          description: Forbidden (unauthorized mentor query)
+
+  /api/v1/alerts/{id}/acknowledge:
+    post:
+      summary: Acknowledge high/critical alert
+      description: Assigned mentor marks alert as acknowledged within 48h SLA.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Alert transitioned to acknowledged
+        '403':
+          description: Forbidden: You can only acknowledge alerts assigned to you
+
+  /api/v1/interventions:
+    get:
+      summary: List recorded interventions
+      description: Lists faculty intervention actions with optional filtering.
+      responses:
+        '200':
+          description: Array of interventions
+    post:
+      summary: Record new intervention action
+      description: Assigned mentor logs an academic counseling or support action.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [alertId, action, notes]
+              properties:
+                alertId: { type: string }
+                action: { type: string }
+                notes: { type: string }
+                followUpDate: { type: string, format: date-time }
+      responses:
+        '201':
+          description: Intervention recorded
+        '403':
+          description: Forbidden (only assigned mentor can create interventions)
+
+  /api/v1/interventions/{id}/outcome:
+    patch:
+      summary: Record intervention outcome
+      description: Update closed-loop outcome (improved, no_change, deteriorated, inconclusive).
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [outcome]
+              properties:
+                outcome: { type: string, enum: [improved, no_change, deteriorated, inconclusive] }
+      responses:
+        '200':
+          description: Outcome saved
+
+  /api/v1/interventions/{id}:
+    delete:
+      summary: Soft-withdraw intervention
+      description: Marks intervention status as withdrawn without deleting audit trail.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Intervention successfully withdrawn
+
+  /api/v1/scoring/batch:
+    post:
+      summary: Enqueue batch risk scoring recalculation
+      description: Triggers BullMQ batch scoring job for specified students or cohort.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                studentIds: { type: array, items: { type: string } }
+                cohortId: { type: string }
+      responses:
+        '202':
+          description: Scoring batch job accepted and enqueued
+
+  /api/v1/analytics/section/{id}:
+    get:
+      summary: Section-level risk analytics
+      description: Risk distribution and factor deficits for a classroom section.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Section analytics summary
+        '403':
+          description: Forbidden for students and unassigned mentors
+
+  /api/v1/analytics/department/{id}:
+    get:
+      summary: Department-level risk analytics
+      description: Department cohort risk bands and SLA breach trendlines.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200':
+          description: Department analytics summary
+        '403':
+          description: Forbidden for students, instructors, and outside HoDs
+
+  /api/v1/analytics/institution:
+    get:
+      summary: Institution-wide risk analytics
+      description: Cross-department risk comparison and macro intervention efficacy.
+      responses:
+        '200':
+          description: Institutional analytics summary
+        '403':
+          description: Forbidden for non-Dean/Admin roles
+
+  /api/v1/admin/model-versions:
+    get:
+      summary: List scoring model versions
+      description: Returns active and historical risk model versions.
+      responses:
+        '200':
+          description: Array of model versions
+    post:
+      summary: Create or preview model version
+      description: Computes live impact preview or commits a new model version.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [weights]
+              properties:
+                weights: { type: object }
+                commit: { type: boolean }
+      responses:
+        '200':
+          description: Preview computed
+        '201':
+          description: New model version committed
+
+  /api/v1/admin/audit:
+    get:
+      summary: Paginated immutable audit trail
+      description: Administrative audit log with action filtering and JSON diff support.
+      parameters:
+        - name: page
+          in: query
+          schema: { type: integer, default: 1 }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20 }
+        - name: action
+          in: query
+          schema: { type: string }
+      responses:
+        '200':
+          description: Paginated audit entries
+        '403':
+          description: Admin access required
+
+  /api/v1/sections/{id}/imports/{source}:
+    post:
+      summary: CSV Data Ingestion
+      description: Ingests attendance, assessment, assignment, or LMS CSV files with header validation and quarantine.
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: { type: string }
+        - name: source
+          in: path
+          required: true
+          schema: { type: string, enum: [attendance, assessments, assignments, lms] }
+      requestBody:
+        required: true
+        content:
+          text/csv:
+            schema: { type: string }
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        '200':
+          description: Ingestion complete with valid and quarantined counts
+        '400':
+          description: Invalid header format or empty file

@@ -373,6 +373,20 @@ docker logs academic_risk_workers --tail 20
 
 ---
 
+## 🔒 Privacy, DPDP Compliance & Integration Boundary
+
+### Digital Personal Data Protection (DPDP) Compliance
+- **Purpose Limitation**: Academic records (attendance, assessments, submissions, LMS activity) are processed strictly for timely academic mentoring, early-risk detection, and student support.
+- **Data Minimization & Redaction**: The system enforces zero credential and PII leakage. Application and audit logs never record passwords, JWT tokens, raw student marks, or private intervention counseling notes.
+- **Data Subject Rights**: Students may review their computed academic risk factors transparently via the student portal. Correction or deletion requests are mediated through designated university administrators.
+- **Retention**: Records and append-only risk snapshots are retained in accordance with institutional academic retention policies.
+
+### Integration Boundary & Assignment Scope
+- **CSV & Synthetic Ingestion**: Live institutional ERP/SIS, LMS APIs, university SSO, and email provider integrations are deliberately deferred because no live university credentials or data contracts were provided for this academic assignment.
+- **Local Demonstrable Stack**: Data input is delivered via standardized CSV upload pipelines (with strict header quarantine validation) and deterministic synthetic seeding (`npm run seed:demo`). All multi-role authentication is handled via local zero-trust JWT sessions.
+
+---
+
 ## 📚 Documentation
 
 Full project documentation is in the [`docs/`](docs/) folder:

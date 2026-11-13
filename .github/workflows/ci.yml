@@ -39,3 +39,6 @@ jobs:
 
       - name: Run scoring engine unit tests
         run: npm --prefix packages/scoring-engine test
+
+      - name: Run complete API backend test suite
+        run: npm --prefix apps/api test
