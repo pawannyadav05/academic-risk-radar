@@ -96,13 +96,23 @@ export default function InterventionList({ interventions, onOpenOutcomeModal, on
                     </td>
                     <td style={{ padding: "0.875rem 1rem", verticalAlign: "top" }}>
                       {outcomeBadge ? (
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem", padding: "0.25rem 0.6rem", borderRadius: "4px", fontSize: "0.75rem", fontWeight: 600, color: outcomeBadge.color, background: "#F2F4F3", border: `1px solid ${outcomeBadge.color}` }}>
-                          <CheckCircle size={12} /> {outcomeBadge.label}
-                        </span>
+                        <div style={{ display: "inline-flex", flexDirection: "column", gap: "0.25rem" }}>
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem", padding: "0.25rem 0.6rem", borderRadius: "4px", fontSize: "0.75rem", fontWeight: 600, color: outcomeBadge.color, background: "#F2F4F3", border: `1px solid ${outcomeBadge.color}` }}>
+                            <CheckCircle size={12} /> {outcomeBadge.label}
+                          </span>
+                          <span style={{ fontSize: "0.6875rem", color: "#5B6B75" }}>
+                            Closed-loop: High risk → {outcomeBadge.label}
+                          </span>
+                        </div>
                       ) : (
-                        <span style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem", padding: "0.25rem 0.6rem", borderRadius: "4px", fontSize: "0.75rem", fontWeight: 600, color: "#D49A1F", background: "#F2F4F3", border: "1px solid #D49A1F" }}>
-                          <Clock size={12} /> Pending
-                        </span>
+                        <div style={{ display: "inline-flex", flexDirection: "column", gap: "0.25rem" }}>
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem", padding: "0.25rem 0.6rem", borderRadius: "4px", fontSize: "0.75rem", fontWeight: 600, color: "#D49A1F", background: "#F2F4F3", border: "1px solid #D49A1F" }}>
+                            <Clock size={12} /> Pending
+                          </span>
+                          <span style={{ fontSize: "0.6875rem", color: "#5B6B75" }}>
+                            Closed-loop: Awaiting review
+                          </span>
+                        </div>
                       )}
                     </td>
                     <td style={{ padding: "0.875rem 1rem", verticalAlign: "top", textAlign: "right" }}>

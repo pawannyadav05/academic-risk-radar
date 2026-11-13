@@ -8,6 +8,8 @@ import rateLimit from "express-rate-limit";
 import { authenticateUser } from "../src/auth/rbac.middleware.js";
 import { signToken } from "../src/auth/jwt.service.js";
 import interventionsRouter from "../src/modules/interventions/index.js";
+import mongoose from "mongoose";
+import { AlertModel, MentorAssignmentModel, InterventionModel } from "../src/db/schemas.js";
 
 /**
  * Tests for Module M6: Intervention & Outcome Tracking
@@ -480,5 +482,111 @@ describe("M6: Soft-Delete Withdrawal Tests", () => {
     const activeList = list.filter((item) => item.status !== "withdrawn");
     assert.equal(activeList.length, 2);
     assert.equal(activeList.some((item) => item.status === "withdrawn"), false);
+  });
+});
+
+describe("M6: Database-Backed Mentor Assignment Tests", () => {
+  it("An instructor or HoD who has a MentorAssignment record for STU-001 CAN successfully call POST /api/v1/interventions (returns 201)", async () => {
+    const origReadyState = mongoose.connection.readyState;
+    Object.defineProperty(mongoose.connection, "readyState", { value: 1, configurable: true });
+
+    const origAlertFindOne = AlertModel.findOne;
+    const origMentorExists = MentorAssignmentModel.exists;
+    const origSave = InterventionModel.prototype.save;
+
+    (AlertModel as any).findOne = () =>
+      Promise.resolve({
+        _id: "alert-assigned-001",
+        studentId: "STU-001",
+        mentorId: "different-prior-mentor", // Direct alert mentor differs
+      });
+
+    (MentorAssignmentModel as any).exists = () =>
+      Promise.resolve({ _id: "assignment-001" }); // But faculty is assigned mentor
+
+    (InterventionModel.prototype as any).save = async function () {
+      return this;
+    };
+
+    const app = createTestApp();
+    const { port, close } = await startServer(app);
+
+    try {
+      const res = await authFetch(`http://127.0.0.1:${port}/api/v1/interventions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": "instructor-mentor-01",
+          "x-user-role": "instructor",
+        },
+        body: JSON.stringify({
+          alertId: "alert-assigned-001",
+          action: "1-on-1 Academic Tutoring",
+          notes: "Discussed improving midterm attendance",
+        }),
+      });
+
+      assert.equal(res.status, 201, "Assigned instructor mentor should create intervention");
+      const body = (await res.json()) as any;
+      assert.ok(body.intervention);
+      assert.equal(body.intervention.alertId, "alert-assigned-001");
+      assert.equal(body.intervention.mentorId, "instructor-mentor-01");
+      assert.equal(body.intervention.status, "active");
+    } finally {
+      close();
+      Object.defineProperty(mongoose.connection, "readyState", { value: origReadyState, configurable: true });
+      AlertModel.findOne = origAlertFindOne;
+      MentorAssignmentModel.exists = origMentorExists;
+      InterventionModel.prototype.save = origSave;
+    }
+  });
+
+  it("Another faculty member without a MentorAssignment for STU-001 receives 403 Forbidden", async () => {
+    const origReadyState = mongoose.connection.readyState;
+    Object.defineProperty(mongoose.connection, "readyState", { value: 1, configurable: true });
+
+    const origAlertFindOne = AlertModel.findOne;
+    const origMentorExists = MentorAssignmentModel.exists;
+
+    (AlertModel as any).findOne = () =>
+      Promise.resolve({
+        _id: "alert-assigned-001",
+        studentId: "STU-001",
+        mentorId: "different-mentor-id",
+      });
+
+    // Unassigned faculty returns null
+    (MentorAssignmentModel as any).exists = () => Promise.resolve(null);
+
+    const app = createTestApp();
+    const { port, close } = await startServer(app);
+
+    try {
+      const res = await authFetch(`http://127.0.0.1:${port}/api/v1/interventions`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "x-user-id": "faculty-unassigned-02",
+          "x-user-role": "instructor",
+        },
+        body: JSON.stringify({
+          alertId: "alert-assigned-001",
+          action: "Unauthorized counseling",
+          notes: "Attempting to intervene without mentor assignment",
+        }),
+      });
+
+      assert.equal(res.status, 403, "Unassigned faculty must receive 403 Forbidden");
+      const body = (await res.json()) as any;
+      assert.match(
+        body.error,
+        /Forbidden: Only the assigned mentor can create interventions for this student/i
+      );
+    } finally {
+      close();
+      Object.defineProperty(mongoose.connection, "readyState", { value: origReadyState, configurable: true });
+      AlertModel.findOne = origAlertFindOne;
+      MentorAssignmentModel.exists = origMentorExists;
+    }
   });
 });

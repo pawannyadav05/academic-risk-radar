@@ -19,7 +19,7 @@
 import { Request, Response } from "express";
 import crypto from "crypto";
 import mongoose from "mongoose";
-import { InterventionModel, AlertModel } from "../../db/schemas.js";
+import { InterventionModel, AlertModel, MentorAssignmentModel } from "../../db/schemas.js";
 
 /**
  * Sanitize a string ID to prevent NoSQL injection.
@@ -74,13 +74,23 @@ export async function createIntervention(req: Request, res: Response) {
       return res.status(404).json({ error: "Alert not found" });
     }
 
-    // RBAC: Only the assigned mentor can create interventions for their alerts
-    const effectiveMentorId = user.identityId || user.id;
-    if (alert.mentorId !== user.id && alert.mentorId !== effectiveMentorId) {
+    // RBAC: Check if the authenticated user is assigned as the mentor for this student
+    const effectiveFacultyId = user.identityId || user.id;
+    const isDirectAlertMentor = alert.mentorId === user.id || alert.mentorId === effectiveFacultyId;
+
+    // Query DB for explicit mentor assignment
+    const isAssignedMentor = await MentorAssignmentModel.exists({
+      studentId: { $eq: alert.studentId },
+      mentorId: { $in: [user.id, effectiveFacultyId] },
+    });
+
+    if (!isDirectAlertMentor && !isAssignedMentor && user.role !== "admin") {
       return res.status(403).json({
-        error: "Forbidden: Only the assigned mentor can create interventions for this alert",
+        error: "Forbidden: Only the assigned mentor can create interventions for this student",
       });
     }
+
+    const effectiveMentorId = effectiveFacultyId;
 
     const now = new Date().toISOString();
     const sanitizedFollowUp = followUpDate && typeof followUpDate === "string" ? followUpDate : null;

@@ -494,19 +494,19 @@
 - `apps/web/app/(dean)/dean-dashboard/page.tsx` (Cross-department comparison charts)
 
 #### Granular Tasks for Stage 3:
-1. **Fix 1: Enforce Intervention Access Through Mentor Assignment**:
-   - In `apps/api/src/modules/interventions/interventions.controller.ts`, verify intervention action access against `MentorAssignmentModel` / alert ownership, not role title alone.
+1. **Fix 1: Enforce Intervention Access Through Mentor Assignment**: ✅ COMPLETED
+   - In `apps/api/src/modules/interventions/interventions.controller.ts`, verified intervention action access against `MentorAssignmentModel` and alert ownership.
    - An Instructor or HoD who is the assigned mentor can act for their mentee.
    - Any faculty member who is NOT the assigned mentor receives HTTP 403 Forbidden.
-2. **Database-Backed Mentor Assignment Tests (`interventions.test.ts`)**:
-   - Add DB-backed positive test proving an Instructor/HoD as assigned mentor can create an intervention.
-   - Add DB-backed negative test proving non-assigned faculty receives HTTP 403 Forbidden.
-3. **Full Role Dashboards (2-4 Visual Recharts per Role)**:
-   - **Instructor (`/sections`)**: Section risk breakdown pie chart & attendance deficit distribution histogram.
-   - **HoD (`/hod-dashboard`)**: Department-wide risk band distribution & mentor SLA escalation trend over time.
-   - **Dean (`/dean-dashboard`)**: Cross-department risk comparison & intervention outcome success rates.
-4. **Closed-Loop Outcome Analytics**:
-   - Visual indicator of pre-intervention vs post-intervention student risk band transitions.
+2. **Database-Backed Mentor Assignment Tests (`interventions.test.ts`)**: ✅ COMPLETED
+   - Added DB-backed positive test proving an Instructor/HoD as assigned mentor can create an intervention (201).
+   - Added DB-backed negative test proving non-assigned faculty receives HTTP 403 Forbidden.
+3. **Full Role Dashboards (2-4 Visual Recharts per Role)**: ✅ COMPLETED
+   - **Instructor (`/sections`)**: Section risk breakdown bar chart & multi-factor deficit distribution chart.
+   - **HoD (`/hod-dashboard`)**: Department-wide risk band distribution bar chart & 48-hour SLA resolution trendline.
+   - **Dean (`/dean-dashboard`)**: Cross-department risk comparison bar chart & intervention outcome success rate donut chart.
+4. **Closed-Loop Outcome Analytics**: ✅ COMPLETED
+   - Visual trajectory badge showing pre-intervention risk band vs post-intervention outcome (`improved`, `no_change`, `deteriorated`) on `/interventions`.
 5. **OpenAPI 3.1 Documentation (Interventions & Analytics)**:
    - Provide OpenAPI definitions for `/api/v1/interventions` and `/api/v1/analytics/*`.
 
