@@ -16,6 +16,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { Users, AlertTriangle, UploadCloud, CheckCircle2, Download, RefreshCw, BookOpen, UserCheck } from "lucide-react";
+import DeficitDistributionChart from "./components/DeficitDistributionChart";
 
 const API_BASE = "/api/v1";
 
@@ -200,6 +201,15 @@ export default function InstructorSectionsPage() {
         { name: "High Risk", value: data.bandDistribution.high, color: BAND_COLORS.high },
         { name: "Critical Risk", value: data.bandDistribution.critical, color: BAND_COLORS.critical },
       ].filter((item) => item.value > 0)
+    : [];
+
+  const riskBarData = data
+    ? [
+        { name: "Low", count: data.bandDistribution.low, color: BAND_COLORS.low },
+        { name: "Moderate", count: data.bandDistribution.moderate, color: BAND_COLORS.moderate },
+        { name: "High", count: data.bandDistribution.high, color: BAND_COLORS.high },
+        { name: "Critical", count: data.bandDistribution.critical, color: BAND_COLORS.critical },
+      ]
     : [];
 
   const barData = data?.attendanceDeficitDistribution || [];
@@ -450,21 +460,23 @@ export default function InstructorSectionsPage() {
         </div>
       ) : (
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(420px, 1fr))", gap: "1.5rem" }}>
-          {/* Risk Breakdown Pie Chart */}
+          {/* Section Risk Breakdown Bar Chart */}
           <div style={{ background: "#FFFFFF", padding: "1.5rem", borderRadius: "8px", border: "1px solid #D9DFDD" }}>
             <h3 style={{ margin: "0 0 1rem", fontSize: "1rem", fontWeight: 600, color: "#1B2A33" }}>Section risk breakdown</h3>
             <div style={{ height: "280px" }}>
-              {pieData.length > 0 ? (
+              {riskBarData.length > 0 ? (
                 <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie data={pieData} cx="50%" cy="50%" innerRadius={55} outerRadius={95} paddingAngle={4} dataKey="value">
-                      {pieData.map((entry, index) => (
+                  <BarChart data={riskBarData} margin={{ top: 20, right: 30, left: -10, bottom: 5 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#D9DFDD" />
+                    <XAxis dataKey="name" stroke="#5B6B75" fontSize={12} tickLine={false} />
+                    <YAxis stroke="#5B6B75" fontSize={12} allowDecimals={false} tickLine={false} />
+                    <Tooltip cursor={{ fill: "#F2F4F3" }} formatter={(value: any) => [`${value} Students`, "Count"]} />
+                    <Bar dataKey="count" radius={[4, 4, 0, 0]}>
+                      {riskBarData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
                       ))}
-                    </Pie>
-                    <Tooltip formatter={(value) => [`${value} Students`, "Count"]} />
-                    <Legend verticalAlign="bottom" height={36} />
-                  </PieChart>
+                    </Bar>
+                  </BarChart>
                 </ResponsiveContainer>
               ) : (
                 <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%", color: "#5B6B75" }}>
@@ -474,27 +486,8 @@ export default function InstructorSectionsPage() {
             </div>
           </div>
 
-          {/* Attendance Deficit Distribution Bar Chart */}
-          <div style={{ background: "#FFFFFF", padding: "1.5rem", borderRadius: "8px", border: "1px solid #D9DFDD" }}>
-            <h3 style={{ margin: "0 0 1rem", fontSize: "1rem", fontWeight: 600, color: "#1B2A33" }}>Attendance deficit distribution</h3>
-            <div style={{ height: "280px" }}>
-              {barData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={barData} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#D9DFDD" />
-                    <XAxis dataKey="bucket" stroke="#5B6B75" fontSize={12} />
-                    <YAxis stroke="#5B6B75" fontSize={12} allowDecimals={false} />
-                    <Tooltip cursor={{ fill: "#F2F4F3" }} />
-                    <Bar dataKey="count" fill="#2D5BA3" radius={[4, 4, 0, 0]} name="Students" />
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%", color: "#5B6B75" }}>
-                  No attendance records found
-                </div>
-              )}
-            </div>
-          </div>
+          {/* Multi-factor Deficit Distribution Chart */}
+          <DeficitDistributionChart attendanceDeficitDistribution={barData} />
         </div>
       )}
     </div>
