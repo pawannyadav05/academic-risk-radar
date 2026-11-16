@@ -1,9 +1,10 @@
 import { Request, Response } from "express";
 import mongoose from "mongoose";
-import { AlertModel, RiskSnapshotModel } from "../../db/schemas.js";
+import { AlertModel, RiskSnapshotModel, UserModel } from "../../db/schemas.js";
 import {
   generateOrUpdateAlertForSnapshot,
   sanitizeId,
+  checkAndEscalateAlerts,
 } from "./alerts.service.js";
 
 /**
@@ -51,10 +52,80 @@ export async function listAlerts(req: Request, res: Response) {
       });
     }
 
-    const filter: Record<string, any> = {};
-    if (effectiveMentorId) {
-      filter.mentorId = effectiveMentorId;
+    // Automatically evaluate 48-hour SLA timeouts and trigger escalations
+    try {
+      await checkAndEscalateAlerts();
+    } catch (escErr: unknown) {
+      const msg = escErr instanceof Error ? escErr.message : "Escalation check error";
+      console.warn("[AlertsController] Pre-list escalation check note:", msg);
     }
+
+    const filter: Record<string, any> = {};
+
+    // ── Strict Organizational Hierarchy-Scoped Access ──
+    if (user.role === "mentor" || user.role === "instructor") {
+      filter.mentorId = effectiveMentorId;
+    } else if (user.role === "hod") {
+      const hodIds = [user.id, user.identityId].filter(Boolean) as string[];
+      const myMentors = await UserModel.find({
+        $or: [{ hodUid: { $in: hodIds } }, { departmentId: user.departmentId }],
+        role: { $in: ["mentor", "instructor", "hod"] },
+      }).lean();
+
+      const allowedMentorIds: string[] = myMentors.map((m) => m._id);
+      myMentors.forEach((m) => {
+        if (m.identityId) allowedMentorIds.push(m.identityId);
+      });
+      allowedMentorIds.push(...hodIds);
+
+      if (rawMentorId) {
+        if (!allowedMentorIds.includes(rawMentorId)) {
+          return res.status(403).json({
+            error: "Forbidden: HoD cannot view alerts for mentors outside their department/supervision",
+          });
+        }
+        filter.mentorId = { $eq: rawMentorId };
+      } else {
+        filter.$or = [
+          { mentorId: { $in: allowedMentorIds } },
+          { hodId: { $in: hodIds } },
+        ];
+      }
+    } else if (user.role === "dean") {
+      const deanIds = [user.id, user.identityId].filter(Boolean) as string[];
+      const myHods = await UserModel.find({ deanUid: { $in: deanIds }, role: "hod" }).lean();
+      const hodUids: string[] = myHods.map((h) => h._id);
+      myHods.forEach((h) => {
+        if (h.identityId) hodUids.push(h.identityId);
+      });
+
+      const myMentors = await UserModel.find({
+        $or: [{ deanUid: { $in: deanIds } }, { hodUid: { $in: hodUids } }],
+      }).lean();
+
+      const allowedMentorIds: string[] = myMentors.map((m) => m._id);
+      myMentors.forEach((m) => {
+        if (m.identityId) allowedMentorIds.push(m.identityId);
+      });
+      allowedMentorIds.push(...deanIds, ...hodUids);
+
+      if (rawMentorId) {
+        if (!allowedMentorIds.includes(rawMentorId)) {
+          return res.status(403).json({
+            error: "Forbidden: Dean cannot view alerts outside their organizational branch",
+          });
+        }
+        filter.mentorId = { $eq: rawMentorId };
+      } else {
+        filter.$or = [
+          { mentorId: { $in: allowedMentorIds } },
+          { hodId: { $in: hodUids } },
+        ];
+      }
+    } else if (rawMentorId) {
+      filter.mentorId = { $eq: rawMentorId };
+    }
+
     if (rawStatus && ["open", "acknowledged", "escalated", "closed"].includes(rawStatus)) {
       filter.status = rawStatus;
     }
@@ -115,6 +186,25 @@ export async function getAlertById(req: Request, res: Response) {
       return res.status(403).json({
         error: "Forbidden: You can only view alerts assigned to you",
       });
+    }
+
+    // RBAC: HoD can only view alerts under their supervision
+    if (user.role === "hod") {
+      const hodIds = [user.id, user.identityId].filter(Boolean) as string[];
+      const isDirectHod = alert.hodId && hodIds.includes(alert.hodId);
+      if (!isDirectHod) {
+        const mentorUser = await UserModel.findOne({
+          $or: [{ _id: alert.mentorId }, { identityId: alert.mentorId }],
+        }).lean();
+        const belongsToHod =
+          (mentorUser?.hodUid && hodIds.includes(mentorUser.hodUid)) ||
+          mentorUser?.departmentId === user.departmentId;
+        if (!belongsToHod && !hodIds.includes(alert.mentorId)) {
+          return res.status(403).json({
+            error: "Forbidden: You can only view alerts within your department or supervised mentors",
+          });
+        }
+      }
     }
 
     return res.status(200).json({ alert });

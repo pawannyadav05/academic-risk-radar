@@ -89,6 +89,8 @@ export interface Alert {
   acknowledgedAt: string | null;
   escalatedAt: string | null;
   slaDeadline: string;
+  hodId?: string | null;
+  isOverdue?: boolean;
 }
 
 export interface Intervention {
@@ -124,6 +126,8 @@ export interface User {
   departmentId?: string;
   sectionIds?: string[];
   identityId?: string;
+  hodUid?: string | null;
+  deanUid?: string | null;
 }
 
 export interface AuditEntry {

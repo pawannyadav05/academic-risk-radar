@@ -15,6 +15,37 @@ import {
   User,
 } from "@academic-risk-radar/shared-types";
 
+// Section Schema (created per term via admin Terms setup)
+interface SectionDoc {
+  _id: string;        // e.g. "k24p2of"
+  termId: number;
+  subjectCodes: string[];
+}
+const SectionSchema = new Schema<SectionDoc>({
+  _id: { type: String, required: true },
+  termId: { type: Number, required: true, index: true },
+  subjectCodes: [{ type: String }],
+});
+SectionSchema.index({ termId: 1, _id: 1 });
+export const SectionModel = mongoose.model<SectionDoc>("Section", SectionSchema);
+
+// Teaching Assignment Schema (Faculty member teaching subjects in sections)
+export interface TeachingAssignment {
+  instructorId: string; // Faculty UID or _id
+  sectionId: string;    // Section ID e.g. "SEC-CSE-101"
+  subjectCode: string;  // Subject code e.g. "CS101"
+  termId?: number;
+}
+const TeachingAssignmentSchema = new Schema<TeachingAssignment>({
+  instructorId: { type: String, required: true, index: true },
+  sectionId: { type: String, required: true, index: true },
+  subjectCode: { type: String, required: true, index: true },
+  termId: { type: Number, default: null },
+});
+TeachingAssignmentSchema.index({ instructorId: 1, sectionId: 1, subjectCode: 1 }, { unique: true });
+TeachingAssignmentSchema.index({ sectionId: 1, subjectCode: 1 });
+export const TeachingAssignmentModel = mongoose.model<TeachingAssignment>("TeachingAssignment", TeachingAssignmentSchema);
+
 // Student Schema
 const StudentSchema = new Schema<Student>({
   _id: { type: String, required: true },
@@ -83,6 +114,8 @@ const UserSchema = new Schema<User>({
   departmentId: { type: String, default: null },
   sectionIds: [{ type: String }],
   identityId: { type: String, default: null },
+  hodUid: { type: String, default: null, index: true },
+  deanUid: { type: String, default: null, index: true },
 });
 UserSchema.index({ role: 1 });
 export const UserModel = mongoose.model<User>("User", UserSchema);
@@ -163,8 +196,11 @@ const AlertSchema = new Schema<Alert>({
   acknowledgedAt: { type: String, default: null },
   escalatedAt: { type: String, default: null },
   slaDeadline: { type: String, required: true, index: true },
+  hodId: { type: String, default: null, index: true },
+  isOverdue: { type: Boolean, default: false },
 });
 AlertSchema.index({ mentorId: 1, status: 1 });
+AlertSchema.index({ hodId: 1, status: 1 });
 AlertSchema.index({ slaDeadline: 1, status: 1 });
 export const AlertModel = mongoose.model<Alert>("Alert", AlertSchema);
 

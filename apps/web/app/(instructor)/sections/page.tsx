@@ -2,45 +2,20 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  Legend,
-  ResponsiveContainer,
-} from "recharts";
-import { Users, AlertTriangle, UploadCloud, CheckCircle2, Download, RefreshCw, BookOpen, UserCheck } from "lucide-react";
+import { UploadCloud, Download, BookOpen, UserCheck } from "lucide-react";
 import DeficitDistributionChart from "./components/DeficitDistributionChart";
+import { TeachingDropdowns, TeachingAssignmentItem } from "./components/TeachingDropdowns";
+import { AcademicDataUploadForm } from "./components/AcademicDataUploadForm";
+import { ImportFeedbackBanner, ImportFeedback } from "./components/ImportFeedbackBanner";
+import { SectionKpiCards } from "./components/SectionKpiCards";
 
 const API_BASE = "/api/v1";
-
-const BAND_COLORS = {
-  low: "#2E8B7A",
-  moderate: "#D49A1F",
-  high: "#8A4A7B",
-  critical: "#5B6B75",
-};
 
 interface SectionAnalytics {
   sectionId: string;
   totalStudents: number;
   bandDistribution: { low: number; moderate: number; high: number; critical: number };
   attendanceDeficitDistribution: Array<{ bucket: string; count: number }>;
-}
-
-interface ImportFeedback {
-  status: "success" | "error";
-  message: string;
-  insertedCount?: number;
-  quarantinedCount?: number;
-  affectedStudents?: number;
-  scoringRecalculation?: string;
 }
 
 const SAMPLE_CSV: Record<string, string> = {
@@ -50,29 +25,20 @@ const SAMPLE_CSV: Record<string, string> = {
 12409923,CS101,92
 12409924,CS101,85
 12409925,CS101,90`,
-  attendance_cs102: `studentId,courseId,percentage
-12409922,CS102,75
-12409921,CS102,91
-12409923,CS102,89
-12409924,CS102,94
-12409925,CS102,88`,
   assessment: `studentId,courseId,type,score,maxScore,date
 12409922,CS101,Quiz 2,14,20,2026-03-20T10:00:00Z
 12409921,CS101,Quiz 2,18,20,2026-03-20T10:00:00Z
 12409923,CS101,Quiz 2,19,20,2026-03-20T10:00:00Z
 12409924,CS101,Quiz 2,16,20,2026-03-20T10:00:00Z
 12409925,CS101,Quiz 2,17,20,2026-03-20T10:00:00Z`,
-  assessment_cs102: `studentId,courseId,type,score,maxScore,date
-12409922,CS102,Lab 2,36,50,2026-03-22T14:00:00Z
-12409921,CS102,Lab 2,47,50,2026-03-22T14:00:00Z
-12409923,CS102,Lab 2,42,50,2026-03-22T14:00:00Z
-12409924,CS102,Lab 2,49,50,2026-03-22T14:00:00Z
-12409925,CS102,Lab 2,44,50,2026-03-22T14:00:00Z`,
 };
 
 export default function InstructorSectionsPage() {
-  const [assignedSections, setAssignedSections] = useState<string[]>(["SEC-CSE-101"]);
+  const [teachingAssignments, setTeachingAssignments] = useState<TeachingAssignmentItem[]>([]);
+  const [selectedSubject, setSelectedSubject] = useState<string>("CS101");
   const [sectionId, setSectionId] = useState<string>("SEC-CSE-101");
+  const [isRectify, setIsRectify] = useState<boolean>(false);
+
   const [data, setData] = useState<SectionAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -83,21 +49,25 @@ export default function InstructorSectionsPage() {
   const [feedback, setFeedback] = useState<ImportFeedback | null>(null);
 
   useEffect(() => {
-    async function initSession() {
+    async function initInstructorData() {
       try {
-        const res = await fetch(`${API_BASE}/auth/me`, { credentials: "include" });
-        if (res.ok) {
-          const body = await res.json();
-          if (body.user?.sectionIds && body.user.sectionIds.length > 0) {
-            setAssignedSections(body.user.sectionIds);
-            setSectionId(body.user.sectionIds[0]);
+        const assignRes = await fetch(`${API_BASE}/instructor/teaching-assignments`, {
+          credentials: "include",
+        });
+        if (assignRes.ok) {
+          const body = await assignRes.json();
+          if (Array.isArray(body.assignments) && body.assignments.length > 0) {
+            setTeachingAssignments(body.assignments);
+            const first = body.assignments[0];
+            setSelectedSubject(first.subjectCode);
+            setSectionId(first.sectionId);
           }
         }
       } catch (err) {
-        console.warn("Could not load instructor session; defaulting to SEC-CSE-101", err);
+        console.warn("Could not load teaching assignments:", err);
       }
     }
-    initSession();
+    initInstructorData();
   }, []);
 
   const fetchAnalytics = useCallback(async () => {
@@ -110,8 +80,9 @@ export default function InstructorSectionsPage() {
       if (!res.ok) throw new Error(`Failed to load section analytics (HTTP ${res.status})`);
       const json = await res.json();
       setData(json);
-    } catch (err: any) {
-      setError(err.message || "Failed to load section analytics");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to load section analytics";
+      setError(msg);
     } finally {
       setLoading(false);
     }
@@ -139,12 +110,15 @@ export default function InstructorSectionsPage() {
   };
 
   const handleDownloadTemplate = () => {
-    const template = SAMPLE_CSV[importSource] || "";
+    let template = SAMPLE_CSV[importSource] || "";
+    if (selectedSubject) {
+      template = template.replace(/CS101/g, selectedSubject);
+    }
     const blob = new Blob([template], { type: "text/csv;charset=utf-8;" });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.href = url;
-    link.setAttribute("download", `${importSource}-sample-${sectionId}.csv`);
+    link.setAttribute("download", `${importSource}-${selectedSubject}-${sectionId}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -165,7 +139,11 @@ export default function InstructorSectionsPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ csvData: csvContent.trim() }),
+        body: JSON.stringify({
+          csvData: csvContent.trim(),
+          subjectCode: selectedSubject,
+          rectify: isRectify,
+        }),
       });
 
       const body = await res.json().catch(() => ({}));
@@ -176,7 +154,9 @@ export default function InstructorSectionsPage() {
 
       setFeedback({
         status: "success",
-        message: `Successfully processed ${importSource} batch for section ${sectionId}.`,
+        message: isRectify
+          ? `Rectification successful: Updated ${importSource} records for ${selectedSubject} in ${sectionId}.`
+          : `Successfully processed ${importSource} batch for ${selectedSubject} in ${sectionId}.`,
         insertedCount: body.insertedCount,
         quarantinedCount: body.quarantinedCount,
         affectedStudents: body.affectedStudents,
@@ -184,35 +164,17 @@ export default function InstructorSectionsPage() {
       });
 
       fetchAnalytics();
-    } catch (err: any) {
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to submit academic data";
       setFeedback({
         status: "error",
-        message: err.message || "Failed to submit academic data",
+        message: msg,
       });
     } finally {
       setUploading(false);
     }
   };
 
-  const pieData = data
-    ? [
-        { name: "Low Risk", value: data.bandDistribution.low, color: BAND_COLORS.low },
-        { name: "Moderate Risk", value: data.bandDistribution.moderate, color: BAND_COLORS.moderate },
-        { name: "High Risk", value: data.bandDistribution.high, color: BAND_COLORS.high },
-        { name: "Critical Risk", value: data.bandDistribution.critical, color: BAND_COLORS.critical },
-      ].filter((item) => item.value > 0)
-    : [];
-
-  const riskBarData = data
-    ? [
-        { name: "Low", count: data.bandDistribution.low, color: BAND_COLORS.low },
-        { name: "Moderate", count: data.bandDistribution.moderate, color: BAND_COLORS.moderate },
-        { name: "High", count: data.bandDistribution.high, color: BAND_COLORS.high },
-        { name: "Critical", count: data.bandDistribution.critical, color: BAND_COLORS.critical },
-      ]
-    : [];
-
-  const barData = data?.attendanceDeficitDistribution || [];
   const totalAtRisk = data ? data.bandDistribution.high + data.bandDistribution.critical : 0;
 
   return (
@@ -229,27 +191,14 @@ export default function InstructorSectionsPage() {
         </Link>
       </div>
 
-      {/* Header and section selector */}
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem", flexWrap: "wrap", gap: "1rem" }}>
-        <div>
-          <h1 style={{ margin: "0 0 0.25rem", fontSize: "1.5rem", fontWeight: 700, color: "#1B2A33" }}>Section {sectionId}</h1>
-          <p style={{ margin: 0, color: "#5B6B75", fontSize: "0.875rem" }}>Monitor student risk distribution and upload course performance data.</p>
-        </div>
-
-        {assignedSections.length > 1 && (
-          <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-            <span style={{ fontSize: "0.8125rem", color: "#5B6B75", fontWeight: 500 }}>Assigned section</span>
-            <select
-              value={sectionId}
-              onChange={(e) => setSectionId(e.target.value)}
-              style={{ background: "#FFFFFF", border: "1px solid #D9DFDD", borderRadius: "4px", padding: "0.4rem 0.75rem", fontSize: "0.875rem", fontWeight: 600, color: "#1B2A33", cursor: "pointer" }}
-            >
-              {assignedSections.map((sec) => (
-                <option key={sec} value={sec}>{sec}</option>
-              ))}
-            </select>
-          </div>
-        )}
+      {/* Header and section summary */}
+      <div style={{ marginBottom: "1.5rem" }}>
+        <h1 style={{ margin: "0 0 0.25rem", fontSize: "1.5rem", fontWeight: 700, color: "#1B2A33" }}>
+          Section {sectionId} — {selectedSubject}
+        </h1>
+        <p style={{ margin: 0, color: "#5B6B75", fontSize: "0.875rem" }}>
+          Upload attendance or marks with dependent subject verification and rectify options.
+        </p>
       </div>
 
       {/* Academic Data Submission Panel */}
@@ -261,7 +210,9 @@ export default function InstructorSectionsPage() {
             </div>
             <div>
               <h2 style={{ margin: 0, fontSize: "1.125rem", fontWeight: 600, color: "#1B2A33" }}>Academic data submission</h2>
-              <p style={{ margin: "0.15rem 0 0", color: "#5B6B75", fontSize: "0.8125rem" }}>Submit attendance or assessment marks to update risk scoring and alerts.</p>
+              <p style={{ margin: "0.15rem 0 0", color: "#5B6B75", fontSize: "0.8125rem" }}>
+                Select subject and section, then submit or rectify records.
+              </p>
             </div>
           </div>
 
@@ -274,221 +225,43 @@ export default function InstructorSectionsPage() {
           </button>
         </div>
 
+        {/* Dynamic Dependent Dropdowns & Rectify Mode */}
+        <TeachingDropdowns
+          assignments={teachingAssignments}
+          selectedSubject={selectedSubject}
+          selectedSection={sectionId}
+          onSubjectChange={setSelectedSubject}
+          onSectionChange={setSectionId}
+          isRectify={isRectify}
+          onRectifyChange={setIsRectify}
+          disabled={uploading}
+        />
+
         {/* Live Feedback Banner */}
-        {feedback && (
-          <div
-            style={{
-              background: "#FFFFFF",
-              border: `1px solid ${feedback.status === "success" ? "#2E8B7A" : "#8A4A7B"}`,
-              color: feedback.status === "success" ? "#2E8B7A" : "#8A4A7B",
-              padding: "0.875rem 1.25rem",
-              borderRadius: "4px",
-              marginBottom: "1.25rem",
-              fontSize: "0.875rem",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", fontWeight: 600, marginBottom: feedback.insertedCount !== undefined ? "0.4rem" : 0 }}>
-              {feedback.status === "success" ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
-              {feedback.message}
-            </div>
-            {feedback.insertedCount !== undefined && (
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", fontSize: "0.8125rem", marginTop: "0.25rem", color: "#5B6B75" }}>
-                <span>Valid rows: <strong style={{ color: "#1B2A33" }}>{feedback.insertedCount}</strong></span>
-                <span>Quarantined rows: <strong style={{ color: feedback.quarantinedCount ? "#8A4A7B" : "#1B2A33" }}>{feedback.quarantinedCount}</strong></span>
-                <span>Students affected: <strong style={{ color: "#1B2A33" }}>{feedback.affectedStudents}</strong></span>
-              </div>
-            )}
-          </div>
-        )}
+        <ImportFeedbackBanner feedback={feedback} />
 
-        <form onSubmit={handleSubmitData}>
-          <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "1rem", marginBottom: "1rem" }}>
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-              <span style={{ fontSize: "0.8125rem", fontWeight: 600, color: "#1B2A33" }}>Data source:</span>
-              <div style={{ display: "inline-flex", background: "#F2F4F3", padding: "0.2rem", borderRadius: "4px", border: "1px solid #D9DFDD" }}>
-                <button
-                  type="button"
-                  onClick={() => handleSourceChange("attendance")}
-                  style={{
-                    background: importSource === "attendance" ? "#FFFFFF" : "transparent",
-                    color: importSource === "attendance" ? "#1B2A33" : "#5B6B75",
-                    border: importSource === "attendance" ? "1px solid #D9DFDD" : "1px solid transparent",
-                    borderRadius: "4px",
-                    padding: "0.35rem 0.85rem",
-                    fontSize: "0.8125rem",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                  }}
-                >
-                  Attendance
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleSourceChange("assessment")}
-                  style={{
-                    background: importSource === "assessment" ? "#FFFFFF" : "transparent",
-                    color: importSource === "assessment" ? "#1B2A33" : "#5B6B75",
-                    border: importSource === "assessment" ? "1px solid #D9DFDD" : "1px solid transparent",
-                    borderRadius: "4px",
-                    padding: "0.35rem 0.85rem",
-                    fontSize: "0.8125rem",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                  }}
-                >
-                  Assessment
-                </button>
-              </div>
-            </div>
-
-            <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginLeft: "auto" }}>
-              <span style={{ fontSize: "0.8125rem", color: "#5B6B75" }}>Or upload file</span>
-              <input
-                type="file"
-                accept=".csv"
-                onChange={handleFileUpload}
-                style={{ fontSize: "0.8125rem", color: "#5B6B75" }}
-              />
-            </div>
-          </div>
-
-          <div style={{ marginBottom: "1rem" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.35rem" }}>
-              <label style={{ fontSize: "0.8125rem", fontWeight: 600, color: "#1B2A33" }}>
-                CSV content preview or direct entry
-              </label>
-              <div style={{ display: "flex", gap: "0.5rem" }}>
-                <button
-                  type="button"
-                  onClick={() => setCsvContent(importSource === "attendance" ? SAMPLE_CSV.attendance : SAMPLE_CSV.assessment)}
-                  style={{ background: "#FFFFFF", border: "1px solid #D9DFDD", borderRadius: "4px", padding: "0.2rem 0.5rem", fontSize: "0.75rem", color: "#2D5BA3", cursor: "pointer" }}
-                >
-                  Load CS101 ({importSource})
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setCsvContent(importSource === "attendance" ? SAMPLE_CSV.attendance_cs102 : SAMPLE_CSV.assessment_cs102)}
-                  style={{ background: "#FFFFFF", border: "1px solid #D9DFDD", borderRadius: "4px", padding: "0.2rem 0.5rem", fontSize: "0.75rem", color: "#2D5BA3", cursor: "pointer" }}
-                >
-                  Load CS102 ({importSource})
-                </button>
-              </div>
-            </div>
-            <textarea
-              rows={4}
-              value={csvContent}
-              onChange={(e) => setCsvContent(e.target.value)}
-              placeholder="Paste comma-separated data here..."
-              style={{
-                width: "100%",
-                fontFamily: "ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace",
-                fontSize: "0.8125rem",
-                padding: "0.75rem",
-                border: "1px solid #D9DFDD",
-                borderRadius: "4px",
-                background: "#F2F4F3",
-                color: "#1B2A33",
-                boxSizing: "border-box",
-              }}
-            />
-            <p style={{ margin: "0.35rem 0 0", fontSize: "0.75rem", color: "#5B6B75" }}>
-              Overall attendance is automatically calculated as the average across both instructors (CS101 + CS102). Previous assessments are permanently preserved.
-            </p>
-          </div>
-
-          <div style={{ display: "flex", justifyContent: "flex-end" }}>
-            <button
-              type="submit"
-              disabled={uploading}
-              style={{
-                background: "#2D5BA3",
-                color: "#FFFFFF",
-                border: "none",
-                borderRadius: "4px",
-                padding: "0.6rem 1.4rem",
-                fontSize: "0.875rem",
-                fontWeight: 600,
-                cursor: uploading ? "not-allowed" : "pointer",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: "0.5rem",
-              }}
-            >
-              {uploading ? (
-                <>
-                  <RefreshCw size={16} /> Saving data...
-                </>
-              ) : (
-                <>
-                  <UploadCloud size={16} /> Submit and recalculate risk
-                </>
-              )}
-            </button>
-          </div>
-        </form>
+        {/* Data Upload Form */}
+        <AcademicDataUploadForm
+          importSource={importSource}
+          onSourceChange={handleSourceChange}
+          csvContent={csvContent}
+          onCsvContentChange={setCsvContent}
+          onFileUpload={handleFileUpload}
+          onSubmit={handleSubmitData}
+          uploading={uploading}
+          isRectify={isRectify}
+          selectedSubject={selectedSubject}
+        />
       </div>
 
       {/* KPI metrics cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1.25rem", marginBottom: "2rem" }}>
-        <div style={{ background: "#FFFFFF", padding: "1.25rem", borderRadius: "8px", border: "1px solid #D9DFDD", display: "flex", alignItems: "center", gap: "1rem" }}>
-          <div style={{ background: "#F2F4F3", padding: "0.75rem", borderRadius: "4px", color: "#2D5BA3" }}>
-            <Users size={20} />
-          </div>
-          <div>
-            <p style={{ margin: 0, color: "#5B6B75", fontSize: "0.8125rem", fontWeight: 500 }}>Total section students</p>
-            <h3 style={{ margin: "0.15rem 0 0", fontSize: "1.5rem", fontWeight: 700, color: "#1B2A33", fontVariantNumeric: "tabular-nums" }}>{data?.totalStudents ?? 0}</h3>
-          </div>
-        </div>
+      <SectionKpiCards totalStudents={data?.totalStudents ?? 0} totalAtRisk={totalAtRisk} />
 
-        <div style={{ background: "#FFFFFF", padding: "1.25rem", borderRadius: "8px", border: "1px solid #D9DFDD", display: "flex", alignItems: "center", gap: "1rem" }}>
-          <div style={{ background: "#F2F4F3", padding: "0.75rem", borderRadius: "4px", color: "#8A4A7B" }}>
-            <AlertTriangle size={20} />
-          </div>
-          <div>
-            <p style={{ margin: 0, color: "#5B6B75", fontSize: "0.8125rem", fontWeight: 500 }}>Students needing support</p>
-            <h3 style={{ margin: "0.15rem 0 0", fontSize: "1.5rem", fontWeight: 700, color: "#8A4A7B", fontVariantNumeric: "tabular-nums" }}>{totalAtRisk}</h3>
-          </div>
-        </div>
-      </div>
-
-      {/* Charts row */}
-      {loading ? (
-        <div style={{ padding: "4rem", textAlign: "center", color: "#5B6B75" }}>Loading analytics...</div>
-      ) : error ? (
-        <div style={{ background: "#FFFFFF", color: "#8A4A7B", padding: "1rem", borderRadius: "8px", border: "1px solid #8A4A7B" }}>
-          {error}
-        </div>
-      ) : (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(420px, 1fr))", gap: "1.5rem" }}>
-          {/* Section Risk Breakdown Bar Chart */}
-          <div style={{ background: "#FFFFFF", padding: "1.5rem", borderRadius: "8px", border: "1px solid #D9DFDD" }}>
-            <h3 style={{ margin: "0 0 1rem", fontSize: "1rem", fontWeight: 600, color: "#1B2A33" }}>Section risk breakdown</h3>
-            <div style={{ height: "280px" }}>
-              {riskBarData.length > 0 ? (
-                <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={riskBarData} margin={{ top: 20, right: 30, left: -10, bottom: 5 }}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#D9DFDD" />
-                    <XAxis dataKey="name" stroke="#5B6B75" fontSize={12} tickLine={false} />
-                    <YAxis stroke="#5B6B75" fontSize={12} allowDecimals={false} tickLine={false} />
-                    <Tooltip cursor={{ fill: "#F2F4F3" }} formatter={(value: any) => [`${value} Students`, "Count"]} />
-                    <Bar dataKey="count" radius={[4, 4, 0, 0]}>
-                      {riskBarData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
-                      ))}
-                    </Bar>
-                  </BarChart>
-                </ResponsiveContainer>
-              ) : (
-                <div style={{ display: "flex", justifyContent: "center", alignItems: "center", height: "100%", color: "#5B6B75" }}>
-                  No student risk data available
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Multi-factor Deficit Distribution Chart */}
-          <DeficitDistributionChart attendanceDeficitDistribution={barData} />
-        </div>
+      {/* Charts */}
+      {data && (
+        <DeficitDistributionChart
+          attendanceDeficitDistribution={data.attendanceDeficitDistribution}
+        />
       )}
     </div>
   );

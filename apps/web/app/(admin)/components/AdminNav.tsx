@@ -3,12 +3,13 @@
 import React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Sliders, History, Database } from "lucide-react";
+import { Sliders, History, Database, CalendarRange } from "lucide-react";
 
 const NAV_ITEMS = [
   { href: "/model-versions", label: "Model versions", icon: Sliders },
   { href: "/audit", label: "Audit log", icon: History },
   { href: "/connectors", label: "Data connectors", icon: Database },
+  { href: "/terms", label: "Terms", icon: CalendarRange },
 ];
 
 export function AdminNav() {

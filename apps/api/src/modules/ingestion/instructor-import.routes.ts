@@ -1,7 +1,10 @@
 import { Router } from "express";
 import rateLimit from "express-rate-limit";
 import { requireRole } from "../../auth/rbac.middleware.js";
-import { importSectionAcademicData } from "./instructor-import.controller.js";
+import {
+  importSectionAcademicData,
+  getInstructorTeachingAssignments,
+} from "./instructor-import.controller.js";
 
 const router = Router();
 
@@ -13,6 +16,16 @@ const importLimiter = rateLimit({
 });
 
 router.use(importLimiter);
+
+/**
+ * GET /api/v1/instructor/teaching-assignments
+ * Returns assigned subjects and sections for the logged-in instructor.
+ */
+router.get(
+  "/instructor/teaching-assignments",
+  requireRole("instructor", "mentor", "hod", "admin"),
+  getInstructorTeachingAssignments
+);
 
 /**
  * POST /api/v1/sections/:sectionId/imports/:source
