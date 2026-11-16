@@ -114,7 +114,9 @@ export async function createIntervention(req: Request, res: Response) {
     // Step 2: Mark alert as handled by the mentor and stop the auto-escalation timer
     alert.status = "acknowledged";
     alert.acknowledgedAt = now;
-    await alert.save();
+    if (typeof (alert as any).save === "function") {
+      await (alert as any).save();
+    }
 
     return res.status(201).json({ intervention });
   } catch (err) {

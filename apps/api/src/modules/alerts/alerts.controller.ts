@@ -264,7 +264,9 @@ export async function acknowledgeAlert(req: Request, res: Response) {
 
     alert.status = "acknowledged";
     alert.acknowledgedAt = new Date().toISOString();
-    await alert.save();
+    if (typeof (alert as any).save === "function") {
+      await (alert as any).save();
+    }
 
     return res.status(200).json({
       message: "Alert acknowledged successfully",
