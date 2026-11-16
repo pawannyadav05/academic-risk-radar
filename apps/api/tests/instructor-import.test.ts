@@ -174,5 +174,57 @@ describe("Instructor Section Academic Submission — RBAC & Validation Tests", (
       close();
     }
   });
+
+  it("GET /instructor/teaching-assignments returns filtered subject and section options", async () => {
+    const app = createTestApp();
+    const { port, close } = await startServer(app);
+    try {
+      const res = await authFetch(
+        `http://127.0.0.1:${port}/api/v1/instructor/teaching-assignments`,
+        {
+          id: "inst-1",
+          name: "Instructor Rajesh",
+          email: "instructor1@radar.edu",
+          role: "instructor",
+          sectionIds: ["SEC-CSE-101"],
+        }
+      );
+      assert.equal(res.status, 200, "Should return 200 for authenticated instructor");
+      const body = (await res.json()) as any;
+      assert.ok(Array.isArray(body.assignments), "Response should contain an assignments array");
+    } finally {
+      close();
+    }
+  });
+
+  it("PRE-UPLOAD VALIDATION: Blocks commit when student in CSV does not exist", async () => {
+    const app = createTestApp();
+    const { port, close } = await startServer(app);
+    try {
+      const res = await authFetch(
+        `http://127.0.0.1:${port}/api/v1/sections/SEC-CSE-101/imports/attendance`,
+        {
+          id: "inst-1",
+          name: "Instructor Rajesh",
+          email: "instructor1@radar.edu",
+          role: "instructor",
+          sectionIds: ["SEC-CSE-101"],
+        },
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            csvData: "studentId,courseId,percentage\nNON_EXISTENT_9999,CS101,80",
+            subjectCode: "CS101",
+          }),
+        }
+      );
+      assert.equal(res.status, 400, "Unknown student must be blocked before commit");
+      const body = (await res.json()) as any;
+      assert.ok(body.error.includes("does not exist in student enrollment records"), "Error message should cite enrollment");
+    } finally {
+      close();
+    }
+  });
 });
 

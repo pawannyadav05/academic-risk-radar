@@ -25,6 +25,8 @@ import {
   RiskSnapshotModel,
   StudentModel,
   UserModel,
+  TeachingAssignmentModel,
+  SectionModel,
 } from "../../db/schemas.js";
 import { computeRiskSnapshot, DEFAULT_MODEL_VERSION } from "@academic-risk-radar/scoring-engine";
 
@@ -95,6 +97,8 @@ export async function seedDemoDatabase(customMongoUri?: string): Promise<SeedDem
       departmentId: "DEP-CSE",
       sectionIds: ["SEC-CSE-101"],
       identityId: "INS-001",
+      hodUid: "HOD-001",
+      deanUid: "DEAN-001",
     },
     // Instructor 1 Alias for convenience
     {
@@ -106,6 +110,8 @@ export async function seedDemoDatabase(customMongoUri?: string): Promise<SeedDem
       departmentId: "DEP-CSE",
       sectionIds: ["SEC-CSE-101"],
       identityId: "INS-001",
+      hodUid: "HOD-001",
+      deanUid: "DEAN-001",
     },
     // Instructor 2 (CS102)
     {
@@ -117,6 +123,8 @@ export async function seedDemoDatabase(customMongoUri?: string): Promise<SeedDem
       departmentId: "DEP-CSE",
       sectionIds: ["SEC-CSE-101"],
       identityId: "INS-002",
+      hodUid: "HOD-001",
+      deanUid: "DEAN-001",
     },
     // Mentor
     {
@@ -128,6 +136,8 @@ export async function seedDemoDatabase(customMongoUri?: string): Promise<SeedDem
       departmentId: "DEP-CSE",
       sectionIds: ["SEC-CSE-101"],
       identityId: "MTR-001",
+      hodUid: "HOD-001",
+      deanUid: "DEAN-001",
     },
     // HoD (Dr. Amit Verma - also teaches SEC-CSE-101 and mentors 12409923)
     {
@@ -139,6 +149,7 @@ export async function seedDemoDatabase(customMongoUri?: string): Promise<SeedDem
       departmentId: "DEP-CSE",
       sectionIds: ["SEC-CSE-101"],
       identityId: "HOD-001",
+      deanUid: "DEAN-001",
     },
     // Dean
     {
@@ -662,6 +673,8 @@ export async function seedDemoDatabase(customMongoUri?: string): Promise<SeedDem
     RiskSnapshotModel.deleteMany({ studentId: { $in: demoStudents.map((s) => s._id) } }),
     AlertModel.deleteMany({ _id: { $in: demoAlerts.map((a) => a._id) } }),
     RiskModelVersionModel.deleteMany({ version: demoModelVersion.version }),
+    TeachingAssignmentModel.deleteMany({ sectionId: "SEC-CSE-101" }),
+    SectionModel.deleteMany({ _id: "SEC-CSE-101" }),
   ]);
 
   await UserModel.insertMany(demoUsers);
@@ -674,6 +687,19 @@ export async function seedDemoDatabase(customMongoUri?: string): Promise<SeedDem
   await RiskSnapshotModel.insertMany(demoRiskSnapshots);
   await AlertModel.insertMany(demoAlerts);
   await RiskModelVersionModel.insertMany([demoModelVersion]);
+
+  // Seed section and teaching assignments
+  await SectionModel.updateOne(
+    { _id: "SEC-CSE-101" },
+    { $set: { _id: "SEC-CSE-101", termId: 20261, subjectCodes: ["CS101", "CS102"] } },
+    { upsert: true }
+  );
+  await TeachingAssignmentModel.insertMany([
+    { instructorId: "INS-001", sectionId: "SEC-CSE-101", subjectCode: "CS101", termId: 20261 },
+    { instructorId: "INS-001-ALIAS", sectionId: "SEC-CSE-101", subjectCode: "CS101", termId: 20261 },
+    { instructorId: "INS-002", sectionId: "SEC-CSE-101", subjectCode: "CS102", termId: 20261 },
+    { instructorId: "HOD-001", sectionId: "SEC-CSE-101", subjectCode: "CS101", termId: 20261 },
+  ]);
 
   // Record Audit Log Entry for Seeding Event
   const auditEntry: AuditEntry = {

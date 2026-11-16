@@ -70,6 +70,25 @@ export async function checkAndEscalateAlerts(
     const prevStatus = alert.status;
     alert.status = "escalated";
     alert.escalatedAt = nowIso;
+    alert.isOverdue = true;
+
+    // Lookup mentor's HOD
+    if (!alert.hodId && mongoose.connection.readyState === 1) {
+      try {
+        const UserModel = models?.UserModel || mongoose.models.User;
+        if (UserModel) {
+          const mentorUser = await UserModel.findOne({
+            $or: [{ _id: alert.mentorId }, { identityId: alert.mentorId }],
+          }).lean();
+          if (mentorUser?.hodUid) {
+            alert.hodId = mentorUser.hodUid;
+          }
+        }
+      } catch (err: any) {
+        console.warn(`[Escalation Worker] Could not lookup mentor HOD: ${err.message}`);
+      }
+    }
+
     await alert.save();
 
     // Emit HoD Notification (Console log notification banner)

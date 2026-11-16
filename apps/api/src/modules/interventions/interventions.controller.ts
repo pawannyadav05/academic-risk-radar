@@ -19,7 +19,7 @@
 import { Request, Response } from "express";
 import crypto from "crypto";
 import mongoose from "mongoose";
-import { InterventionModel, AlertModel, MentorAssignmentModel } from "../../db/schemas.js";
+import { InterventionModel, AlertModel, MentorAssignmentModel, UserModel } from "../../db/schemas.js";
 
 /**
  * Sanitize a string ID to prevent NoSQL injection.
@@ -110,6 +110,13 @@ export async function createIntervention(req: Request, res: Response) {
     });
 
     await intervention.save();
+
+    // Step 2: Mark alert as handled by the mentor and stop the auto-escalation timer
+    alert.status = "acknowledged";
+    alert.acknowledgedAt = now;
+    if (typeof (alert as any).save === "function") {
+      await (alert as any).save();
+    }
 
     return res.status(201).json({ intervention });
   } catch (err) {
@@ -263,9 +270,7 @@ export async function listInterventions(req: Request, res: Response) {
     }
 
     const effectiveUserMentorId = user.identityId || user.id;
-    // Sanitize query parameters to prevent NoSQL injection
     const queryMentorId = sanitizeId(req.query.mentorId as string);
-    const mentorId = queryMentorId || String(effectiveUserMentorId);
     const rawAlertId = req.query.alertId ? sanitizeId(req.query.alertId as string) : undefined;
     const includeWithdrawn = req.query.includeWithdrawn === "true";
     const statusParam = req.query.status ? sanitizeId(req.query.status as string) : undefined;
@@ -274,15 +279,71 @@ export async function listInterventions(req: Request, res: Response) {
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit as string) || 20));
     const skip = (page - 1) * limit;
 
-    // RBAC: Faculty (mentors/instructors) can only list their own interventions
-    if ((user.role === "mentor" || user.role === "instructor") && mentorId !== user.id && mentorId !== effectiveUserMentorId) {
-      return res.status(403).json({
-        error: "Forbidden: Faculty can only view their own interventions",
+    const filter: Record<string, any> = {};
+
+    // ── Strict Organizational Hierarchy-Scoped Access ──
+    if (user.role === "mentor" || user.role === "instructor") {
+      if (queryMentorId && queryMentorId !== user.id && queryMentorId !== effectiveUserMentorId) {
+        return res.status(403).json({
+          error: "Forbidden: Faculty can only view their own interventions",
+        });
+      }
+      filter.mentorId = { $in: [user.id, effectiveUserMentorId] };
+    } else if (user.role === "hod") {
+      const hodIds = [user.id, user.identityId].filter(Boolean) as string[];
+      const myMentors = await UserModel.find({
+        $or: [{ hodUid: { $in: hodIds } }, { departmentId: user.departmentId }],
+        role: { $in: ["mentor", "instructor", "hod"] },
+      }).lean();
+
+      const allowedMentorIds: string[] = myMentors.map((m) => m._id);
+      myMentors.forEach((m) => {
+        if (m.identityId) allowedMentorIds.push(m.identityId);
       });
+      allowedMentorIds.push(...hodIds);
+
+      if (queryMentorId) {
+        if (!allowedMentorIds.includes(queryMentorId)) {
+          return res.status(403).json({
+            error: "Forbidden: HoD cannot view interventions from mentors of another department or HoD",
+          });
+        }
+        filter.mentorId = { $eq: queryMentorId };
+      } else {
+        filter.mentorId = { $in: allowedMentorIds };
+      }
+    } else if (user.role === "dean") {
+      const deanIds = [user.id, user.identityId].filter(Boolean) as string[];
+      const myHods = await UserModel.find({ deanUid: { $in: deanIds }, role: "hod" }).lean();
+      const hodUids: string[] = myHods.map((h) => h._id);
+      myHods.forEach((h) => {
+        if (h.identityId) hodUids.push(h.identityId);
+      });
+
+      const myMentors = await UserModel.find({
+        $or: [{ deanUid: { $in: deanIds } }, { hodUid: { $in: hodUids } }],
+      }).lean();
+
+      const allowedMentorIds: string[] = myMentors.map((m) => m._id);
+      myMentors.forEach((m) => {
+        if (m.identityId) allowedMentorIds.push(m.identityId);
+      });
+      allowedMentorIds.push(...deanIds, ...hodUids);
+
+      if (queryMentorId) {
+        if (!allowedMentorIds.includes(queryMentorId)) {
+          return res.status(403).json({
+            error: "Forbidden: Dean cannot view interventions outside their organizational branch",
+          });
+        }
+        filter.mentorId = { $eq: queryMentorId };
+      } else {
+        filter.mentorId = { $in: allowedMentorIds };
+      }
+    } else if (queryMentorId) {
+      filter.mentorId = { $eq: queryMentorId };
     }
 
-    // Build filter with sanitized values and explicit $eq operators to prevent NoSQL injection
-    const filter: Record<string, any> = { mentorId: { $eq: String(mentorId) } };
     if (rawAlertId) {
       filter.alertId = { $eq: String(rawAlertId) };
     }

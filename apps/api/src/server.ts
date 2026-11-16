@@ -14,6 +14,7 @@ import alertsRouter from "./modules/alerts/index.js";
 import interventionsRouter from "./modules/interventions/index.js";
 import analyticsRouter from "./modules/analytics/index.js";
 import adminRouter from "./modules/admin/index.js";
+import { checkAndEscalateAlerts } from "./modules/alerts/alerts.service.js";
 
 const app = express();
 const PORT = process.env.PORT || 4000;
@@ -125,6 +126,18 @@ if (process.env.NODE_ENV !== "test") {
     .connect(MONGO_URI)
     .then(() => {
       console.log(`Connected to MongoDB at ${MONGO_URI}`);
+      // Periodic 48-hour SLA timeout evaluation
+      setInterval(async () => {
+        try {
+          if (mongoose.connection.readyState === 1) {
+            await checkAndEscalateAlerts();
+          }
+        } catch (slaErr: unknown) {
+          const msg = slaErr instanceof Error ? slaErr.message : "Error";
+          console.warn("[Server] SLA escalation timer check:", msg);
+        }
+      }, 60000);
+
       app.listen(PORT, () => {
         console.log(`Academic Risk Radar API Server running on port ${PORT}`);
       });

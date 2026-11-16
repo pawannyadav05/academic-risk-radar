@@ -6,6 +6,7 @@ import {
   activateModelVersion,
   getAuditTrail,
 } from "./admin.controller.js";
+import { listTerms, createTerm } from "./terms.controller.js";
 
 // Module M8: Configuration & Audit Router (Team Member 1 - Pawan)
 const router = Router();
@@ -34,5 +35,17 @@ router.post("/model-versions/:v/activate", requireRole("admin"), activateModelVe
  * Paginated, filterable audit log reader.
  */
 router.get("/audit", requireRole("admin"), getAuditTrail);
+
+/**
+ * GET /api/v1/admin/terms
+ * List all academic terms (newest first).
+ */
+router.get("/terms", requireRole("admin"), listTerms);
+
+/**
+ * POST /api/v1/admin/terms
+ * Create a new academic term with 5 CSV payloads in JSON body.
+ */
+router.post("/terms", requireRole("admin"), createTerm);
 
 export default router;
