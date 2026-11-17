@@ -1,13 +1,21 @@
 "use client";
 
-import React, { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
-import { UploadCloud, Download, BookOpen, UserCheck } from "lucide-react";
-import DeficitDistributionChart from "./components/DeficitDistributionChart";
-import { TeachingDropdowns, TeachingAssignmentItem } from "./components/TeachingDropdowns";
-import { AcademicDataUploadForm } from "./components/AcademicDataUploadForm";
-import { ImportFeedbackBanner, ImportFeedback } from "./components/ImportFeedbackBanner";
-import { SectionKpiCards } from "./components/SectionKpiCards";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
+import { BookOpen, UserCheck } from "lucide-react";
+import { Tabs } from "@/app/components/Tabs";
+import { PageHeader } from "@/app/components/PageHeader";
+import { Toast } from "@/app/(mentor)/inbox/components/Toast";
+import { SectionOverviewStats } from "./components/SectionOverviewStats";
+import { StudentsNeedingSupportNotice } from "./components/StudentsNeedingSupportNotice";
+import { UploadStepOneClass } from "./components/UploadStepOneClass";
+import { UploadStepTwoType } from "./components/UploadStepTwoType";
+import { UploadStepThreeData } from "./components/UploadStepThreeData";
+import { CsvPreviewTable } from "./components/CsvPreviewTable";
+import { SubmitActionBar } from "./components/SubmitActionBar";
+import { ImportResultPanel } from "./components/ImportResultPanel";
+import { WhereStudentsFallingBehindChart } from "./components/WhereStudentsFallingBehindChart";
+import { TeachingAssignmentItem } from "./components/TeachingDropdowns";
+import { ImportFeedback } from "./components/ImportFeedbackBanner";
 
 const API_BASE = "/api/v1";
 
@@ -41,12 +49,13 @@ export default function InstructorSectionsPage() {
 
   const [data, setData] = useState<SectionAnalytics | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [lastSubmissionDate, setLastSubmissionDate] = useState<string | null>(null);
 
   const [importSource, setImportSource] = useState<"attendance" | "assessment">("attendance");
   const [csvContent, setCsvContent] = useState<string>(SAMPLE_CSV.attendance);
   const [uploading, setUploading] = useState(false);
   const [feedback, setFeedback] = useState<ImportFeedback | null>(null);
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" } | null>(null);
 
   useEffect(() => {
     async function initInstructorData() {
@@ -64,25 +73,31 @@ export default function InstructorSectionsPage() {
           }
         }
       } catch (err) {
-        console.warn("Could not load teaching assignments:", err);
+        console.warn("Could not fetch teaching assignments:", err);
       }
     }
     initInstructorData();
   }, []);
 
   const fetchAnalytics = useCallback(async () => {
+    if (!sectionId) return;
     setLoading(true);
-    setError(null);
     try {
-      const res = await fetch(`${API_BASE}/analytics/section/${sectionId}`, {
+      // Primary contract: /analytics/section/:id, fallback: /sections/:id/analytics
+      let res = await fetch(`${API_BASE}/analytics/section/${sectionId}`, {
         credentials: "include",
       });
-      if (!res.ok) throw new Error(`Failed to load section analytics (HTTP ${res.status})`);
-      const json = await res.json();
-      setData(json);
+      if (!res.ok) {
+        res = await fetch(`${API_BASE}/sections/${sectionId}/analytics`, {
+          credentials: "include",
+        });
+      }
+      if (res.ok) {
+        const json = await res.json();
+        setData(json.data || json);
+      }
     } catch (err: unknown) {
-      const msg = err instanceof Error ? err.message : "Failed to load section analytics";
-      setError(msg);
+      console.warn("Could not load section analytics:", err);
     } finally {
       setLoading(false);
     }
@@ -92,15 +107,30 @@ export default function InstructorSectionsPage() {
     fetchAnalytics();
   }, [fetchAnalytics]);
 
-  const handleSourceChange = (source: "attendance" | "assessment") => {
-    setImportSource(source);
-    setCsvContent(SAMPLE_CSV[source] || "");
-    setFeedback(null);
+  // Toast timer
+  useEffect(() => {
+    if (!toast) return;
+    const t = setTimeout(() => setToast(null), 3500);
+    return () => clearTimeout(t);
+  }, [toast]);
+
+  const handleSubjectChange = (newSubject: string) => {
+    setSelectedSubject(newSubject);
+    let sample = SAMPLE_CSV[importSource] || "";
+    sample = sample.replace(/CS101/g, newSubject);
+    setCsvContent(sample);
   };
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+  const handleSourceChange = (src: "attendance" | "assessment") => {
+    setImportSource(src);
+    let sample = SAMPLE_CSV[src] || "";
+    if (selectedSubject) {
+      sample = sample.replace(/CS101/g, selectedSubject);
+    }
+    setCsvContent(sample);
+  };
+
+  const handleFileUpload = (file: File) => {
     const reader = new FileReader();
     reader.onload = (event) => {
       const content = event.target?.result as string;
@@ -124,10 +154,15 @@ export default function InstructorSectionsPage() {
     document.body.removeChild(link);
   };
 
-  const handleSubmitData = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const rowCount = useMemo(() => {
+    const lines = csvContent.split("\n").map((l) => l.trim()).filter(Boolean);
+    return Math.max(0, lines.length - 1);
+  }, [csvContent]);
+
+  const handleSubmitData = async () => {
     if (!csvContent.trim()) {
       setFeedback({ status: "error", message: "CSV content cannot be empty." });
+      setToast({ message: "CSV content cannot be empty.", type: "error" });
       return;
     }
 
@@ -152,6 +187,14 @@ export default function InstructorSectionsPage() {
         throw new Error(body.error || `Upload failed with HTTP ${res.status}`);
       }
 
+      const now = new Date();
+      const formattedSubmissionTime = now.toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      }) + " at " + now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+      setLastSubmissionDate(formattedSubmissionTime);
+
       setFeedback({
         status: "success",
         message: isRectify
@@ -163,106 +206,130 @@ export default function InstructorSectionsPage() {
         scoringRecalculation: body.scoringRecalculation,
       });
 
+      setToast({ message: "Risk scores updated", type: "success" });
       fetchAnalytics();
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Failed to submit academic data";
-      setFeedback({
-        status: "error",
-        message: msg,
-      });
+      setFeedback({ status: "error", message: msg });
+      setToast({ message: msg, type: "error" });
     } finally {
       setUploading(false);
     }
   };
 
-  const totalAtRisk = data ? data.bandDistribution.high + data.bandDistribution.critical : 0;
+  const totalAtRisk = data ? (data.bandDistribution.high ?? 0) + (data.bandDistribution.critical ?? 0) : 0;
 
   return (
-    <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "1.5rem", color: "#1B2A33" }}>
+    <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "1.5rem 0", color: "var(--text)" }}>
       {/* Faculty Dual-Role Navigation */}
-      <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1.5rem", borderBottom: "1px solid #D9DFDD", paddingBottom: "0.5rem" }}>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", padding: "0.4rem 0.75rem", borderRadius: "4px", fontSize: "0.8125rem", fontWeight: 600, background: "#FFFFFF", color: "#2D5BA3", border: "1px solid #D9DFDD", borderBottom: "2px solid #2D5BA3" }}>
-          <BookOpen size={14} />
-          Teaching section (Instructor)
-        </span>
-        <Link href="/inbox" style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", padding: "0.4rem 0.75rem", borderRadius: "4px", fontSize: "0.8125rem", fontWeight: 500, color: "#5B6B75", textDecoration: "none" }}>
-          <UserCheck size={14} />
-          Mentee alerts &amp; interventions (Mentor)
-        </Link>
-      </div>
+      <Tabs
+        items={[
+          {
+            label: "Teaching section",
+            href: "/sections",
+            icon: BookOpen,
+            active: true,
+          },
+          {
+            label: "Mentee alerts & interventions",
+            href: "/inbox",
+            icon: UserCheck,
+            active: false,
+          },
+        ]}
+        ariaLabel="Faculty navigation"
+      />
 
-      {/* Header and section summary */}
-      <div style={{ marginBottom: "1.5rem" }}>
-        <h1 style={{ margin: "0 0 0.25rem", fontSize: "1.5rem", fontWeight: 700, color: "#1B2A33" }}>
-          Section {sectionId} — {selectedSubject}
-        </h1>
-        <p style={{ margin: 0, color: "#5B6B75", fontSize: "0.875rem" }}>
-          Upload attendance or marks with dependent subject verification and rectify options.
-        </p>
-      </div>
+      {/* 1. Page Header */}
+      <PageHeader
+        breadcrumb={`Instructor / Section ${sectionId}`}
+        title={`${selectedSubject}, Section ${sectionId}`}
+        description="Submit attendance or assessment data and review how your section is doing."
+      />
 
-      {/* Academic Data Submission Panel */}
-      <div style={{ background: "#FFFFFF", border: "1px solid #D9DFDD", borderRadius: "8px", padding: "1.5rem", marginBottom: "2rem" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1rem", flexWrap: "wrap", gap: "0.75rem" }}>
-          <div style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}>
-            <div style={{ background: "#F2F4F3", color: "#2D5BA3", padding: "0.5rem", borderRadius: "4px" }}>
-              <UploadCloud size={20} />
-            </div>
-            <div>
-              <h2 style={{ margin: 0, fontSize: "1.125rem", fontWeight: 600, color: "#1B2A33" }}>Academic data submission</h2>
-              <p style={{ margin: "0.15rem 0 0", color: "#5B6B75", fontSize: "0.8125rem" }}>
-                Select subject and section, then submit or rectify records.
-              </p>
-            </div>
-          </div>
+      {/* 2. Section Overview Stats (Above the Form) */}
+      <SectionOverviewStats
+        totalStudents={data?.totalStudents}
+        totalNeedingSupport={totalAtRisk}
+        lastSubmissionDate={lastSubmissionDate}
+        loading={loading}
+      />
 
-          <button
-            type="button"
-            onClick={handleDownloadTemplate}
-            style={{ background: "#FFFFFF", border: "1px solid #D9DFDD", color: "#5B6B75", padding: "0.45rem 0.85rem", borderRadius: "4px", fontSize: "0.8125rem", fontWeight: 500, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "0.4rem" }}
-          >
-            <Download size={14} /> Sample CSV template
-          </button>
-        </div>
+      {/* 6. Students Needing Support Notice */}
+      <StudentsNeedingSupportNotice
+        sectionId={sectionId}
+        totalAtRisk={totalAtRisk}
+      />
 
-        {/* Dynamic Dependent Dropdowns & Rectify Mode */}
-        <TeachingDropdowns
+      {/* Submission Feedback Panel */}
+      <ImportResultPanel feedback={feedback} onDismiss={() => setFeedback(null)} />
+
+      {/* 3. Upload Flow 3-Step Card */}
+      <div
+        style={{
+          background: "var(--surface)",
+          border: "1px solid var(--border)",
+          borderRadius: "var(--radius-md)",
+          padding: "1.75rem",
+          marginBottom: "1.5rem",
+        }}
+      >
+        {/* Step 1: Choose class */}
+        <UploadStepOneClass
           assignments={teachingAssignments}
           selectedSubject={selectedSubject}
           selectedSection={sectionId}
-          onSubjectChange={setSelectedSubject}
+          onSubjectChange={handleSubjectChange}
           onSectionChange={setSectionId}
-          isRectify={isRectify}
-          onRectifyChange={setIsRectify}
           disabled={uploading}
         />
 
-        {/* Live Feedback Banner */}
-        <ImportFeedbackBanner feedback={feedback} />
-
-        {/* Data Upload Form */}
-        <AcademicDataUploadForm
+        {/* Step 2: Choose data type */}
+        <UploadStepTwoType
           importSource={importSource}
           onSourceChange={handleSourceChange}
+          isRectify={isRectify}
+          onRectifyChange={setIsRectify}
+          selectedSubject={selectedSubject}
+          disabled={uploading}
+        />
+
+        {/* Step 3: Add data */}
+        <UploadStepThreeData
           csvContent={csvContent}
           onCsvContentChange={setCsvContent}
           onFileUpload={handleFileUpload}
-          onSubmit={handleSubmitData}
+          onDownloadTemplate={handleDownloadTemplate}
+          importSource={importSource}
+          selectedSubject={selectedSubject}
+          disabled={uploading}
+        />
+
+        {/* 4. CSV Preview and client-side validation */}
+        <CsvPreviewTable
+          csvContent={csvContent}
+          selectedSubject={selectedSubject}
+          importSource={importSource}
+        />
+
+        {/* 5. Sticky Submit Action Bar */}
+        <SubmitActionBar
+          importSource={importSource}
+          selectedSubject={selectedSubject}
+          rowCount={rowCount}
           uploading={uploading}
           isRectify={isRectify}
-          selectedSubject={selectedSubject}
+          onSubmit={handleSubmitData}
         />
       </div>
 
-      {/* KPI metrics cards */}
-      <SectionKpiCards totalStudents={data?.totalStudents ?? 0} totalAtRisk={totalAtRisk} />
+      {/* 7. Distribution Chart: Where students are falling behind */}
+      <WhereStudentsFallingBehindChart
+        attendanceDeficitDistribution={data?.attendanceDeficitDistribution}
+      />
 
-      {/* Charts */}
-      {data && (
-        <DeficitDistributionChart
-          attendanceDeficitDistribution={data.attendanceDeficitDistribution}
-        />
-      )}
+      {/* Toast popup */}
+      {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
     </div>
   );
 }

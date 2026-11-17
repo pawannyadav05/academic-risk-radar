@@ -20,14 +20,14 @@ export default async function ForbiddenPage() {
         alignItems: "center",
         justifyContent: "center",
         padding: "1rem",
-        fontFamily: "var(--font-atkinson, system-ui, sans-serif)",
+        fontFamily: "var(--font-family)",
       }}
     >
       <div
         style={{
-          background: "#FFFFFF",
-          border: "1px solid #D9DFDD",
-          borderRadius: "8px",
+          background: "var(--surface)",
+          border: "1px solid var(--border)",
+          borderRadius: "var(--radius-md)",
           padding: "2rem",
           maxWidth: "480px",
           width: "100%",
@@ -40,9 +40,9 @@ export default async function ForbiddenPage() {
             justifyContent: "center",
             width: "40px",
             height: "40px",
-            borderRadius: "4px",
-            background: "#F2F4F3",
-            color: "#8A4A7B",
+            borderRadius: "var(--radius-sm)",
+            background: "var(--surface-2)",
+            color: "var(--danger)",
             marginBottom: "1rem",
           }}
         >
@@ -54,7 +54,7 @@ export default async function ForbiddenPage() {
             margin: "0 0 0.5rem",
             fontSize: "1.25rem",
             fontWeight: 700,
-            color: "#1B2A33",
+            color: "var(--text)",
             lineHeight: 1.3,
           }}
         >
@@ -66,7 +66,7 @@ export default async function ForbiddenPage() {
             margin: "0 0 1.25rem",
             fontSize: "0.875rem",
             lineHeight: 1.5,
-            color: "#5B6B75",
+            color: "var(--text-muted)",
           }}
         >
           Your current account role does not have permission to view this page. Records and controls are separated by institutional role.
@@ -74,16 +74,16 @@ export default async function ForbiddenPage() {
 
         <div
           style={{
-            background: "#F2F4F3",
-            border: "1px solid #D9DFDD",
-            borderRadius: "4px",
+            background: "var(--surface-2)",
+            border: "1px solid var(--border)",
+            borderRadius: "var(--radius-sm)",
             padding: "0.75rem 1rem",
             fontSize: "0.8125rem",
-            color: "#5B6B75",
+            color: "var(--text-muted)",
             marginBottom: "1.5rem",
           }}
         >
-          Signed in as <strong style={{ color: "#1B2A33" }}>{session?.name || "Unknown"}</strong> ({session?.role || "guest"}).
+          Signed in as <strong style={{ color: "var(--text)" }}>{session?.name || "Unknown"}</strong> ({session?.role || "guest"}).
         </div>
 
         <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
@@ -93,16 +93,16 @@ export default async function ForbiddenPage() {
               display: "inline-flex",
               alignItems: "center",
               gap: "0.4rem",
-              background: "#2D5BA3",
-              color: "#FFFFFF",
+              background: "var(--primary)",
+              color: "var(--primary-contrast)",
               padding: "0.5rem 1rem",
-              borderRadius: "4px",
+              borderRadius: "var(--radius-sm)",
               fontSize: "0.8125rem",
               fontWeight: 600,
               textDecoration: "none",
             }}
           >
-            Go to dashboard
+            Go back home
           </Link>
 
           <form action={logoutAction} style={{ margin: 0 }}>
@@ -112,11 +112,11 @@ export default async function ForbiddenPage() {
                 display: "inline-flex",
                 alignItems: "center",
                 gap: "0.4rem",
-                background: "#FFFFFF",
-                color: "#5B6B75",
-                border: "1px solid #D9DFDD",
+                background: "var(--surface-2)",
+                color: "var(--text)",
+                border: "1px solid var(--border)",
                 padding: "0.5rem 1rem",
-                borderRadius: "4px",
+                borderRadius: "var(--radius-sm)",
                 fontSize: "0.8125rem",
                 fontWeight: 600,
                 cursor: "pointer",

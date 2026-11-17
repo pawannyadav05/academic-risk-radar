@@ -60,11 +60,17 @@ export async function loginAction(
       cache: "no-store",
     });
 
-    const data = await res.json();
+    if (res.status === 429) {
+      return {
+        error: "Too many requests. Please wait a moment and try again.",
+      };
+    }
+
+    const data = await res.json().catch(() => ({}));
 
     if (!res.ok || !data.token) {
       return {
-        error: data.error || "Invalid institutional email or password.",
+        error: data.error || (res.status === 401 ? "Invalid institutional email or password." : "Authentication service is currently unavailable. Please try again."),
       };
     }
 
@@ -106,5 +112,5 @@ export async function loginAction(
 export async function logoutAction() {
   const cookieStore = cookies();
   cookieStore.delete(SESSION_COOKIE_NAME);
-  redirect("/login");
+  redirect("/login?reason=signed-out");
 }

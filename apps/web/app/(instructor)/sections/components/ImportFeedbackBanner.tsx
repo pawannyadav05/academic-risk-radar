@@ -18,16 +18,16 @@ export function ImportFeedbackBanner({ feedback }: Props) {
   if (!feedback) return null;
 
   const isSuccess = feedback.status === "success";
-  const borderColor = isSuccess ? "#2E8B7A" : "#8A4A7B";
+  const borderColor = isSuccess ? "var(--success)" : "var(--danger)";
 
   return (
     <div
       style={{
-        background: "#FFFFFF",
+        background: "var(--surface)",
         border: `1px solid ${borderColor}`,
         color: borderColor,
         padding: "0.875rem 1.25rem",
-        borderRadius: "4px",
+        borderRadius: "var(--radius-sm)",
         marginBottom: "1.25rem",
         fontSize: "0.875rem",
       }}
@@ -37,13 +37,12 @@ export function ImportFeedbackBanner({ feedback }: Props) {
         {feedback.message}
       </div>
       {feedback.insertedCount !== undefined && (
-        <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", fontSize: "0.8125rem", marginTop: "0.25rem", color: "#5B6B75" }}>
-          <span>Valid rows: <strong style={{ color: "#1B2A33" }}>{feedback.insertedCount}</strong></span>
-          <span>Quarantined rows: <strong style={{ color: feedback.quarantinedCount ? "#8A4A7B" : "#1B2A33" }}>{feedback.quarantinedCount}</strong></span>
-          <span>Students affected: <strong style={{ color: "#1B2A33" }}>{feedback.affectedStudents}</strong></span>
+        <div style={{ display: "flex", flexWrap: "wrap", gap: "1rem", fontSize: "0.8125rem", marginTop: "0.25rem", color: "var(--text-muted)" }}>
+          <span>Valid rows: <strong style={{ color: "var(--text)" }}>{feedback.insertedCount}</strong></span>
+          <span>Quarantined rows: <strong style={{ color: feedback.quarantinedCount ? "var(--danger)" : "var(--text)" }}>{feedback.quarantinedCount}</strong></span>
+          <span>Students affected: <strong style={{ color: "var(--text)" }}>{feedback.affectedStudents}</strong></span>
         </div>
       )}
     </div>
   );
 }
-

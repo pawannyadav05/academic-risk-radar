@@ -2,15 +2,18 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { RiskSnapshot, RiskBand } from "@academic-risk-radar/shared-types";
-import { StudentProfileCard } from "./components/StudentProfileCard";
-import { PersonalInfoCard } from "./components/PersonalInfoCard";
-import { MetricsSummaryCards } from "./components/MetricsSummaryCards";
-import { FactorBreakdownList } from "./components/FactorBreakdownList";
+import { ProfileStrip } from "./components/ProfileStrip";
+import { AcademicStandingHero } from "./components/AcademicStandingHero";
+import { StatTiles } from "./components/StatTiles";
+import { WhatThisMeansPanel } from "./components/WhatThisMeansPanel";
 import { SubjectAttendanceCard } from "./components/SubjectAttendanceCard";
 import { AssessmentHistoryTable, AssessmentRecordItem } from "./components/AssessmentHistoryTable";
+import { FactorBreakdownList } from "./components/FactorBreakdownList";
 import { StudentRiskSkeleton } from "./components/StudentRiskSkeleton";
 import { StudentRiskEmpty } from "./components/StudentRiskEmpty";
 import { StudentRiskError } from "./components/StudentRiskError";
+import { PageHeader } from "@/app/components/PageHeader";
+import { Tabs } from "@/app/components/Tabs";
 
 const API_BASE = "/api/v1";
 
@@ -114,10 +117,13 @@ export default function StudentRiskPage() {
     return <StudentRiskError message={error} onRetry={loadStudentData} />;
   }
 
-  const studentName = session?.name || "Student";
   const studentId = session?.identityId || session?.id || "N/A";
+  const studentName =
+    session?.name ||
+    (profile as any)?.name ||
+    (profile as any)?.studentName ||
+    studentId;
   const section = session?.sectionIds?.[0] || "SEC-CSE-101";
-  const department = session?.departmentId || "DEP-CSE";
 
   if (!risk) {
     return (
@@ -134,68 +140,91 @@ export default function StudentRiskPage() {
   const attendancePct = Math.round(attendanceRate * 100);
   const assessmentAvg = profile?.computedMetrics?.assessmentAvg ?? 0.75;
   const assessmentAvgPct = Math.round(assessmentAvg * 100);
-  // Official institutional CGPA from academic record — not affected by individual assessments
   const cgpa = (profile?.cgpa ?? 7.4).toFixed(2);
   const rawRiskScore = (risk.factors || []).reduce((acc, f) => acc + f.contribution, 0);
   const riskPct = Math.round(rawRiskScore * 100);
   const band: RiskBand = risk.band;
 
+  const weakSubjects = (profile?.attendance?.subjectBreakdown || []).filter((s) => s.percentage < 75);
+
   return (
     <div
       style={{
-        fontFamily: "var(--font-atkinson, system-ui, sans-serif)",
-        color: "#1B2A33",
+        fontFamily: "var(--font-family)",
+        color: "var(--text)",
+        maxWidth: "1200px",
+        margin: "0 auto",
       }}
     >
-      <StudentProfileCard
+      <PageHeader
+        breadcrumb="Student / Academic standing"
+        title="Academic Risk Standing"
+        description="Transparent progress overview and factor breakdown for your enrolled courses."
+      />
+
+      {/* 1. Profile strip at top */}
+      <ProfileStrip
         name={studentName}
         enrolmentId={studentId}
         programme="B.Tech (Computer Science & Engineering)"
         section={section}
-        cgpa={cgpa}
-        attendancePct={attendancePct}
-        band={band}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
         computedAt={risk.computedAt}
-        modelVersion={risk.modelVersion}
+      />
+
+      {/* Tabs: Standing overview & Factor breakdown */}
+      <Tabs
+        items={[
+          {
+            label: "Standing overview",
+            active: activeTab === "overview",
+            onClick: () => setActiveTab("overview"),
+          },
+          {
+            label: "Factor breakdown",
+            active: activeTab === "factors",
+            onClick: () => setActiveTab("factors"),
+          },
+        ]}
+        ariaLabel="Student standing tabs"
       />
 
       {activeTab === "overview" ? (
         <div style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
-          <div style={{ display: "grid", gridTemplateColumns: "320px 1fr", gap: "1.25rem" }}>
-            <PersonalInfoCard
-              name={studentName}
-              email={session?.email || "student@radar.edu"}
-              section={section}
-              department={department}
-              enrolmentId={studentId}
-              modelVersion={risk.modelVersion}
-              riskScore={riskPct}
-              band={band}
-            />
-            <MetricsSummaryCards
-              riskScore={riskPct}
-              rawRiskScore={rawRiskScore}
-              band={band}
-              attendanceRate={attendanceRate}
-              attendancePct={attendancePct}
-              assessmentAvg={assessmentAvg}
-              cgpa={cgpa}
-            />
+          {/* 2 & 3. Hero Card + Two Compact Stat Tiles side by side */}
+          <div
+            className="student-hero-grid"
+            style={{
+              display: "grid",
+              gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
+              gap: "1.25rem",
+            }}
+          >
+            <AcademicStandingHero score={riskPct} band={band} />
+            <StatTiles attendancePct={attendancePct} cgpa={cgpa} />
           </div>
 
+          {/* 4. What this means & Suggested next steps panel */}
+          <WhatThisMeansPanel
+            band={band}
+            attendancePct={attendancePct}
+            assessmentAvgPct={assessmentAvgPct}
+            weakSubjects={weakSubjects}
+          />
+
+          {/* 5. Subject attendance with 75% target marker and updated copy */}
           <SubjectAttendanceCard
             overallPct={attendancePct}
             subjectBreakdown={profile?.attendance?.subjectBreakdown}
           />
 
+          {/* 6. Recorded assessments data table with colored chips and horiz scroll */}
           <AssessmentHistoryTable
             records={profile?.assessments?.records}
             assessmentAvgPct={assessmentAvgPct}
           />
         </div>
       ) : (
+        /* 7. Factor breakdown tab */
         <FactorBreakdownList
           factors={risk.factors || []}
           totalScore={rawRiskScore}

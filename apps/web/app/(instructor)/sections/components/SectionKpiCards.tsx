@@ -9,25 +9,25 @@ interface Props {
 export function SectionKpiCards({ totalStudents, totalAtRisk }: Props) {
   return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1.25rem", marginBottom: "2rem" }}>
-      <div style={{ background: "#FFFFFF", padding: "1.25rem", borderRadius: "8px", border: "1px solid #D9DFDD", display: "flex", alignItems: "center", gap: "1rem" }}>
-        <div style={{ background: "#F2F4F3", padding: "0.75rem", borderRadius: "4px", color: "#2D5BA3" }}>
+      <div style={{ background: "var(--surface)", padding: "1.25rem", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", display: "flex", alignItems: "center", gap: "1rem" }}>
+        <div style={{ background: "var(--surface-2)", padding: "0.75rem", borderRadius: "var(--radius-sm)", color: "var(--primary)" }}>
           <Users size={20} />
         </div>
         <div>
-          <p style={{ margin: 0, color: "#5B6B75", fontSize: "0.8125rem", fontWeight: 500 }}>Total section students</p>
-          <h3 style={{ margin: "0.15rem 0 0", fontSize: "1.5rem", fontWeight: 700, color: "#1B2A33", fontVariantNumeric: "tabular-nums" }}>
+          <p style={{ margin: 0, color: "var(--text-muted)", fontSize: "0.8125rem", fontWeight: 500 }}>Total section students</p>
+          <h3 style={{ margin: "0.15rem 0 0", fontSize: "1.5rem", fontWeight: 700, color: "var(--text)", fontVariantNumeric: "tabular-nums" }}>
             {totalStudents}
           </h3>
         </div>
       </div>
 
-      <div style={{ background: "#FFFFFF", padding: "1.25rem", borderRadius: "8px", border: "1px solid #D9DFDD", display: "flex", alignItems: "center", gap: "1rem" }}>
-        <div style={{ background: "#F2F4F3", padding: "0.75rem", borderRadius: "4px", color: "#8A4A7B" }}>
+      <div style={{ background: "var(--surface)", padding: "1.25rem", borderRadius: "var(--radius-md)", border: "1px solid var(--border)", display: "flex", alignItems: "center", gap: "1rem" }}>
+        <div style={{ background: "var(--surface-2)", padding: "0.75rem", borderRadius: "var(--radius-sm)", color: "var(--danger)" }}>
           <AlertTriangle size={20} />
         </div>
         <div>
-          <p style={{ margin: 0, color: "#5B6B75", fontSize: "0.8125rem", fontWeight: 500 }}>Students needing support</p>
-          <h3 style={{ margin: "0.15rem 0 0", fontSize: "1.5rem", fontWeight: 700, color: "#8A4A7B", fontVariantNumeric: "tabular-nums" }}>
+          <p style={{ margin: 0, color: "var(--text-muted)", fontSize: "0.8125rem", fontWeight: 500 }}>Students needing support</p>
+          <h3 style={{ margin: "0.15rem 0 0", fontSize: "1.5rem", fontWeight: 700, color: "var(--danger)", fontVariantNumeric: "tabular-nums" }}>
             {totalAtRisk}
           </h3>
         </div>
@@ -35,4 +35,3 @@ export function SectionKpiCards({ totalStudents, totalAtRisk }: Props) {
     </div>
   );
 }
-

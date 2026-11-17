@@ -23,12 +23,12 @@ export function AuditPagination({
         alignItems: "center",
         padding: "0.5rem 0",
         fontSize: "0.8125rem",
-        color: "#5B6B75",
+        color: "var(--text-muted)",
       }}
     >
       <div>
-        Showing page <span style={{ fontWeight: 600, color: "#1B2A33", fontVariantNumeric: "tabular-nums" }}>{page}</span> of{" "}
-        <span style={{ fontWeight: 600, color: "#1B2A33", fontVariantNumeric: "tabular-nums" }}>{totalPages}</span> ({total} total entries)
+        Showing page <span style={{ fontWeight: 600, color: "var(--text)", fontVariantNumeric: "tabular-nums" }}>{page}</span> of{" "}
+        <span style={{ fontWeight: 600, color: "var(--text)", fontVariantNumeric: "tabular-nums" }}>{totalPages}</span> ({total} total entries)
       </div>
 
       <div style={{ display: "flex", gap: "0.5rem" }}>
@@ -36,13 +36,13 @@ export function AuditPagination({
           onClick={() => onPageChange(page - 1)}
           disabled={page <= 1}
           style={{
-            background: "#FFFFFF",
-            border: "1px solid #D9DFDD",
-            borderRadius: "4px",
+            background: "var(--surface)",
+            border: "1px solid var(--border)",
+            borderRadius: "var(--radius-sm)",
             padding: "0.35rem 0.75rem",
             fontSize: "0.8125rem",
             fontWeight: 500,
-            color: page <= 1 ? "#A0ABA9" : "#1B2A33",
+            color: page <= 1 ? "var(--text-muted)" : "var(--text)",
             cursor: page <= 1 ? "not-allowed" : "pointer",
           }}
         >
@@ -52,13 +52,13 @@ export function AuditPagination({
           onClick={() => onPageChange(page + 1)}
           disabled={page >= totalPages}
           style={{
-            background: "#FFFFFF",
-            border: "1px solid #D9DFDD",
-            borderRadius: "4px",
+            background: "var(--surface)",
+            border: "1px solid var(--border)",
+            borderRadius: "var(--radius-sm)",
             padding: "0.35rem 0.75rem",
             fontSize: "0.8125rem",
             fontWeight: 500,
-            color: page >= totalPages ? "#A0ABA9" : "#1B2A33",
+            color: page >= totalPages ? "var(--text-muted)" : "var(--text)",
             cursor: page >= totalPages ? "not-allowed" : "pointer",
           }}
         >

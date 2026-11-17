@@ -46,9 +46,14 @@ app.use(
 
 app.use(express.json());
 
+const isDev = process.env.NODE_ENV !== "production";
+
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
+  max: isDev ? 100000 : 100, // limit each IP to 100 requests per windowMs in prod
+  skip: () => isDev,
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
 app.use(limiter);

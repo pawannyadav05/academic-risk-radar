@@ -135,7 +135,9 @@ export async function getSession(): Promise<SessionUser | null> {
 export async function getSessionOrRedirect(returnUrl?: string): Promise<SessionUser> {
   const session = await getSession();
   if (!session) {
-    const target = returnUrl ? `/login?returnUrl=${encodeURIComponent(returnUrl)}` : "/login";
+    const target = returnUrl
+      ? `/login?returnUrl=${encodeURIComponent(returnUrl)}&reason=session-expired`
+      : "/login?reason=session-expired";
     redirect(target);
   }
   return session;
