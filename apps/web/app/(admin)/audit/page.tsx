@@ -2,10 +2,13 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { AuditEntry } from "@academic-risk-radar/shared-types";
+import { Lock } from "lucide-react";
+import { PageHeader } from "@/app/components/PageHeader";
+import { AdminErrorBanner } from "../components/AdminErrorBanner";
 import { AuditFilterBar } from "./components/AuditFilterBar";
 import { AuditTable } from "./components/AuditTable";
 import { AuditPagination } from "./components/AuditPagination";
-import { AuditDetailModal } from "./components/AuditDetailModal";
+import { AuditDetailDrawer } from "./components/AuditDetailDrawer";
 
 const API_BASE = "/api/v1";
 
@@ -13,9 +16,13 @@ export default function AuditLogsPage() {
   const [entries, setEntries] = useState<AuditEntry[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  const [statusCode, setStatusCode] = useState<number | null>(null);
 
   const [entityType, setEntityType] = useState<string>("");
   const [actorId, setActorId] = useState<string>("");
+  const [fromDate, setFromDate] = useState<string>("");
+  const [toDate, setToDate] = useState<string>("");
+
   const [page, setPage] = useState<number>(1);
   const [totalPages, setTotalPages] = useState<number>(1);
   const [total, setTotal] = useState<number>(0);
@@ -25,30 +32,33 @@ export default function AuditLogsPage() {
   const fetchAuditLogs = useCallback(async (targetPage = 1) => {
     setLoading(true);
     setError(null);
+    setStatusCode(null);
     try {
       const params = new URLSearchParams();
       if (entityType) params.set("entityType", entityType);
-      if (actorId) params.set("actorId", actorId.trim());
+      if (actorId.trim()) params.set("actorId", actorId.trim());
+      if (fromDate) params.set("from", new Date(fromDate).toISOString());
+      if (toDate) params.set("to", new Date(`${toDate}T23:59:59Z`).toISOString());
       params.set("page", String(targetPage));
       params.set("limit", "15");
 
       const res = await fetch(`${API_BASE}/admin/audit?${params.toString()}`, { credentials: "include" });
-      const data = await res.json();
-
-      if (res.ok) {
-        setEntries(data.entries || []);
-        setTotal(data.total || 0);
-        setTotalPages(data.totalPages || 1);
-        setPage(data.page || targetPage);
-      } else {
-        setError(data.error || "Failed to load audit logs");
+      if (!res.ok) {
+        setStatusCode(res.status);
+        throw new Error(`HTTP ${res.status}: Failed to load audit logs`);
       }
-    } catch (err: any) {
-      setError(`Network error: ${err.message}`);
+      const data = await res.json();
+      setEntries(data.entries || []);
+      setTotal(data.total || 0);
+      setTotalPages(data.totalPages || 1);
+      setPage(data.page || targetPage);
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to load audit trail";
+      setError(msg);
     } finally {
       setLoading(false);
     }
-  }, [entityType, actorId]);
+  }, [entityType, actorId, fromDate, toDate]);
 
   useEffect(() => {
     fetchAuditLogs(1);
@@ -57,50 +67,62 @@ export default function AuditLogsPage() {
   const handleReset = () => {
     setEntityType("");
     setActorId("");
+    setFromDate("");
+    setToDate("");
     setPage(1);
+  };
+
+  const handleRemoveFilter = (key: "entityType" | "actorId" | "from" | "to") => {
+    if (key === "entityType") setEntityType("");
+    if (key === "actorId") setActorId("");
+    if (key === "from") setFromDate("");
+    if (key === "to") setToDate("");
   };
 
   return (
     <div>
-      <div style={{ marginBottom: "1.5rem" }}>
-        <h1 style={{ margin: "0 0 0.35rem", fontSize: "1.5rem", fontWeight: 700, color: "#1B2A33" }}>
-          System audit log
-        </h1>
-        <p style={{ margin: 0, color: "#5B6B75", fontSize: "0.875rem", maxWidth: "600px" }}>
-          Immutable append-only record of model activations, administrative configurations, and mentor interventions.
-        </p>
-      </div>
+      <PageHeader
+        breadcrumb="Admin / Audit log"
+        title="System audit log"
+        description="Immutable append-only record of model activations, administrative configurations, and mentor interventions."
+        action={
+          <div style={{ display: "inline-flex", alignItems: "center", gap: "0.35rem", fontSize: "0.75rem", color: "var(--text-muted)", background: "var(--surface)", border: "1px solid var(--border)", padding: "0.35rem 0.65rem", borderRadius: "var(--radius-sm)" }}>
+            <Lock size={12} style={{ color: "var(--text-muted)" }} />
+            <span>Immutable append-only record</span>
+          </div>
+        }
+      />
 
       <AuditFilterBar
         entityType={entityType}
         setEntityType={setEntityType}
         actorId={actorId}
         setActorId={setActorId}
+        fromDate={fromDate}
+        setFromDate={setFromDate}
+        toDate={toDate}
+        setToDate={setToDate}
         onApply={() => fetchAuditLogs(1)}
         onReset={handleReset}
+        onRemoveFilter={handleRemoveFilter}
       />
 
-      {error && (
-        <div style={{ padding: "0.75rem 1rem", borderRadius: "4px", marginBottom: "1.25rem", fontSize: "0.8125rem", background: "#FBF0F4", color: "#8A4A7B", border: "1px solid #8A4A7B" }}>
-          {error}
-        </div>
-      )}
+      {error && <AdminErrorBanner error={error} statusCode={statusCode} onRetry={() => fetchAuditLogs(page)} />}
 
       {loading ? (
-        <div style={{ color: "#5B6B75", fontSize: "0.875rem", padding: "2rem 0" }}>Loading audit records...</div>
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem", marginBottom: "1.25rem" }}>
+          {[1, 2, 3, 4, 5].map((i) => (
+            <div key={i} style={{ height: "48px", background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)" }} />
+          ))}
+        </div>
       ) : (
         <>
           <AuditTable entries={entries} onSelectEntry={setSelectedEntry} />
-          <AuditPagination
-            page={page}
-            totalPages={totalPages}
-            total={total}
-            onPageChange={(p) => fetchAuditLogs(p)}
-          />
+          <AuditPagination page={page} totalPages={totalPages} total={total} onPageChange={(p) => fetchAuditLogs(p)} />
         </>
       )}
 
-      <AuditDetailModal entry={selectedEntry} onClose={() => setSelectedEntry(null)} />
+      <AuditDetailDrawer entry={selectedEntry} onClose={() => setSelectedEntry(null)} />
     </div>
   );
 }

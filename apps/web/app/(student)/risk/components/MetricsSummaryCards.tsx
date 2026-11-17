@@ -23,18 +23,18 @@ export function MetricsSummaryCards({
   cgpa,
 }: MetricsSummaryCardsProps) {
   const bandInfo = BAND_CONFIG[band] || BAND_CONFIG.low;
-  const attendanceColor = attendancePct < 75 ? "#D49A1F" : "#2E8B7A";
+  const attendanceColor = attendancePct < 75 ? "var(--warning)" : "var(--success)";
 
   return (
     <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: "1rem" }}>
       {/* 1. Academic Standing Score */}
       <div style={{
-        background: "#FFFFFF", borderRadius: "8px", padding: "1.5rem",
-        border: "1px solid #D9DFDD",
+        background: "var(--surface)", borderRadius: "var(--radius-md)", padding: "1.5rem",
+        border: "1px solid var(--border)",
         display: "flex", flexDirection: "column", alignItems: "center",
       }}>
         <div style={{ display: "flex", alignItems: "center", width: "100%", marginBottom: "1.25rem" }}>
-          <span style={{ fontSize: "0.875rem", fontWeight: 600, color: "#1B2A33" }}>Standing score</span>
+          <span style={{ fontSize: "0.875rem", fontWeight: 600, color: "var(--text)" }}>Standing score</span>
           <span style={{ marginLeft: "auto", fontSize: "0.875rem", fontWeight: 700, color: bandInfo.color, fontVariantNumeric: "tabular-nums" }}>
             {riskScore}
           </span>
@@ -46,19 +46,19 @@ export function MetricsSummaryCards({
           label={`${riskScore}`}
           sublabel="out of 100"
         />
-        <div style={{ marginTop: "0.875rem", fontSize: "0.8125rem", color: "#5B6B75", textAlign: "center" }}>
+        <div style={{ marginTop: "0.875rem", fontSize: "0.8125rem", color: "var(--text-muted)", textAlign: "center" }}>
           {bandInfo.label}
         </div>
       </div>
 
       {/* 2. Attendance */}
       <div style={{
-        background: "#FFFFFF", borderRadius: "8px", padding: "1.5rem",
-        border: "1px solid #D9DFDD",
+        background: "var(--surface)", borderRadius: "var(--radius-md)", padding: "1.5rem",
+        border: "1px solid var(--border)",
         display: "flex", flexDirection: "column", alignItems: "center",
       }}>
         <div style={{ display: "flex", alignItems: "center", width: "100%", marginBottom: "1.25rem" }}>
-          <span style={{ fontSize: "0.875rem", fontWeight: 600, color: "#1B2A33" }}>Attendance</span>
+          <span style={{ fontSize: "0.875rem", fontWeight: 600, color: "var(--text)" }}>Attendance</span>
           <span style={{ marginLeft: "auto", fontSize: "0.875rem", fontWeight: 700, color: attendanceColor, fontVariantNumeric: "tabular-nums" }}>
             {attendancePct}%
           </span>
@@ -69,31 +69,31 @@ export function MetricsSummaryCards({
           size={150}
           label={`${attendancePct}%`}
         />
-        <div style={{ marginTop: "0.875rem", fontSize: "0.8125rem", color: "#5B6B75", textAlign: "center" }}>
+        <div style={{ marginTop: "0.875rem", fontSize: "0.8125rem", color: "var(--text-muted)", textAlign: "center" }}>
           {attendancePct < 75 ? "Below 75% target" : "Above 75% target"}
         </div>
       </div>
 
       {/* 3. CGPA */}
       <div style={{
-        background: "#FFFFFF", borderRadius: "8px", padding: "1.5rem",
-        border: "1px solid #D9DFDD",
+        background: "var(--surface)", borderRadius: "var(--radius-md)", padding: "1.5rem",
+        border: "1px solid var(--border)",
         display: "flex", flexDirection: "column", alignItems: "center",
       }}>
         <div style={{ display: "flex", alignItems: "center", width: "100%", marginBottom: "1.25rem" }}>
-          <span style={{ fontSize: "0.875rem", fontWeight: 600, color: "#1B2A33" }}>CGPA</span>
-          <span style={{ marginLeft: "auto", fontSize: "0.875rem", fontWeight: 700, color: "#2E8B7A", fontVariantNumeric: "tabular-nums" }}>
+          <span style={{ fontSize: "0.875rem", fontWeight: 600, color: "var(--text)" }}>CGPA</span>
+          <span style={{ marginLeft: "auto", fontSize: "0.875rem", fontWeight: 700, color: "var(--success)", fontVariantNumeric: "tabular-nums" }}>
             {cgpa}
           </span>
         </div>
         <DonutRing
           value={assessmentAvg}
-          color="#2E8B7A"
+          color="var(--success)"
           size={150}
           label={cgpa}
           sublabel="10.0 scale"
         />
-        <div style={{ marginTop: "0.875rem", fontSize: "0.8125rem", color: "#5B6B75", textAlign: "center" }}>
+        <div style={{ marginTop: "0.875rem", fontSize: "0.8125rem", color: "var(--text-muted)", textAlign: "center" }}>
           Cumulative grade average
         </div>
       </div>

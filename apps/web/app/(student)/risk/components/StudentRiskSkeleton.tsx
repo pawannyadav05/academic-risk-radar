@@ -4,19 +4,19 @@ export function StudentRiskSkeleton() {
   return (
     <div
       style={{
-        fontFamily: "var(--font-atkinson, system-ui, sans-serif)",
-        color: "#1B2A33",
+        fontFamily: "var(--font-family)",
+        color: "var(--text)",
         padding: "1.5rem",
       }}
     >
       {/* Header Skeleton */}
       <div
         style={{
-          background: "#FFFFFF",
-          borderRadius: "8px",
+          background: "var(--surface)",
+          borderRadius: "var(--radius-md)",
           height: "200px",
           marginBottom: "1.25rem",
-          border: "1px solid #D9DFDD",
+          border: "1px solid var(--border)",
         }}
       />
 
@@ -30,10 +30,10 @@ export function StudentRiskSkeleton() {
       >
         <div
           style={{
-            background: "#FFFFFF",
-            borderRadius: "8px",
+            background: "var(--surface)",
+            borderRadius: "var(--radius-md)",
             height: "320px",
-            border: "1px solid #D9DFDD",
+            border: "1px solid var(--border)",
           }}
         />
         <div
@@ -47,10 +47,10 @@ export function StudentRiskSkeleton() {
             <div
               key={i}
               style={{
-                background: "#FFFFFF",
-                borderRadius: "8px",
+                background: "var(--surface)",
+                borderRadius: "var(--radius-md)",
                 height: "280px",
-                border: "1px solid #D9DFDD",
+                border: "1px solid var(--border)",
               }}
             />
           ))}

@@ -25,22 +25,23 @@ export function AcademicDataUploadForm({
   selectedSubject,
 }: Props) {
   const btnStyle = (active: boolean): React.CSSProperties => ({
-    background: active ? "#FFFFFF" : "transparent",
-    color: active ? "#1B2A33" : "#5B6B75",
-    border: active ? "1px solid #D9DFDD" : "1px solid transparent",
-    borderRadius: "4px",
+    background: active ? "var(--surface)" : "transparent",
+    color: active ? "var(--text)" : "var(--text-muted)",
+    border: active ? "1px solid var(--border)" : "1px solid transparent",
+    borderRadius: "var(--radius-sm)",
     padding: "0.35rem 0.85rem",
     fontSize: "0.8125rem",
     fontWeight: 600,
     cursor: "pointer",
+    transition: "background 0.15s ease, color 0.15s ease",
   });
 
   return (
     <form onSubmit={onSubmit}>
       <div style={{ display: "flex", flexWrap: "wrap", alignItems: "center", gap: "1rem", marginBottom: "1rem" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem" }}>
-          <span style={{ fontSize: "0.8125rem", fontWeight: 600, color: "#1B2A33" }}>Data source</span>
-          <div style={{ display: "inline-flex", background: "#F2F4F3", padding: "0.2rem", borderRadius: "4px", border: "1px solid #D9DFDD" }}>
+          <span style={{ fontSize: "0.8125rem", fontWeight: 600, color: "var(--text)" }}>Data source</span>
+          <div style={{ display: "inline-flex", background: "var(--surface-2)", padding: "0.2rem", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)" }}>
             <button type="button" onClick={() => onSourceChange("attendance")} style={btnStyle(importSource === "attendance")}>
               Attendance
             </button>
@@ -51,13 +52,13 @@ export function AcademicDataUploadForm({
         </div>
 
         <div style={{ display: "flex", alignItems: "center", gap: "0.5rem", marginLeft: "auto" }}>
-          <span style={{ fontSize: "0.8125rem", color: "#5B6B75" }}>Upload file</span>
-          <input type="file" accept=".csv" onChange={onFileUpload} style={{ fontSize: "0.8125rem", color: "#5B6B75" }} />
+          <span style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }}>Upload file</span>
+          <input type="file" accept=".csv" onChange={onFileUpload} style={{ fontSize: "0.8125rem", color: "var(--text-muted)" }} />
         </div>
       </div>
 
       <div style={{ marginBottom: "1rem" }}>
-        <label htmlFor="csv-content-input" style={{ display: "block", fontSize: "0.8125rem", fontWeight: 600, color: "#1B2A33", marginBottom: "0.35rem" }}>
+        <label htmlFor="csv-content-input" style={{ display: "block", fontSize: "0.8125rem", fontWeight: 600, color: "var(--text)", marginBottom: "0.35rem" }}>
           CSV content for {selectedSubject || "selected subject"}
         </label>
         <textarea
@@ -66,9 +67,9 @@ export function AcademicDataUploadForm({
           value={csvContent}
           onChange={(e) => onCsvContentChange(e.target.value)}
           placeholder="Paste comma-separated student records here..."
-          style={{ width: "100%", fontFamily: "ui-monospace, monospace", fontSize: "0.8125rem", padding: "0.75rem", border: "1px solid #D9DFDD", borderRadius: "4px", background: "#F2F4F3", color: "#1B2A33", boxSizing: "border-box" }}
+          style={{ width: "100%", fontFamily: "ui-monospace, monospace", fontSize: "0.8125rem", padding: "0.75rem", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", background: "var(--surface-2)", color: "var(--text)", boxSizing: "border-box" }}
         />
-        <p style={{ margin: "0.35rem 0 0", fontSize: "0.75rem", color: "#5B6B75" }}>
+        <p style={{ margin: "0.35rem 0 0", fontSize: "0.75rem", color: "var(--text-muted)" }}>
           {isRectify
             ? "Rectify mode: Uploaded records will update previous student records for this subject and recalculate risk."
             : "New submission: Records will be verified for student enrollment and instructor mapping before saving."}
@@ -80,10 +81,10 @@ export function AcademicDataUploadForm({
           type="submit"
           disabled={uploading}
           style={{
-            background: isRectify ? "#8A4A7B" : "#2D5BA3",
-            color: "#FFFFFF",
+            background: isRectify ? "var(--danger)" : "var(--primary)",
+            color: "var(--primary-contrast)",
             border: "none",
-            borderRadius: "4px",
+            borderRadius: "var(--radius-sm)",
             padding: "0.6rem 1.4rem",
             fontSize: "0.875rem",
             fontWeight: 600,
@@ -91,6 +92,7 @@ export function AcademicDataUploadForm({
             display: "inline-flex",
             alignItems: "center",
             gap: "0.5rem",
+            transition: "background 0.15s ease",
           }}
         >
           {uploading ? (
@@ -98,7 +100,7 @@ export function AcademicDataUploadForm({
           ) : isRectify ? (
             <><UploadCloud size={16} /> Rectify and recalculate risk</>
           ) : (
-            <><UploadCloud size={16} /> Submit and recalculate risk</>
+            <><UploadCloud size={16} /> Submit and calculate risk</>
           )}
         </button>
       </div>

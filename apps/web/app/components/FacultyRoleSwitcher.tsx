@@ -25,7 +25,7 @@ export function FacultyRoleSwitcher({ role }: FacultyRoleSwitcherProps) {
     const isMentor = pathname.startsWith("/inbox") || pathname.startsWith("/interventions");
 
     return (
-      <div style={{ display: "inline-flex", gap: "0.25rem", background: "#F2F4F3", padding: "0.15rem", borderRadius: "4px", border: "1px solid #D9DFDD" }}>
+      <div style={{ display: "inline-flex", gap: "0.25rem", background: "var(--surface-2)", padding: "0.15rem", borderRadius: "var(--radius-sm)", border: "1px solid var(--border)" }}>
         <Link
           href="/hod-dashboard"
           style={{
@@ -33,11 +33,11 @@ export function FacultyRoleSwitcher({ role }: FacultyRoleSwitcherProps) {
             alignItems: "center",
             gap: "0.25rem",
             padding: "0.25rem 0.5rem",
-            borderRadius: "3px",
+            borderRadius: "var(--radius-sm)",
             fontSize: "0.75rem",
             fontWeight: isHod ? 600 : 500,
-            background: isHod ? "#FFFFFF" : "transparent",
-            color: isHod ? "#2D5BA3" : "#5B6B75",
+            background: isHod ? "var(--surface)" : "transparent",
+            color: isHod ? "var(--primary)" : "var(--text-muted)",
             textDecoration: "none",
           }}
           title="Head of Department Dashboard"
@@ -52,11 +52,11 @@ export function FacultyRoleSwitcher({ role }: FacultyRoleSwitcherProps) {
             alignItems: "center",
             gap: "0.25rem",
             padding: "0.25rem 0.5rem",
-            borderRadius: "3px",
+            borderRadius: "var(--radius-sm)",
             fontSize: "0.75rem",
             fontWeight: isInstructor ? 600 : 500,
-            background: isInstructor ? "#FFFFFF" : "transparent",
-            color: isInstructor ? "#2D5BA3" : "#5B6B75",
+            background: isInstructor ? "var(--surface)" : "transparent",
+            color: isInstructor ? "var(--primary)" : "var(--text-muted)",
             textDecoration: "none",
           }}
           title="Teaching Section & Marks"
@@ -71,11 +71,11 @@ export function FacultyRoleSwitcher({ role }: FacultyRoleSwitcherProps) {
             alignItems: "center",
             gap: "0.25rem",
             padding: "0.25rem 0.5rem",
-            borderRadius: "3px",
+            borderRadius: "var(--radius-sm)",
             fontSize: "0.75rem",
             fontWeight: isMentor ? 600 : 500,
-            background: isMentor ? "#FFFFFF" : "transparent",
-            color: isMentor ? "#2D5BA3" : "#5B6B75",
+            background: isMentor ? "var(--surface)" : "transparent",
+            color: isMentor ? "var(--primary)" : "var(--text-muted)",
             textDecoration: "none",
           }}
           title="Mentee Alerts & Interventions"
@@ -99,10 +99,10 @@ export function FacultyRoleSwitcher({ role }: FacultyRoleSwitcherProps) {
           display: "inline-flex",
           alignItems: "center",
           gap: "0.4rem",
-          background: "#FFFFFF",
-          border: "1px solid #2D5BA3",
-          borderRadius: "4px",
-          color: "#2D5BA3",
+          background: "var(--surface)",
+          border: "1px solid var(--primary)",
+          borderRadius: "var(--radius-sm)",
+          color: "var(--primary)",
           padding: "0.3rem 0.65rem",
           fontSize: "0.8125rem",
           fontWeight: 600,
@@ -124,10 +124,10 @@ export function FacultyRoleSwitcher({ role }: FacultyRoleSwitcherProps) {
           display: "inline-flex",
           alignItems: "center",
           gap: "0.4rem",
-          background: "#FFFFFF",
-          border: "1px solid #2D5BA3",
-          borderRadius: "4px",
-          color: "#2D5BA3",
+          background: "var(--surface)",
+          border: "1px solid var(--primary)",
+          borderRadius: "var(--radius-sm)",
+          color: "var(--primary)",
           padding: "0.3rem 0.65rem",
           fontSize: "0.8125rem",
           fontWeight: 600,
@@ -149,10 +149,10 @@ export function FacultyRoleSwitcher({ role }: FacultyRoleSwitcherProps) {
           display: "inline-flex",
           alignItems: "center",
           gap: "0.3rem",
-          background: "#FFFFFF",
-          border: "1px solid #D9DFDD",
-          borderRadius: "4px",
-          color: "#1B2A33",
+          background: "var(--surface)",
+          border: "1px solid var(--border)",
+          borderRadius: "var(--radius-sm)",
+          color: "var(--text)",
           padding: "0.25rem 0.5rem",
           fontSize: "0.75rem",
           fontWeight: 500,
@@ -168,10 +168,10 @@ export function FacultyRoleSwitcher({ role }: FacultyRoleSwitcherProps) {
           display: "inline-flex",
           alignItems: "center",
           gap: "0.3rem",
-          background: "#FFFFFF",
-          border: "1px solid #D9DFDD",
-          borderRadius: "4px",
-          color: "#1B2A33",
+          background: "var(--surface)",
+          border: "1px solid var(--border)",
+          borderRadius: "var(--radius-sm)",
+          color: "var(--text)",
           padding: "0.25rem 0.5rem",
           fontSize: "0.75rem",
           fontWeight: 500,

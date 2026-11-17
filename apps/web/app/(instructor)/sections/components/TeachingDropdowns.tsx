@@ -16,8 +16,8 @@ interface Props {
   disabled?: boolean;
 }
 
-const LBL: React.CSSProperties = { fontSize: "0.8125rem", fontWeight: 600, color: "#1B2A33" };
-const SEL: React.CSSProperties = { background: "#FFFFFF", border: "1px solid #D9DFDD", borderRadius: "4px", padding: "0.4rem 0.75rem", fontSize: "0.875rem", fontWeight: 600, color: "#1B2A33", cursor: "pointer", outline: "none" };
+const LBL: React.CSSProperties = { fontSize: "0.8125rem", fontWeight: 600, color: "var(--text)" };
+const SEL: React.CSSProperties = { background: "var(--surface-2)", border: "1px solid var(--border)", borderRadius: "var(--radius-sm)", padding: "0.4rem 0.75rem", fontSize: "0.875rem", fontWeight: 600, color: "var(--text)", cursor: "pointer", outline: "none" };
 
 export function TeachingDropdowns({
   assignments,
@@ -64,11 +64,11 @@ export function TeachingDropdowns({
       </div>
 
       <div style={{ display: "flex", alignItems: "center", gap: "0.45rem", marginLeft: "auto" }}>
-        <input type="checkbox" id="rectify-toggle" checked={isRectify} onChange={(e) => onRectifyChange(e.target.checked)} disabled={disabled} style={{ width: "16px", height: "16px", cursor: "pointer" }} />
+        <input type="checkbox" id="rectify-toggle" checked={isRectify} onChange={(e) => onRectifyChange(e.target.checked)} disabled={disabled} style={{ width: "16px", height: "16px", cursor: "pointer", accentColor: "var(--primary)" }} />
         <label htmlFor="rectify-toggle" style={{ ...LBL, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "0.35rem" }}>
           <span>Rectify previous submission</span>
           {isRectify && (
-            <span style={{ fontSize: "0.75rem", padding: "0.15rem 0.4rem", borderRadius: "4px", background: "#FBF0F4", color: "#8A4A7B", fontWeight: 600 }}>
+            <span style={{ fontSize: "0.75rem", padding: "0.15rem 0.4rem", borderRadius: "var(--radius-sm)", background: "var(--surface-2)", color: "var(--danger)", border: "1px solid var(--danger)", fontWeight: 600 }}>
               Overwrites prior records
             </span>
           )}

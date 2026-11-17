@@ -1,32 +1,39 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import { Plus } from "lucide-react";
+import { PageHeader } from "@/app/components/PageHeader";
+import { AdminErrorBanner } from "../components/AdminErrorBanner";
+import { AdminToast } from "../components/AdminToast";
 import { TermList } from "./components/TermList";
 import { EmptyTermState } from "./components/EmptyTermState";
-import { NewTermForm } from "./components/NewTermForm";
-
-interface Term {
-  _id: string;
-  termId: number;
-  label: string;
-  status: "active" | "archived";
-  createdAt: string;
-}
+import { NewTermWizard } from "./components/NewTermWizard";
+import { TermDetailModal, TermItem } from "./components/TermDetailModal";
 
 export default function TermsPage() {
-  const [terms, setTerms] = useState<Term[]>([]);
+  const [terms, setTerms] = useState<TermItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [showForm, setShowForm] = useState(false);
-  const [feedback, setFeedback] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [statusCode, setStatusCode] = useState<number | null>(null);
+  const [isWizardOpen, setIsWizardOpen] = useState(false);
+  const [inspectTerm, setInspectTerm] = useState<TermItem | null>(null);
+  const [toast, setToast] = useState<{ type: "success" | "error"; message: string } | null>(null);
 
   const loadTerms = useCallback(async () => {
     setLoading(true);
+    setError(null);
+    setStatusCode(null);
     try {
       const res = await fetch("/api/v1/admin/terms", { credentials: "include" });
+      if (!res.ok) {
+        setStatusCode(res.status);
+        setError(`HTTP ${res.status}: Failed to load academic terms`);
+        return;
+      }
       const data = await res.json();
       setTerms(Array.isArray(data) ? data : []);
     } catch {
-      setTerms([]);
+      setError("Network error: Failed to connect to backend");
     } finally {
       setLoading(false);
     }
@@ -36,81 +43,90 @@ export default function TermsPage() {
     loadTerms();
   }, [loadTerms]);
 
-  function handleSuccess() {
-    setShowForm(false);
-    setFeedback("Term created. Faculty and students are now active.");
+  const handleWizardSuccess = () => {
+    setIsWizardOpen(false);
+    setToast({
+      type: "success",
+      message: "Academic term created successfully. Rosters and section mappings are active.",
+    });
     loadTerms();
-  }
-
-  if (loading) {
-    return (
-      <p style={{ color: "#5B6B75", fontSize: "0.875rem", padding: "1.5rem 0" }}>
-        Loading terms…
-      </p>
-    );
-  }
+  };
 
   return (
-    <div>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1.5rem" }}>
-        <div>
-          <h1 style={{ margin: "0 0 0.3rem", fontSize: "1.5rem", fontWeight: 700, color: "#1B2A33" }}>
-            Academic terms
-          </h1>
-          <p style={{ margin: 0, color: "#5B6B75", fontSize: "0.875rem", maxWidth: "520px" }}>
-            Each term loads faculty, student accounts, and section mappings in one step.
-          </p>
-        </div>
-        {terms.length > 0 && !showForm && (
+    <div style={{ display: "flex", flexDirection: "column" }}>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", flexWrap: "wrap", gap: "1rem" }}>
+        <PageHeader
+          breadcrumb="Admin / Terms"
+          title="Academic terms"
+          description="Configure academic calendars, provision term rosters, and map course sections."
+        />
+
+        {terms.length > 0 && !loading && (
           <button
-            onClick={() => { setFeedback(null); setShowForm(true); }}
+            onClick={() => setIsWizardOpen(true)}
             style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: "0.35rem",
               padding: "0.55rem 1.1rem",
-              borderRadius: "4px",
-              border: "1px solid #2D5BA3",
-              background: "#2D5BA3",
-              color: "#FFFFFF",
+              borderRadius: "var(--radius-sm)",
+              border: "1px solid var(--accent)",
+              background: "var(--accent)",
+              color: "var(--accent-contrast)",
               fontSize: "0.875rem",
               fontWeight: 600,
               cursor: "pointer",
+              marginTop: "0.5rem",
             }}
           >
-            + Add new term
+            <Plus size={16} />
+            Add new term
           </button>
         )}
       </div>
 
-      {feedback && (
-        <div
-          style={{
-            padding: "0.65rem 1rem",
-            borderRadius: "4px",
-            marginBottom: "1.25rem",
-            fontSize: "0.8125rem",
-            background: "#E8F5F1",
-            color: "#2E8B7A",
-            border: "1px solid #2E8B7A",
-          }}
-        >
-          {feedback}
+      {error && (
+        <div style={{ marginBottom: "1.5rem" }}>
+          <AdminErrorBanner error={error} statusCode={statusCode} onRetry={loadTerms} />
         </div>
       )}
 
-      {showForm && (
-        <NewTermForm
-          onCancel={() => setShowForm(false)}
-          onSuccess={handleSuccess}
+      {loading ? (
+        <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem", padding: "1rem 0" }}>
+          <div
+            style={{
+              height: 240,
+              borderRadius: "var(--radius-md)",
+              background: "var(--surface)",
+              border: "1px solid var(--border)",
+              animation: "pulse 1.5s infinite ease-in-out",
+            }}
+          />
+        </div>
+      ) : terms.length === 0 ? (
+        <EmptyTermState onAdd={() => setIsWizardOpen(true)} />
+      ) : (
+        <TermList terms={terms} onView={(t) => setInspectTerm(t)} />
+      )}
+
+      <NewTermWizard
+        isOpen={isWizardOpen}
+        onClose={() => setIsWizardOpen(false)}
+        onSuccess={handleWizardSuccess}
+      />
+
+      <TermDetailModal
+        term={inspectTerm}
+        onClose={() => setInspectTerm(null)}
+      />
+
+      {toast && (
+        <AdminToast
+          type={toast.type}
+          message={toast.message}
+          onClose={() => setToast(null)}
         />
-      )}
-
-      {terms.length === 0 && !showForm && (
-        <EmptyTermState onAdd={() => setShowForm(true)} />
-      )}
-
-      {terms.length > 0 && (
-        <TermList terms={terms} />
       )}
     </div>
   );
 }
-

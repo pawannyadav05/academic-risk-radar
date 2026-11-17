@@ -45,28 +45,26 @@ export default function MentorInterventionsPage() {
     setTimeout(() => setSuccessMsg(null), 4000);
   };
 
-
   return (
-    <div style={{ padding: "1.5rem", maxWidth: "1200px", margin: "0 auto", color: "#1B2A33" }}>
+    <div style={{ padding: "1.5rem", maxWidth: "1200px", margin: "0 auto", color: "var(--text)" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1.5rem" }}>
         <div>
-          <h1 style={{ margin: "0 0 0.4rem", fontSize: "1.6rem", fontWeight: 700 }}>Mentor Interventions</h1>
-          <p style={{ margin: 0, color: "#94a3b8", fontSize: "0.85rem" }}>Track mentoring actions and outcome progression for assigned students.</p>
+          <h1 style={{ margin: "0 0 0.4rem", fontSize: "var(--text-page-title)", lineHeight: "var(--line-page-title)", fontWeight: 700 }}>Mentor Interventions</h1>
+          <p style={{ margin: 0, color: "var(--text-muted)", fontSize: "var(--text-body)" }}>Track mentoring actions and outcome progression for assigned students.</p>
         </div>
         <button
           onClick={() => setShowCreateModal(true)}
-          style={{ background: "#2D5BA3", border: "none", color: "#fff", padding: "0.6rem 1.1rem", borderRadius: "4px", fontWeight: 600, fontSize: "0.8125rem", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "0.4rem" }}
+          style={{ background: "var(--primary)", border: "none", color: "var(--primary-contrast)", padding: "0.6rem 1.1rem", borderRadius: "var(--radius-sm)", fontWeight: 600, fontSize: "0.8125rem", cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "0.4rem", transition: "background 0.15s ease" }}
         >
           <Plus size={16} /> New Intervention
         </button>
       </div>
 
-      {successMsg && <div style={{ background: "#FFFFFF", border: "1px solid #2E8B7A", color: "#2E8B7A", padding: "0.75rem 1rem", borderRadius: "8px", marginBottom: "1rem", fontSize: "0.85rem" }}>{successMsg}</div>}
-      {error && <div style={{ background: "#FFFFFF", border: "1px solid #8A4A7B", color: "#8A4A7B", padding: "0.75rem 1rem", borderRadius: "8px", marginBottom: "1rem", fontSize: "0.85rem" }}>{error}</div>}
-
+      {successMsg && <div style={{ background: "var(--surface)", border: "1px solid var(--success)", color: "var(--success)", padding: "0.75rem 1rem", borderRadius: "var(--radius-md)", marginBottom: "1rem", fontSize: "0.85rem" }}>{successMsg}</div>}
+      {error && <div style={{ background: "var(--surface)", border: "1px solid var(--danger)", color: "var(--danger)", padding: "0.75rem 1rem", borderRadius: "var(--radius-md)", marginBottom: "1rem", fontSize: "0.85rem" }}>{error}</div>}
 
       {loading ? (
-        <div style={{ padding: "3rem", textAlign: "center", color: "#64748b" }}>Loading interventions...</div>
+        <div style={{ padding: "3rem", textAlign: "center", color: "var(--text-muted)" }}>Loading interventions...</div>
       ) : (
         <InterventionList
           interventions={interventions}

@@ -34,4 +34,5 @@ STAGE_2_PROGRESS_REPORT.md
 *stage2-progress*
 tmp/
 output/
+scratch/
 

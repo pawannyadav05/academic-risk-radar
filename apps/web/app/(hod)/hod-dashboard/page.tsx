@@ -1,10 +1,16 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
-import Link from "next/link";
-import { Users, ShieldAlert, AlertTriangle } from "lucide-react";
+import { LayoutDashboard, Bell, FileText } from "lucide-react";
+import { Tabs } from "@/app/components/Tabs";
+import { PageHeader } from "@/app/components/PageHeader";
+import { HodKpiRow } from "./components/HodKpiRow";
+import { HodErrorBanner } from "./components/HodErrorBanner";
 import DepartmentRiskBarChart from "./components/DepartmentRiskBarChart";
 import SlaEscalationLineChart from "./components/SlaEscalationLineChart";
+import { HodSupervisedAlertsTab } from "./components/HodSupervisedAlertsTab";
+import { HodInterventionLogsTab } from "./components/HodInterventionLogsTab";
+import { Alert, Intervention } from "@academic-risk-radar/shared-types";
 
 const API_BASE = "/api/v1";
 
@@ -17,125 +23,150 @@ interface DepartmentAnalytics {
 }
 
 export default function HodDashboardPage() {
-  const [departmentId, setDepartmentId] = useState<string>("CSE");
+  const [activeTab, setActiveTab] = useState<"overview" | "alerts" | "interventions">("overview");
+  const [departmentId, setDepartmentId] = useState<string | null>(null);
   const [data, setData] = useState<DepartmentAnalytics | null>(null);
+  const [alerts, setAlerts] = useState<Alert[]>([]);
+  const [interventions, setInterventions] = useState<Intervention[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [statusCode, setStatusCode] = useState<number | null>(null);
 
-  useEffect(() => {
-    async function initUser() {
-      try {
-        const res = await fetch(`${API_BASE}/auth/me`, { credentials: "include" });
-        if (res.ok) {
-          const body = await res.json();
-          if (body.user?.departmentId) {
-            setDepartmentId(body.user.departmentId);
-          }
-        }
-      } catch {}
-    }
-    initUser();
+  // Initialize department from current authenticated user
+  const initUser = useCallback(async () => {
+    try {
+      const res = await fetch(`${API_BASE}/auth/me`, { credentials: "include" });
+      if (res.ok) {
+        const body = await res.json();
+        const dept = body.user?.departmentId || "DEP-CSE";
+        setDepartmentId(dept);
+        return dept;
+      }
+    } catch {}
+    setDepartmentId("DEP-CSE");
+    return "DEP-CSE";
   }, []);
 
-  const fetchAnalytics = useCallback(async () => {
+  const fetchAnalytics = useCallback(async (dept: string) => {
     setLoading(true);
     setError(null);
+    setStatusCode(null);
     try {
-      const res = await fetch(`${API_BASE}/analytics/department/${departmentId}`, {
-        credentials: "include",
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}: Failed to load department metrics`);
-      const json = await res.json();
+      const [analyticsRes, alertsRes, interventionsRes] = await Promise.all([
+        fetch(`${API_BASE}/analytics/department/${dept}`, { credentials: "include" }),
+        fetch(`${API_BASE}/alerts`, { credentials: "include" }),
+        fetch(`${API_BASE}/interventions`, { credentials: "include" }),
+      ]);
+
+      if (!analyticsRes.ok) {
+        setStatusCode(analyticsRes.status);
+        throw new Error(`HTTP ${analyticsRes.status}: Failed to load department metrics`);
+      }
+
+      const json = await analyticsRes.json();
       setData(json);
-    } catch (err: any) {
-      setError(err.message || "Failed to load department analytics");
+
+      if (alertsRes.ok) {
+        const aJson = await alertsRes.json();
+        setAlerts(aJson.alerts || []);
+      }
+      if (interventionsRes.ok) {
+        const iJson = await interventionsRes.json();
+        setInterventions(iJson.interventions || []);
+      }
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to load department analytics";
+      setError(msg);
     } finally {
       setLoading(false);
     }
-  }, [departmentId]);
+  }, []);
 
   useEffect(() => {
-    fetchAnalytics();
-  }, [fetchAnalytics]);
+    initUser().then((dept) => {
+      if (dept) fetchAnalytics(dept);
+    });
+  }, [initUser, fetchAnalytics]);
 
   const atRiskCount = data ? (data.bandDistribution.high || 0) + (data.bandDistribution.critical || 0) : 0;
+  const currentDept = departmentId || "DEP-CSE";
 
   return (
-    <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "1.5rem", color: "#1B2A33" }}>
-      {/* Hierarchy Navigation */}
-      <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1.5rem", borderBottom: "1px solid #D9DFDD", paddingBottom: "0.5rem" }}>
-        <span style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", padding: "0.4rem 0.75rem", borderRadius: "4px", fontSize: "0.8125rem", fontWeight: 600, background: "#FFFFFF", color: "#2D5BA3", border: "1px solid #D9DFDD", borderBottom: "2px solid #2D5BA3" }}>
-          Department overview
-        </span>
-        <Link href="/inbox" style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", padding: "0.4rem 0.75rem", borderRadius: "4px", fontSize: "0.8125rem", fontWeight: 500, color: "#5B6B75", textDecoration: "none" }}>
-          Supervised alerts &amp; escalations
-        </Link>
-        <Link href="/interventions" style={{ display: "inline-flex", alignItems: "center", gap: "0.4rem", padding: "0.4rem 0.75rem", borderRadius: "4px", fontSize: "0.8125rem", fontWeight: 500, color: "#5B6B75", textDecoration: "none" }}>
-          Mentor intervention logs
-        </Link>
-      </div>
+    <div style={{ maxWidth: "1200px", margin: "0 auto", padding: "1.5rem 0", color: "var(--text)" }}>
+      {/* Hierarchy Navigation Tabs */}
+      <Tabs
+        items={[
+          {
+            label: "Department overview",
+            active: activeTab === "overview",
+            onClick: () => setActiveTab("overview"),
+            title: "Department metrics and risk distribution",
+            icon: LayoutDashboard,
+          },
+          {
+            label: "Supervised alerts & escalations",
+            active: activeTab === "alerts",
+            onClick: () => setActiveTab("alerts"),
+            count: alerts.length > 0 ? alerts.length : undefined,
+            title: `${alerts.length} open alerts across department mentors`,
+            icon: Bell,
+          },
+          {
+            label: "Mentor intervention logs",
+            active: activeTab === "interventions",
+            onClick: () => setActiveTab("interventions"),
+            count: interventions.length > 0 ? interventions.length : undefined,
+            title: `${interventions.length} logged mentor intervention sessions`,
+            icon: FileText,
+          },
+        ]}
+        ariaLabel="Department navigation"
+      />
 
-      {/* Header */}
-      <div style={{ marginBottom: "1.5rem" }}>
-        <h1 style={{ margin: "0.2rem 0 0.35rem", fontSize: "1.75rem", fontWeight: 700, color: "#1B2A33" }}>
-          Department Dashboard: {departmentId}
-        </h1>
-        <p style={{ margin: 0, color: "#5B6B75", fontSize: "0.875rem" }}>
-          Academic risk cohort distributions and 48-hour SLA escalation triage for {departmentId}.
-        </p>
-      </div>
+      <PageHeader
+        breadcrumb={`Head of Department / ${currentDept}`}
+        title={activeTab === "overview" ? "Department overview" : activeTab === "alerts" ? "Supervised alerts & escalations" : "Mentor intervention logs"}
+        description="Risk distribution and 48-hour alert escalations for your department."
+      />
 
-      {/* KPI metric cards */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))", gap: "1.25rem", marginBottom: "2rem" }}>
-        <div style={{ background: "#FFFFFF", padding: "1.25rem", borderRadius: "8px", border: "1px solid #D9DFDD", display: "flex", alignItems: "center", gap: "1rem" }}>
-          <div style={{ background: "#F2F4F3", padding: "0.85rem", borderRadius: "4px", color: "#2D5BA3" }}>
-            <Users size={24} />
-          </div>
-          <div>
-            <p style={{ margin: 0, color: "#5B6B75", fontSize: "0.8125rem", fontWeight: 500 }}>Total Department Students</p>
-            <h3 style={{ margin: "0.15rem 0 0", fontSize: "1.6rem", fontWeight: 700, color: "#1B2A33", fontVariantNumeric: "tabular-nums" }}>
-              {loading ? "..." : (data?.totalStudents ?? 0)}
-            </h3>
-          </div>
-        </div>
-
-        <div style={{ background: "#FFFFFF", padding: "1.25rem", borderRadius: "8px", border: "1px solid #D9DFDD", display: "flex", alignItems: "center", gap: "1rem" }}>
-          <div style={{ background: "#F2F4F3", padding: "0.85rem", borderRadius: "4px", color: "#8A4A7B" }}>
-            <AlertTriangle size={24} />
-          </div>
-          <div>
-            <p style={{ margin: 0, color: "#5B6B75", fontSize: "0.8125rem", fontWeight: 500 }}>Students At Risk (High / Critical)</p>
-            <h3 style={{ margin: "0.15rem 0 0", fontSize: "1.6rem", fontWeight: 700, color: "#8A4A7B", fontVariantNumeric: "tabular-nums" }}>
-              {loading ? "..." : atRiskCount}
-            </h3>
-          </div>
-        </div>
-
-        <div style={{ background: "#FFFFFF", padding: "1.25rem", borderRadius: "8px", border: "1px solid #D9DFDD", display: "flex", alignItems: "center", gap: "1rem" }}>
-          <div style={{ background: "#F2F4F3", padding: "0.85rem", borderRadius: "4px", color: "#8A4A7B" }}>
-            <ShieldAlert size={24} />
-          </div>
-          <div>
-            <p style={{ margin: 0, color: "#5B6B75", fontSize: "0.8125rem", fontWeight: 500 }}>Escalated Alerts (SLA Breaches)</p>
-            <h3 style={{ margin: "0.15rem 0 0", fontSize: "1.6rem", fontWeight: 700, color: "#8A4A7B", fontVariantNumeric: "tabular-nums" }}>
-              {loading ? "..." : (data?.escalatedAlerts ?? 0)}
-            </h3>
-          </div>
-        </div>
-      </div>
+      {/* KPI metric cards (Shown across HoD view) */}
+      <HodKpiRow
+        totalStudents={data?.totalStudents}
+        atRiskCount={atRiskCount}
+        escalatedAlerts={data?.escalatedAlerts}
+        loading={loading}
+        hasError={!!error}
+      />
 
       {error && (
-        <div style={{ background: "#FFFFFF", border: "1px solid #8A4A7B", color: "#8A4A7B", padding: "1rem", borderRadius: "8px", fontSize: "0.875rem", marginBottom: "1.5rem" }}>
-          {error}
+        <HodErrorBanner
+          error={error}
+          statusCode={statusCode}
+          onRetry={() => fetchAnalytics(currentDept)}
+        />
+      )}
+
+      {/* Active Tab Content */}
+      {activeTab === "overview" && (
+        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(420px, 1fr))", gap: "1.5rem" }}>
+          <DepartmentRiskBarChart bandDistribution={data?.bandDistribution} />
+          <SlaEscalationLineChart escalatedAlerts={data?.escalatedAlerts} recentTrends={data?.recentTrends} />
         </div>
       )}
 
-      {/* Visual Recharts Row */}
-      {data && (
-        <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(420px, 1fr))", gap: "1.5rem" }}>
-          <DepartmentRiskBarChart bandDistribution={data.bandDistribution} />
-          <SlaEscalationLineChart escalatedAlerts={data.escalatedAlerts} recentTrends={data.recentTrends} />
-        </div>
+      {activeTab === "alerts" && (
+        <HodSupervisedAlertsTab
+          alerts={alerts}
+          loading={loading}
+          onRefresh={() => fetchAnalytics(currentDept)}
+        />
+      )}
+
+      {activeTab === "interventions" && (
+        <HodInterventionLogsTab
+          interventions={interventions}
+          loading={loading}
+        />
       )}
     </div>
   );

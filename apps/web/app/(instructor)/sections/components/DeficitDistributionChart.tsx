@@ -33,21 +33,29 @@ export default function DeficitDistributionChart({ attendanceDeficitDistribution
         ];
 
   return (
-    <div style={{ background: "#FFFFFF", padding: "1.5rem", borderRadius: "8px", border: "1px solid #D9DFDD" }}>
+    <div style={{ background: "var(--surface)", padding: "1.5rem", borderRadius: "var(--radius-md)", border: "1px solid var(--border)" }}>
       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: "1rem" }}>
-        <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 600, color: "#1B2A33" }}>
+        <h3 style={{ margin: 0, fontSize: "1rem", fontWeight: 600, color: "var(--text)" }}>
           Multi-factor deficit distribution
         </h3>
-        <span style={{ fontSize: "0.75rem", color: "#5B6B75" }}>Attendance vs Assessments vs Submissions</span>
+        <span style={{ fontSize: "0.75rem", color: "var(--text-muted)" }}>Attendance vs Assessments vs Submissions</span>
       </div>
       <div style={{ height: "280px" }}>
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data} margin={{ top: 15, right: 20, left: -10, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#D9DFDD" />
-            <XAxis dataKey="range" stroke="#5B6B75" fontSize={12} tickLine={false} />
-            <YAxis stroke="#5B6B75" fontSize={12} allowDecimals={false} tickLine={false} />
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="var(--border)" />
+            <XAxis dataKey="range" stroke="var(--text-muted)" fontSize={12} tickLine={false} />
+            <YAxis stroke="var(--text-muted)" fontSize={12} allowDecimals={false} tickLine={false} />
             <Tooltip
-              cursor={{ fill: "#F2F4F3" }}
+              contentStyle={{
+                backgroundColor: "var(--surface)",
+                borderColor: "var(--border)",
+                color: "var(--text)",
+                borderRadius: "var(--radius-sm)",
+                fontSize: "0.8125rem",
+              }}
+              itemStyle={{ color: "var(--text)" }}
+              cursor={{ fill: "var(--surface-2)" }}
               formatter={(value: any, name: any) => [
                 `${value} Students`,
                 name === "attendance"
@@ -58,18 +66,20 @@ export default function DeficitDistributionChart({ attendanceDeficitDistribution
               ]}
             />
             <Legend
-              formatter={(value) =>
-                value === "attendance"
-                  ? "Attendance Deficit"
-                  : value === "assessment"
-                  ? "Assessment Deficit"
-                  : "Missing Assignments"
-              }
+              formatter={(value) => (
+                <span style={{ color: "var(--text)", fontWeight: 500 }}>
+                  {value === "attendance"
+                    ? "Attendance Deficit"
+                    : value === "assessment"
+                    ? "Assessment Deficit"
+                    : "Missing Assignments"}
+                </span>
+              )}
               wrapperStyle={{ fontSize: "12px", paddingTop: "8px" }}
             />
-            <Bar dataKey="attendance" fill="#2D5BA3" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="assessment" fill="#8A4A7B" radius={[4, 4, 0, 0]} />
-            <Bar dataKey="missingWork" fill="#D49A1F" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="attendance" fill="var(--primary)" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="assessment" fill="var(--danger)" radius={[4, 4, 0, 0]} />
+            <Bar dataKey="missingWork" fill="var(--warning)" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </div>

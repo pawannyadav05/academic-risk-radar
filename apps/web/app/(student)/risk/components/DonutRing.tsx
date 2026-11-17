@@ -13,7 +13,7 @@ interface DonutRingProps {
 export function DonutRing({
   value,
   color,
-  trackColor = "#D9DFDD",
+  trackColor = "var(--border)",
   size = 150,
   strokeWidth = 12,
   label,
@@ -47,10 +47,10 @@ export function DonutRing({
         y={sublabel ? c - 5 : c + 6}
         textAnchor="middle"
         dominantBaseline="middle"
-        fill="#1B2A33"
+        fill="var(--text)"
         fontSize={size * 0.16}
         fontWeight="700"
-        fontFamily="var(--font-atkinson, system-ui, sans-serif)"
+        fontFamily="var(--font-family)"
       >
         {label}
       </text>
@@ -59,9 +59,9 @@ export function DonutRing({
           x={c}
           y={c + 14}
           textAnchor="middle"
-          fill="#5B6B75"
+          fill="var(--text-muted)"
           fontSize={size * 0.085}
-          fontFamily="var(--font-atkinson, system-ui, sans-serif)"
+          fontFamily="var(--font-family)"
         >
           {sublabel}
         </text>

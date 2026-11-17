@@ -11,10 +11,10 @@ interface Props {
 }
 
 const OUTCOMES = [
-  { value: "improved", label: "Improved", color: "#2E8B7A", desc: "Demonstrated academic recovery" },
-  { value: "no_change", label: "No Change", color: "#D49A1F", desc: "No measurable shift observed" },
-  { value: "deteriorated", label: "Deteriorated", color: "#8A4A7B", desc: "Risk indicators worsened" },
-  { value: "inconclusive", label: "Inconclusive", color: "#5B6B75", desc: "Insufficient data gathered" },
+  { value: "improved", label: "Improved", color: "var(--success)", desc: "Demonstrated academic recovery" },
+  { value: "no_change", label: "No Change", color: "var(--warning)", desc: "No measurable shift observed" },
+  { value: "deteriorated", label: "Deteriorated", color: "var(--danger)", desc: "Risk indicators worsened" },
+  { value: "inconclusive", label: "Inconclusive", color: "var(--text-muted)", desc: "Insufficient data gathered" },
 ] as const;
 
 export default function OutcomeModal({ intervention, onClose, onSubmitSuccess, apiBase }: Props) {
@@ -49,15 +49,15 @@ export default function OutcomeModal({ intervention, onClose, onSubmitSuccess, a
   };
 
   return (
-    <div style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,0.5)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "1rem" }}>
-      <div style={{ background: "#FFFFFF", border: "1px solid #D9DFDD", borderRadius: "8px", width: "100%", maxWidth: "480px", padding: "1.5rem" }}>
-        <h3 style={{ margin: "0 0 0.5rem", color: "#1B2A33", fontSize: "1.125rem", fontWeight: 600 }}>Update intervention outcome</h3>
-        <p style={{ margin: "0 0 1.25rem", color: "#5B6B75", fontSize: "0.8125rem" }}>
-          Record observed impact for <strong style={{ color: "#2D5BA3" }}>{intervention.action}</strong>
+    <div style={{ position: "fixed", inset: 0, background: "var(--overlay)", backdropFilter: "blur(2px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 1000, padding: "1rem" }}>
+      <div style={{ background: "var(--surface)", border: "1px solid var(--border)", borderRadius: "var(--radius-md)", width: "100%", maxWidth: "480px", padding: "1.5rem" }}>
+        <h3 style={{ margin: "0 0 0.5rem", color: "var(--text)", fontSize: "1.125rem", fontWeight: 600 }}>Update intervention outcome</h3>
+        <p style={{ margin: "0 0 1.25rem", color: "var(--text-muted)", fontSize: "0.8125rem" }}>
+          Record observed impact for <strong style={{ color: "var(--primary)" }}>{intervention.action}</strong>
         </p>
 
         {error && (
-          <div style={{ background: "#FFFFFF", border: "1px solid #8A4A7B", color: "#8A4A7B", padding: "0.75rem", borderRadius: "4px", fontSize: "0.8125rem", marginBottom: "1rem" }}>
+          <div style={{ background: "var(--surface-2)", border: "1px solid var(--danger)", color: "var(--danger)", padding: "0.75rem", borderRadius: "var(--radius-sm)", fontSize: "0.8125rem", marginBottom: "1rem" }}>
             {error}
           </div>
         )}
@@ -73,19 +73,20 @@ export default function OutcomeModal({ intervention, onClose, onSubmitSuccess, a
                   onClick={() => setSelectedOutcome(o.value)}
                   style={{
                     padding: "0.75rem",
-                    borderRadius: "4px",
-                    border: active ? `2px solid ${o.color}` : "1px solid #D9DFDD",
-                    background: "#F2F4F3",
-                    color: active ? o.color : "#5B6B75",
+                    borderRadius: "var(--radius-sm)",
+                    border: active ? `2px solid ${o.color}` : "1px solid var(--border)",
+                    background: "var(--surface-2)",
+                    color: active ? o.color : "var(--text-muted)",
                     textAlign: "left",
                     cursor: "pointer",
                     display: "flex",
                     flexDirection: "column",
                     gap: "0.25rem",
+                    transition: "border-color 0.15s ease",
                   }}
                 >
                   <span style={{ fontWeight: 600, fontSize: "0.875rem" }}>{o.label}</span>
-                  <span style={{ fontSize: "0.7rem", color: "#5B6B75" }}>{o.desc}</span>
+                  <span style={{ fontSize: "0.7rem", color: "var(--text-muted)" }}>{o.desc}</span>
                 </button>
               );
             })}
@@ -96,14 +97,14 @@ export default function OutcomeModal({ intervention, onClose, onSubmitSuccess, a
               type="button"
               onClick={onClose}
               disabled={loading}
-              style={{ background: "#FFFFFF", border: "1px solid #D9DFDD", color: "#5B6B75", padding: "0.5rem 1rem", borderRadius: "4px", cursor: "pointer", fontSize: "0.8125rem" }}
+              style={{ background: "var(--surface-2)", border: "1px solid var(--border)", color: "var(--text-muted)", padding: "0.5rem 1rem", borderRadius: "var(--radius-sm)", cursor: "pointer", fontSize: "0.8125rem" }}
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={loading}
-              style={{ background: "#2D5BA3", border: "none", color: "#FFFFFF", padding: "0.5rem 1.25rem", borderRadius: "4px", cursor: loading ? "not-allowed" : "pointer", fontWeight: 600, fontSize: "0.8125rem" }}
+              style={{ background: "var(--primary)", border: "none", color: "var(--primary-contrast)", padding: "0.5rem 1.25rem", borderRadius: "var(--radius-sm)", cursor: loading ? "not-allowed" : "pointer", fontWeight: 600, fontSize: "0.8125rem", transition: "background 0.15s ease" }}
             >
               {loading ? "Saving..." : "Save outcome"}
             </button>

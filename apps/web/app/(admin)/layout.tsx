@@ -1,12 +1,11 @@
 import React from "react";
-import { AdminNav } from "./components/AdminNav";
+import { AdminTabs } from "./components/AdminTabs";
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div>
-      <AdminNav />
+    <>
+      <AdminTabs />
       {children}
-    </div>
+    </>
   );
 }
-
