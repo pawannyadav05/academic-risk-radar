@@ -76,6 +76,17 @@ app.use("/api/v1", interventionsRouter);
 app.use("/api/v1", analyticsRouter);
 app.use("/api/v1/admin", adminRouter);
 
+// Root endpoint
+app.get("/", (_req, res) => {
+  res.json({
+    service: "Academic Risk Radar API",
+    status: "online",
+    version: "1.0.0",
+    health: "/health",
+    ready: "/ready",
+  });
+});
+
 // Health check endpoint (basic liveness probe)
 app.get("/health", (_req, res) => {
   res.json({ status: "healthy", timestamp: new Date().toISOString() });
