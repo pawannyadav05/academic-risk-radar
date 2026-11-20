@@ -17,20 +17,20 @@ SEC-CSE-102,CS101,CS103`,
   {
     key: "facultyCsv",
     label: "Faculty roster",
-    columnsHint: "uid, name, department, designation, hod_uid, dean_uid",
-    sampleContent: `uid,name,department,designation,hod_uid,dean_uid
-FAC-001,Dr. Amit Verma,DEP-CSE,hod,,
-FAC-002,Prof. Sarah Jenkins,DEP-CSE,assistant_professor,FAC-001,
-FAC-003,Prof. Rajesh Kumar,DEP-CSE,assistant_professor,FAC-001,`,
+    columnsHint: "uid, name, email, department, designation, hod_uid, dean_uid",
+    sampleContent: `uid,name,email,department,designation,hod_uid,dean_uid
+FAC-001,Dr. Amit Verma,amit.verma@radar.edu,DEP-CSE,hod,,
+FAC-002,Prof. Sarah Jenkins,sarah.jenkins@radar.edu,DEP-CSE,assistant_professor,FAC-001,
+FAC-003,Prof. Rajesh Kumar,rajesh.kumar@radar.edu,DEP-CSE,assistant_professor,FAC-001,`,
   },
   {
     key: "studentCredsCsv",
     label: "Student credentials",
-    columnsHint: "student_id, password",
-    sampleContent: `student_id,password
-12409921,RadarPass2026!
-12409922,RadarPass2026!
-12409923,RadarPass2026!`,
+    columnsHint: "student_id, email, password",
+    sampleContent: `student_id,email,password
+12409921,s12409921@radar.edu,RadarPass2026!
+12409922,s12409922@radar.edu,RadarPass2026!
+12409923,s12409923@radar.edu,RadarPass2026!`,
   },
   {
     key: "facultyCredsCsv",

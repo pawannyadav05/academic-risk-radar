@@ -247,4 +247,85 @@ describe("Module M8 — Admin Router (Stage 2)", () => {
       server.close();
     }
   });
+
+  it("GET /api/v1/admin/terms returns 200 for admin and 403 for student", async () => {
+    const app = createTestServer();
+    const server = app.listen(0);
+    const port = (server.address() as any).port;
+
+    try {
+      // Student role -> 403
+      const studentRes = await fetch(`http://127.0.0.1:${port}/api/v1/admin/terms`, {
+        headers: getStudentAuthHeaders(),
+      });
+      assert.equal(studentRes.status, 403, "Should return 403 for student role on GET /terms");
+
+      // Admin role -> 200
+      const adminRes = await fetch(`http://127.0.0.1:${port}/api/v1/admin/terms`, {
+        headers: getAdminAuthHeaders(),
+      });
+      assert.equal(adminRes.status, 200, "Should return 200 for admin role on GET /terms");
+      const body = await adminRes.json();
+      assert.ok(Array.isArray(body), "Should return array of terms");
+    } finally {
+      server.close();
+    }
+  });
+
+  it("POST /api/v1/admin/terms parses CSVs including email fields for faculty and students", async () => {
+    const app = createTestServer();
+    const server = app.listen(0);
+    const port = (server.address() as any).port;
+
+    try {
+      const payload = {
+        termId: 20261,
+        sectionDetailsCsv: "sectionname,subjectcode1,subjectcode2\nSEC-CSE-101,CS101,CS102",
+        facultyCsv: "uid,name,email,department,designation,hod_uid,dean_uid\nFAC-001,Dr. Amit Verma,amit.verma@radar.edu,DEP-CSE,hod,,\nFAC-002,Prof. Sarah Jenkins,sarah.jenkins@radar.edu,DEP-CSE,assistant_professor,FAC-001,",
+        studentCredsCsv: "student_id,email,password\n12409921,s12409921@radar.edu,Pass123!\n12409922,s12409922@radar.edu,Pass123!",
+        facultyCredsCsv: "uid,password\nFAC-001,FacultyPass!\nFAC-002,FacultyPass!",
+        studentMentorCsv: "student_id,section,mentor_uid\n12409921,SEC-CSE-101,FAC-001\n12409922,SEC-CSE-101,FAC-001",
+        instructorSectionCsv: "uid,section,subject_code\nFAC-002,SEC-CSE-101,CS101",
+      };
+
+      const res = await fetch(`http://127.0.0.1:${port}/api/v1/admin/terms`, {
+        method: "POST",
+        headers: getAdminAuthHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify(payload),
+      });
+
+      assert.equal(res.status, 201, "Should successfully create term");
+      const body = (await res.json()) as any;
+      assert.equal(body.termId, 20261);
+      assert.equal(body.summary.facultyCreated, 2);
+      assert.equal(body.summary.studentsCreated, 2);
+      assert.equal(body.summary.sectionsConfigured, 1);
+    } finally {
+      server.close();
+    }
+  });
+
+  it("POST /api/v1/admin/terms validates missing CSVs and invalid termId", async () => {
+    const app = createTestServer();
+    const server = app.listen(0);
+    const port = (server.address() as any).port;
+
+    try {
+      const resInvalidTerm = await fetch(`http://127.0.0.1:${port}/api/v1/admin/terms`, {
+        method: "POST",
+        headers: getAdminAuthHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ termId: -5 }),
+      });
+      assert.equal(resInvalidTerm.status, 400, "Should reject negative termId");
+
+      const resMissingCsv = await fetch(`http://127.0.0.1:${port}/api/v1/admin/terms`, {
+        method: "POST",
+        headers: getAdminAuthHeaders({ "Content-Type": "application/json" }),
+        body: JSON.stringify({ termId: 20262 }),
+      });
+      assert.equal(resMissingCsv.status, 400, "Should reject when CSVs are missing");
+    } finally {
+      server.close();
+    }
+  });
 });

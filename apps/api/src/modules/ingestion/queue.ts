@@ -1,7 +1,5 @@
 import { Queue } from "bullmq";
-
-const REDIS_HOST = process.env.REDIS_HOST || "127.0.0.1";
-const REDIS_PORT = parseInt(process.env.REDIS_PORT || "6379", 10);
+import { getApiRedisConnection } from "../../lib/redis.js";
 
 /**
  * BullMQ queue for CSV ingestion jobs.
@@ -16,12 +14,7 @@ let _queue: Queue | null = null;
 export function getIngestionQueue(): Queue {
   if (!_queue) {
     _queue = new Queue("ingestion-queue", {
-      connection: {
-        host: REDIS_HOST,
-        port: REDIS_PORT,
-        maxRetriesPerRequest: null,
-        lazyConnect: true,
-      },
+      connection: getApiRedisConnection() as any,
       defaultJobOptions: {
         attempts: 3,
         backoff: { type: "exponential", delay: 2000 },

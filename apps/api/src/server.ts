@@ -34,7 +34,12 @@ app.use(
   cors({
     origin: (origin, callback) => {
       // Allow requests with no origin (like mobile apps, curl, or server-to-server)
-      if (!origin || ALLOWED_ORIGINS.includes(origin)) {
+      if (
+        !origin ||
+        ALLOWED_ORIGINS.includes("*") ||
+        ALLOWED_ORIGINS.includes(origin) ||
+        origin.endsWith(".vercel.app")
+      ) {
         return callback(null, true);
       }
       return callback(new Error("CORS origin not allowed"), false);
@@ -95,13 +100,23 @@ app.get("/ready", async (_req, res) => {
   try {
     const ioredisModule = await import("ioredis");
     const RedisConstructor = (ioredisModule as any).default || (ioredisModule as any).Redis || ioredisModule;
-    redisClient = new RedisConstructor({
-      host: resolvedRedisHost,
-      port: resolvedRedisPort,
-      connectTimeout: 2000,
-      lazyConnect: true,
-      maxRetriesPerRequest: 1,
-    });
+    if (process.env.REDIS_URL) {
+      const isTls = process.env.REDIS_URL.startsWith("rediss://");
+      redisClient = new RedisConstructor(process.env.REDIS_URL, {
+        connectTimeout: 4000,
+        lazyConnect: true,
+        maxRetriesPerRequest: 1,
+        tls: isTls ? { rejectUnauthorized: false } : undefined,
+      });
+    } else {
+      redisClient = new RedisConstructor({
+        host: resolvedRedisHost,
+        port: resolvedRedisPort,
+        connectTimeout: 2000,
+        lazyConnect: true,
+        maxRetriesPerRequest: 1,
+      });
+    }
     await redisClient.connect();
     const pong = await redisClient.ping();
     redisReady = pong === "PONG";

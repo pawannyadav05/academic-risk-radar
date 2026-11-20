@@ -7,19 +7,9 @@ import {
 } from "@academic-risk-radar/scoring-engine";
 import { RiskModelVersion, RiskSnapshot } from "@academic-risk-radar/shared-types";
 import { registerRepeatableSchedules } from "./scheduler.js";
+import { getWorkerRedisConnection } from "./connection.js";
 import "./escalation.worker.js";
 
-let resolvedRedisHost = process.env.REDIS_HOST || "127.0.0.1";
-let resolvedRedisPort = parseInt(process.env.REDIS_PORT || "6379", 10);
-if (process.env.REDIS_URL) {
-  try {
-    const parsedRedis = new URL(process.env.REDIS_URL);
-    resolvedRedisHost = parsedRedis.hostname || resolvedRedisHost;
-    resolvedRedisPort = parseInt(parsedRedis.port || "6379", 10);
-  } catch {}
-}
-const REDIS_HOST = resolvedRedisHost;
-const REDIS_PORT = resolvedRedisPort;
 const MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/academic_risk_radar";
 
 /**
@@ -300,7 +290,7 @@ export const scoringWorker = new Worker(
     };
   },
   {
-    connection: { host: REDIS_HOST, port: REDIS_PORT },
+    connection: getWorkerRedisConnection() as any,
     concurrency: 2,
   }
 );
@@ -324,7 +314,7 @@ if (process.env.NODE_ENV !== "test") {
     .connect(MONGO_URI)
     .then(() => {
       console.log(`[Scoring Worker] Connected to MongoDB at ${MONGO_URI}`);
-      return registerRepeatableSchedules({ host: REDIS_HOST, port: REDIS_PORT });
+      return registerRepeatableSchedules();
     })
     .catch((err) => {
       console.error("[Scoring Worker] Startup initialization error:", err.message);

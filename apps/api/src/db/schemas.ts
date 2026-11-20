@@ -234,5 +234,36 @@ InterventionSchema.index({ mentorId: 1, createdAt: -1 });
 InterventionSchema.index({ mentorId: 1, status: 1 });
 export const InterventionModel = mongoose.model<Intervention>("Intervention", InterventionSchema);
 
+// Password Reset OTP Schema (Auth Forgot Password)
+export interface PasswordResetOtpDoc {
+  _id: string;
+  studentId: string;
+  email: string;
+  otpHash: string;
+  expiresAt: string;
+  attempts: number;
+  requestCountToday: number;
+  windowStart: string;
+  createdAt: string;
+}
+
+const PasswordResetOtpSchema = new Schema<PasswordResetOtpDoc>({
+  _id: { type: String, required: true },
+  studentId: { type: String, required: true, index: true },
+  email: { type: String, required: true, lowercase: true, trim: true },
+  otpHash: { type: String, required: true },
+  expiresAt: { type: String, required: true, index: true },
+  attempts: { type: Number, default: 0 },
+  requestCountToday: { type: Number, default: 1 },
+  windowStart: { type: String, required: true },
+  createdAt: { type: String, required: true },
+});
+PasswordResetOtpSchema.index({ studentId: 1, expiresAt: -1 });
+
+export const PasswordResetOtpModel = mongoose.model<PasswordResetOtpDoc>(
+  "PasswordResetOtp",
+  PasswordResetOtpSchema
+);
+
 
 

@@ -114,3 +114,90 @@ export async function logoutAction() {
   cookieStore.delete(SESSION_COOKIE_NAME);
   redirect("/login?reason=signed-out");
 }
+
+export interface RequestOtpResult {
+  success: boolean;
+  message?: string;
+  error?: string;
+  remainingRequestsToday?: number;
+}
+
+export interface ResetPasswordResult {
+  success: boolean;
+  message?: string;
+  error?: string;
+}
+
+/**
+ * Server action to request a 6-digit OTP for password reset (student or faculty).
+ */
+export async function requestOtpAction(
+  identifier: string,
+  email: string
+): Promise<RequestOtpResult> {
+  try {
+    const res = await fetch(`${API_INTERNAL_URL}/api/v1/auth/forgot-password/request-otp`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: identifier, email }),
+      cache: "no-store",
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return {
+        success: false,
+        error: data.error || "Unable to send verification code. Please try again.",
+      };
+    }
+
+    return {
+      success: true,
+      message: data.message || "Verification code sent to your registered email.",
+      remainingRequestsToday: data.remainingRequestsToday,
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Connection error";
+    return {
+      success: false,
+      error: `Network error: ${msg}`,
+    };
+  }
+}
+
+/**
+ * Server action to verify OTP and set a new password.
+ */
+export async function resetPasswordAction(
+  identifier: string,
+  otp: string,
+  newPassword: string
+): Promise<ResetPasswordResult> {
+  try {
+    const res = await fetch(`${API_INTERNAL_URL}/api/v1/auth/forgot-password/reset`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ userId: identifier, otp, newPassword }),
+      cache: "no-store",
+    });
+
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) {
+      return {
+        success: false,
+        error: data.error || "Unable to reset password. Please try again.",
+      };
+    }
+
+    return {
+      success: true,
+      message: data.message || "Your password has been reset successfully. You can now sign in.",
+    };
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : "Connection error";
+    return {
+      success: false,
+      error: `Network error: ${msg}`,
+    };
+  }
+}

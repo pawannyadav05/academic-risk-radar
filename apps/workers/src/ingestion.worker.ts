@@ -1,8 +1,7 @@
 import { Worker, Job } from "bullmq";
 import mongoose from "mongoose";
+import { getWorkerRedisConnection } from "./connection.js";
 
-const REDIS_HOST = process.env.REDIS_HOST || "127.0.0.1";
-const REDIS_PORT = parseInt(process.env.REDIS_PORT || "6379", 10);
 const MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/academic_risk_radar";
 
 /**
@@ -72,7 +71,7 @@ export const ingestionWorker = new Worker(
     };
   },
   {
-    connection: { host: REDIS_HOST, port: REDIS_PORT },
+    connection: getWorkerRedisConnection() as any,
     concurrency: 3,
   }
 );

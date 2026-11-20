@@ -230,9 +230,19 @@ export async function seedDemoDatabase(customMongoUri?: string): Promise<SeedDem
       sectionIds: ["SEC-CSE-101"],
       identityId: "12409925",
     },
+    {
+      _id: "12410595",
+      name: "Piyush Singh",
+      email: "piyushsingh6963@gmail.com",
+      role: "student",
+      passwordHash,
+      departmentId: "DEP-CSE",
+      sectionIds: ["SEC-CSE-101"],
+      identityId: "12410595",
+    },
   ];
 
-  // 3. Define 5 Students in Section SEC-CSE-101
+  // 3. Define Students in Section SEC-CSE-101
   const demoStudents: Student[] = [
     {
       _id: "12409921",
@@ -273,6 +283,14 @@ export async function seedDemoDatabase(customMongoUri?: string): Promise<SeedDem
       sectionIds: ["SEC-CSE-101"],
       programme: "B.Tech Computer Science & Engineering",
       cgpa: 7.90,
+    },
+    {
+      _id: "12410595",
+      name: "Piyush Singh",
+      enrolmentId: "12410595",
+      sectionIds: ["SEC-CSE-101"],
+      programme: "B.Tech Computer Science & Engineering",
+      cgpa: 8.10,
     },
   ];
 
@@ -398,6 +416,25 @@ export async function seedDemoDatabase(customMongoUri?: string): Promise<SeedDem
       status: "present",
       sourceRef: "INS-002-UPLOAD",
     },
+    // 12410595 (Piyush Singh)
+    {
+      studentId: "12410595",
+      sectionId: "SEC-CSE-101",
+      courseId: "CS101",
+      date: "2026-10-20T09:00:00.000Z",
+      percentage: 88,
+      status: "present",
+      sourceRef: "INS-001-UPLOAD",
+    },
+    {
+      studentId: "12410595",
+      sectionId: "SEC-CSE-101",
+      courseId: "CS102",
+      date: "2026-10-20T11:00:00.000Z",
+      percentage: 90,
+      status: "present",
+      sourceRef: "INS-002-UPLOAD",
+    },
   ];
 
   // 6. Historical Assessment Records (Stored and preserved across courses)
@@ -486,6 +523,15 @@ export async function seedDemoDatabase(customMongoUri?: string): Promise<SeedDem
       date: "2026-09-28T10:00:00.000Z",
       sourceRef: "INS-001-ASSESS",
     },
+    {
+      studentId: "12410595",
+      courseId: "CS101",
+      type: "Midterm Exam",
+      score: 86,
+      maxScore: 100,
+      date: "2026-09-28T10:00:00.000Z",
+      sourceRef: "INS-001-ASSESS",
+    },
   ];
 
   // 7. Assignment Submissions
@@ -519,7 +565,7 @@ export async function seedDemoDatabase(customMongoUri?: string): Promise<SeedDem
       status: "missing",
     },
     // Cohort submissions
-    ...["12409921", "12409923", "12409924", "12409925"].map((sid) => ({
+    ...["12409921", "12409923", "12409924", "12409925", "12410595"].map((sid) => ({
       studentId: sid,
       courseId: "CS101",
       assignmentId: "ASG-001",
@@ -552,7 +598,7 @@ export async function seedDemoDatabase(customMongoUri?: string): Promise<SeedDem
       durationSec: 420,
     },
     // Cohort LMS engagement
-    ...["12409921", "12409923", "12409924", "12409925"].map((sid) => ({
+    ...["12409921", "12409923", "12409924", "12409925", "12410595"].map((sid) => ({
       studentId: sid,
       courseId: "CS101",
       date: "2026-10-05T14:00:00.000Z",

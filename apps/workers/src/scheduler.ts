@@ -1,4 +1,5 @@
 import { Queue } from "bullmq";
+import { getWorkerRedisConnection } from "./connection.js";
 
 export const NIGHTLY_SCORING_SCHEDULER_ID = "nightly-batch-scoring-scheduler";
 export const SLA_ESCALATION_SCHEDULER_ID = "recurring-sla-escalation-scheduler";
@@ -6,6 +7,7 @@ export const SLA_ESCALATION_SCHEDULER_ID = "recurring-sla-escalation-scheduler";
 export interface SchedulerOptions {
   host?: string;
   port?: number;
+  connection?: any;
 }
 
 /**
@@ -17,21 +19,10 @@ export interface SchedulerOptions {
  * strict idempotency across worker restarts, scale-out replicas, and zero duplicate schedules.
  */
 export async function registerRepeatableSchedules(options: SchedulerOptions = {}) {
-  let resolvedHost = options.host || process.env.REDIS_HOST || "127.0.0.1";
-  let resolvedPort = options.port || parseInt(process.env.REDIS_PORT || "6379", 10);
+  const connection = options.connection || (options.host ? { host: options.host, port: options.port } : getWorkerRedisConnection());
 
-  if (!options.host && process.env.REDIS_URL) {
-    try {
-      const parsed = new URL(process.env.REDIS_URL);
-      resolvedHost = parsed.hostname || resolvedHost;
-      resolvedPort = parseInt(parsed.port || "6379", 10);
-    } catch {}
-  }
-
-  const connection = { host: resolvedHost, port: resolvedPort };
-
-  const scoringQueue = new Queue("risk-scoring-queue", { connection });
-  const escalationQueue = new Queue("alert-escalation-queue", { connection });
+  const scoringQueue = new Queue("risk-scoring-queue", { connection: connection as any });
+  const escalationQueue = new Queue("alert-escalation-queue", { connection: connection as any });
 
   try {
     // 1. Idempotent Nightly Scoring (02:00 daily)

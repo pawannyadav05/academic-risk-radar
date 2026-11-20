@@ -46,6 +46,9 @@ services:
       REDIS_HOST: redis
       REDIS_PORT: 6379
       JWT_SECRET: ${JWT_SECRET:-evaluation_development_jwt_secret_radar_2026}
+      BREVO_API_KEY: ${BREVO_API_KEY}
+      BREVO_SENDER_EMAIL: ${BREVO_SENDER_EMAIL:-kumarpawan90107@gmail.com}
+      BREVO_SENDER_NAME: ${BREVO_SENDER_NAME:-Academic Risk Radar}
     depends_on:
       mongodb:
         condition: service_healthy

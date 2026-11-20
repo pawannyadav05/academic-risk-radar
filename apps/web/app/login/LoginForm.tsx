@@ -4,6 +4,7 @@ import React, { useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { LogIn, AlertCircle, Eye, EyeOff, Loader2 } from "lucide-react";
 import { loginAction, LoginState } from "@/actions/auth";
+import { ForgotPasswordModal } from "./components/ForgotPasswordModal";
 
 const DEMO_ROLES = [
   { label: "Admin", email: "admin@radar.edu" },
@@ -57,6 +58,7 @@ export function LoginForm({ returnUrl }: { returnUrl?: string }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showForgotPassword, setShowForgotPassword] = useState(false);
 
   return (
     <form action={formAction} style={{ display: "flex", flexDirection: "column", gap: "1.25rem" }}>
@@ -187,6 +189,24 @@ export function LoginForm({ returnUrl }: { returnUrl?: string }) {
         )}
       </div>
 
+      <div style={{ display: "flex", justifyContent: "flex-end", marginTop: "-0.5rem" }}>
+        <button
+          type="button"
+          onClick={() => setShowForgotPassword(true)}
+          style={{
+            background: "transparent",
+            border: "none",
+            color: "var(--accent)",
+            fontSize: "0.8125rem",
+            cursor: "pointer",
+            padding: 0,
+            fontWeight: 500,
+          }}
+        >
+          Forgot password?
+        </button>
+      </div>
+
       {/* Error Banner */}
       {state?.error && (
         <div
@@ -210,6 +230,11 @@ export function LoginForm({ returnUrl }: { returnUrl?: string }) {
       )}
 
       <SubmitButton />
+
+      <ForgotPasswordModal
+        isOpen={showForgotPassword}
+        onClose={() => setShowForgotPassword(false)}
+      />
     </form>
   );
 }

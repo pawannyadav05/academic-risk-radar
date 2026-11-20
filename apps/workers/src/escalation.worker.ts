@@ -1,9 +1,8 @@
 import { Worker, Job, Queue } from "bullmq";
 import mongoose from "mongoose";
 import { Alert } from "@academic-risk-radar/shared-types";
+import { getWorkerRedisConnection } from "./connection.js";
 
-const REDIS_HOST = process.env.REDIS_HOST || "127.0.0.1";
-const REDIS_PORT = parseInt(process.env.REDIS_PORT || "6379", 10);
 const MONGO_URI = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/academic_risk_radar";
 
 export const ALERT_ESCALATION_QUEUE = "alert-escalation-queue";
@@ -135,7 +134,7 @@ let escalationQueue: Queue | null = null;
 export function getEscalationQueue(): Queue {
   if (!escalationQueue) {
     escalationQueue = new Queue(ALERT_ESCALATION_QUEUE, {
-      connection: { host: REDIS_HOST, port: REDIS_PORT },
+      connection: getWorkerRedisConnection() as any,
     });
   }
   return escalationQueue;
@@ -171,7 +170,7 @@ export const escalationWorker = new Worker(
     return result;
   },
   {
-    connection: { host: REDIS_HOST, port: REDIS_PORT },
+    connection: getWorkerRedisConnection() as any,
     concurrency: 2,
   }
 );

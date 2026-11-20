@@ -65,6 +65,7 @@ function studentEmail(studentId: string, termId: number): string {
 interface FacultyRow {
   uid: string;
   name: string;
+  email?: string;
   department: string;
   designation: string;
   hodUid?: string;
@@ -76,11 +77,13 @@ function parseFacultyCsv(csv: string): FacultyRow[] {
   if (rows.length < 2) return [];
   const [header, ...data] = rows;
   const h = new Map(header.map((c, i) => [c.toLowerCase().replace(/[^a-z]/g, ""), i]));
+  const emailCol = h.get("email") ?? h.get("facultyemail") ?? h.get("mail");
   return data
     .filter((r) => r.length > 1)
     .map((r) => ({
       uid: r[h.get("uid") ?? 0] ?? "",
       name: r[h.get("name") ?? 1] ?? "",
+      email: emailCol !== undefined ? (r[emailCol]?.trim() || undefined) : undefined,
       department: r[h.get("department") ?? 2] ?? "",
       designation: r[h.get("designation") ?? 3]?.toLowerCase().replace(/\s+/g, "_") ?? "",
       hodUid: h.has("hoduid") ? (r[h.get("hoduid")!] ?? "") : undefined,
@@ -92,6 +95,7 @@ function parseFacultyCsv(csv: string): FacultyRow[] {
 interface CredRow {
   id: string;
   password: string;
+  email?: string;
 }
 
 function parseCredsCsv(csv: string): CredRow[] {
@@ -101,9 +105,14 @@ function parseCredsCsv(csv: string): CredRow[] {
   const h = new Map(header.map((c, i) => [c.toLowerCase().replace(/[^a-z]/g, ""), i]));
   const idCol = h.get("uid") ?? h.get("studentid") ?? h.get("id") ?? 0;
   const pwCol = h.get("password") ?? 1;
+  const emailCol = h.get("email") ?? h.get("studentemail") ?? h.get("facultyemail") ?? h.get("mail");
   return data
     .filter((r) => r.length > 1)
-    .map((r) => ({ id: r[idCol] ?? "", password: r[pwCol] ?? "" }))
+    .map((r) => ({
+      id: r[idCol] ?? "",
+      password: r[pwCol] ?? "",
+      email: emailCol !== undefined ? (r[emailCol]?.trim() || undefined) : undefined,
+    }))
     .filter((r) => r.id && r.password);
 }
 
@@ -111,6 +120,7 @@ interface MappingRow {
   studentId: string;
   section: string;
   mentorUid: string;
+  email?: string;
 }
 
 function parseStudentMentorCsv(csv: string): MappingRow[] {
@@ -118,12 +128,14 @@ function parseStudentMentorCsv(csv: string): MappingRow[] {
   if (rows.length < 2) return [];
   const [header, ...data] = rows;
   const h = new Map(header.map((c, i) => [c.toLowerCase().replace(/[^a-z]/g, ""), i]));
+  const emailCol = h.get("email") ?? h.get("studentemail") ?? h.get("mail");
   return data
     .filter((r) => r.length > 1)
     .map((r) => ({
       studentId: r[h.get("studentid") ?? 0] ?? "",
       section: r[h.get("section") ?? 1] ?? "",
       mentorUid: r[h.get("mentoruid") ?? h.get("mentor") ?? 2] ?? "",
+      email: emailCol !== undefined ? (r[emailCol]?.trim() || undefined) : undefined,
     }))
     .filter((r) => r.studentId && r.mentorUid);
 }
@@ -175,6 +187,9 @@ function parseSectionDetailsCsv(csv: string): SectionDetailRow[] {
 /** GET /api/v1/admin/terms */
 export async function listTerms(req: Request, res: Response) {
   try {
+    if (mongoose.connection.readyState !== 1) {
+      return res.json([]);
+    }
     const terms = await TermModel.find({}).sort({ termId: -1 }).lean();
     return res.json(terms);
   } catch (err: unknown) {
@@ -205,9 +220,11 @@ export async function createTerm(req: Request, res: Response) {
       return res.status(400).json({ error: "termId must be a positive integer" });
     }
 
-    const existing = await TermModel.findOne({ termId: numericTermId });
-    if (existing) {
-      return res.status(409).json({ error: `Term ${numericTermId} already exists` });
+    if (mongoose.connection.readyState === 1) {
+      const existing = await TermModel.findOne({ termId: numericTermId });
+      if (existing) {
+        return res.status(409).json({ error: `Term ${numericTermId} already exists` });
+      }
     }
 
     if (
@@ -230,8 +247,32 @@ export async function createTerm(req: Request, res: Response) {
     };
     const errors: string[] = [];
 
-    // ── 1. Section Details CSV → upsert Section records ──
+    // Parse all CSVs first
     const sectionRows = parseSectionDetailsCsv(String(sectionDetailsCsv));
+    summary.sectionsConfigured = sectionRows.length;
+
+    const facultyRows = parseFacultyCsv(String(facultyCsv));
+    summary.facultyCreated = facultyRows.length;
+
+    const studentCreds = parseCredsCsv(String(studentCredsCsv));
+    summary.studentsCreated = studentCreds.length;
+
+    const mentorRows = parseStudentMentorCsv(String(studentMentorCsv));
+    summary.mentorAssignments = mentorRows.length;
+
+    const instrRows = parseInstructorSectionCsv(String(instructorSectionCsv));
+    summary.sectionAssignments = instrRows.length;
+
+    if (mongoose.connection.readyState !== 1) {
+      return res.status(201).json({
+        termId: numericTermId,
+        status: "active",
+        summary,
+        errors,
+      });
+    }
+
+    // ── 1. Section Details CSV → upsert Section records ──
     for (const row of sectionRows) {
       await SectionModel.updateOne(
         { _id: row.sectionId, termId: numericTermId },
@@ -244,18 +285,16 @@ export async function createTerm(req: Request, res: Response) {
         },
         { upsert: true }
       );
-      summary.sectionsConfigured++;
     }
 
     // ── 2. Faculty CSV → create/update User records ──
-    const facultyRows = parseFacultyCsv(String(facultyCsv));
     for (const row of facultyRows) {
       const role = DESIGNATION_TO_ROLE[row.designation];
       if (!role) {
         errors.push(`Unknown designation '${row.designation}' for uid ${row.uid}`);
         continue;
       }
-      const email = facultyEmail(row.uid, numericTermId);
+      const email = row.email || facultyEmail(row.uid, numericTermId);
       await UserModel.updateOne(
         { _id: row.uid },
         {
@@ -273,33 +312,36 @@ export async function createTerm(req: Request, res: Response) {
         },
         { upsert: true }
       );
-      summary.facultyCreated++;
     }
 
-    // ── 2. Student credentials CSV → create Student User records ──
-    const studentCreds = parseCredsCsv(String(studentCredsCsv));
+    // ── 3. Student credentials CSV → create Student User records ──
     for (const row of studentCreds) {
-      const email = studentEmail(row.id, numericTermId);
+      const email = row.email || studentEmail(row.id, numericTermId);
       const hash = await bcrypt.hash(row.password, 10);
       await UserModel.updateOne(
         { _id: row.id },
         { $set: { _id: row.id, role: "student", name: row.id, email, passwordHash: hash, sectionIds: [] } },
         { upsert: true }
       );
-      summary.studentsCreated++;
     }
 
-    // ── 3. Faculty credentials CSV → update passwordHash on faculty Users ──
+    // ── 4. Faculty credentials CSV → update passwordHash on faculty Users ──
     const facultyCreds = parseCredsCsv(String(facultyCredsCsv));
     for (const row of facultyCreds) {
       const hash = await bcrypt.hash(row.password, 10);
-      await UserModel.updateOne({ _id: row.id }, { $set: { passwordHash: hash } });
+      const updateFields: Record<string, string> = { passwordHash: hash };
+      if (row.email) {
+        updateFields.email = row.email;
+      }
+      await UserModel.updateOne({ _id: row.id }, { $set: updateFields });
     }
 
-    // ── 4. Student-Mentor mapping CSV → upsert MentorAssignment records ──
-    const mentorRows = parseStudentMentorCsv(String(studentMentorCsv));
+    // ── 5. Student-Mentor mapping CSV → upsert MentorAssignment records ──
     const now = new Date().toISOString();
     for (const row of mentorRows) {
+      if (row.email) {
+        await UserModel.updateOne({ _id: row.studentId }, { $set: { email: row.email } });
+      }
       await MentorAssignmentModel.updateOne(
         { studentId: row.studentId, mentorId: row.mentorUid },
         {
@@ -317,11 +359,9 @@ export async function createTerm(req: Request, res: Response) {
         { _id: row.studentId },
         { $addToSet: { sectionIds: row.section } }
       );
-      summary.mentorAssignments++;
     }
 
-    // ── 5. Instructor-Section mapping CSV → update sectionIds and TeachingAssignment ──
-    const instrRows = parseInstructorSectionCsv(String(instructorSectionCsv));
+    // ── 6. Instructor-Section mapping CSV → update sectionIds and TeachingAssignment ──
     for (const row of instrRows) {
       await UserModel.updateOne({ _id: row.uid }, { $addToSet: { sectionIds: row.section } });
       await TeachingAssignmentModel.updateOne(
@@ -336,7 +376,6 @@ export async function createTerm(req: Request, res: Response) {
         },
         { upsert: true }
       );
-      summary.sectionAssignments++;
     }
 
     // ── Create Term document ──
