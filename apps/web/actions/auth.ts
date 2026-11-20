@@ -25,9 +25,17 @@ export interface LoginResult {
 
 export type LoginState = LoginResult | null;
 
-const API_INTERNAL_URL =
-  process.env.API_INTERNAL_URL ||
-  (process.env.NODE_ENV === "production" ? "http://api:4000" : "http://localhost:4000");
+function getApiInternalUrl(): string {
+  const raw =
+    process.env.API_INTERNAL_URL ||
+    process.env.NEXT_PUBLIC_API_URL?.replace(/\/api\/v1\/?$/, "") ||
+    (process.env.NODE_ENV === "production"
+      ? "https://academic-risk-api.onrender.com"
+      : "http://localhost:4000");
+  return raw.trim().replace(/\/+$/, "");
+}
+
+const API_INTERNAL_URL = getApiInternalUrl();
 
 /**
  * Server action to authenticate credentials against Express /api/v1/auth/login

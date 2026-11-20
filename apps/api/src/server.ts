@@ -49,6 +49,14 @@ app.use(
   })
 );
 
+// Sanitize duplicate slashes (e.g. //api/v1/...)
+app.use((req, _res, next) => {
+  if (req.url.startsWith("//")) {
+    req.url = req.url.replace(/^\/+/, "/");
+  }
+  next();
+});
+
 app.use(express.json());
 
 const isDev = process.env.NODE_ENV !== "production";
