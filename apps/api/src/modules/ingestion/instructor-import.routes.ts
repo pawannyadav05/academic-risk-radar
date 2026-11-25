@@ -6,6 +6,7 @@ import {
   getInstructorTeachingAssignments,
 } from "./instructor-import.controller.js";
 
+// Module Ingestion: Protected academic submission router for instructors
 const router = Router();
 
 const importLimiter = rateLimit({
@@ -14,8 +15,6 @@ const importLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
-
-router.use(importLimiter);
 
 /**
  * GET /api/v1/instructor/teaching-assignments
@@ -34,6 +33,7 @@ router.get(
 router.post(
   "/sections/:sectionId/imports/:source",
   requireRole("instructor", "mentor", "hod", "admin"),
+  importLimiter,
   importSectionAcademicData
 );
 

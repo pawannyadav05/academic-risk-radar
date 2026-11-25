@@ -226,5 +226,55 @@ describe("Instructor Section Academic Submission — RBAC & Validation Tests", (
       close();
     }
   });
+
+  it("REGRESSION: importLimiter applies only to import routes and does not limit other /api/v1 routes after 60+ requests", async () => {
+    const app = express();
+    app.use(express.json());
+    app.use(authenticateUser);
+    app.use("/api/v1", instructorImportRouter);
+    app.get("/api/v1/scoring/health", (_req, res) => res.status(200).json({ ok: true }));
+
+    const { port, close } = await startServer(app);
+    try {
+      const instructorClaims = {
+        id: "inst-1",
+        name: "Instructor Rajesh",
+        email: "instructor1@radar.edu",
+        role: "instructor",
+        sectionIds: ["SEC-CSE-101"],
+      };
+
+      // 1. Prove non-import endpoints under /api/v1 are NOT limited after 60+ requests
+      for (let i = 1; i <= 65; i++) {
+        const res = await fetch(`http://127.0.0.1:${port}/api/v1/scoring/health`);
+        assert.equal(
+          res.status,
+          200,
+          `Non-import route should return 200 on request ${i}, but got ${res.status}`
+        );
+      }
+
+      // 2. Prove the import endpoint IS still limited after 60 requests (returns 429)
+      let got429 = false;
+      for (let i = 1; i <= 65; i++) {
+        const res = await authFetch(
+          `http://127.0.0.1:${port}/api/v1/sections/SEC-CSE-101/imports/invalid-source`,
+          instructorClaims,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ csvData: "test" }),
+          }
+        );
+        if (res.status === 429) {
+          got429 = true;
+          break;
+        }
+      }
+      assert.ok(got429, "Import endpoint should return 429 after exceeding import rate limit");
+    } finally {
+      close();
+    }
+  });
 });
 
